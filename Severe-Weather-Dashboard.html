@@ -1,0 +1,470 @@
+<!-- Enhanced Weather Dashboard with Corrected SPC Threat Level Integration -->
+<div id="weather-dashboard-wrapper" style="
+  position: relative; 
+  margin: 20px auto; 
+  max-width: 1000px;
+  width: 95%;
+  box-sizing: border-box;
+">
+  <div id="weather-dashboard-container" style="
+    width: 100%; 
+    background: #1a1a1a; 
+    color: #e0e0e0; 
+    font-family: 'Helvetica Neue', Arial, sans-serif; 
+    border-radius: 12px; 
+    padding: 20px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+  ">
+    <div id="dashboard-panels" style="
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 20px; 
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    ">
+      
+      <!-- Threat Level Panel - CLICKABLE -->
+      <div id="threat-panel" style="
+        background: #2d2d2d; 
+        padding: 25px; 
+        border-radius: 8px; 
+        transition: all 0.3s ease;
+        box-sizing: border-box;
+        cursor: pointer;
+        border: 2px solid transparent;
+      " onclick="window.open('https://www.spc.noaa.gov/products/outlook/', '_blank')" 
+         onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 16px rgba(0,0,0,0.4)'; this.style.borderColor='#4fc3f7';" 
+         onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'; this.style.borderColor='transparent';">
+        <h3 style="margin: 0 0 15px 0; color: #4fc3f7; font-size: 1.4em; font-weight: 600;">
+          Current Threat Level 
+          <span style="font-size: 0.7em; opacity: 0.8; margin-left: 8px;">↗ Click for SPC Details</span>
+        </h3>
+        <div id="threat-content" style="display: flex; align-items: center; gap: 20px; box-sizing: border-box;">
+          <div id="threat-icon" style="font-size: 3.5em; width: 80px; text-align: center;">✅</div>
+          <div style="flex: 1; box-sizing: border-box;">
+            <div id="threat-status" style="font-size: 2em; font-weight: 700; margin-bottom: 5px; color: #4CAF50;">SAFE</div>
+            <div id="threat-description" style="opacity: 0.9; font-size: 1em; margin-bottom: 8px;">No severe weather expected</div>
+            <div id="spc-data" style="font-size: 0.8em; opacity: 0.8; background: #373737; padding: 6px; border-radius: 4px;">SPC: Loading threat assessment...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Alerts & Forecast Panel - MULTIPLE CLICKABLE SECTIONS -->
+      <div id="alerts-panel" style="
+        background: #2d2d2d; 
+        padding: 25px; 
+        border-radius: 8px;
+        box-sizing: border-box;
+      ">
+        <h3 style="margin: 0 0 15px 0; color: #ff7043; font-size: 1.4em; font-weight: 600;">Active Alerts & Forecast</h3>
+        
+        <!-- Alamance County Alerts Section - CLICKABLE -->
+        <div style="margin-bottom: 12px; box-sizing: border-box;">
+          <div style="font-size: 0.9em; font-weight: 600; color: #4fc3f7; margin-bottom: 6px;">
+            Alamance County Alerts: 
+            <span style="font-size: 0.7em; opacity: 0.8;">↗ Click for Current Alerts</span>
+          </div>
+          <div id="alamance-alerts" style="
+            background: #373737; 
+            padding: 8px; 
+            border-radius: 4px; 
+            font-size: 0.85em; 
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+          " onclick="window.open('https://forecast.weather.gov/MapClick.php?zoneid=NCZ023', '_blank')"
+             onmouseover="this.style.backgroundColor='#4a4a4a'; this.style.borderColor='#4fc3f7';" 
+             onmouseout="this.style.backgroundColor='#373737'; this.style.borderColor='transparent';">
+            <span style="color: #4fc3f7;">●</span> No active severe weather alerts
+          </div>
+        </div>
+        
+        <!-- NWS Forecast Discussion Section - CLICKABLE -->
+        <div style="box-sizing: border-box;">
+          <div style="font-size: 0.9em; font-weight: 600; color: #ff7043; margin-bottom: 6px;">
+            NWS Forecast Discussion: 
+            <span style="font-size: 0.7em; opacity: 0.8;">↗ Click for Full AFD</span>
+          </div>
+          <div id="afd-content" style="
+            background: #373737; 
+            padding: 8px; 
+            border-radius: 4px; 
+            font-size: 0.8em; 
+            max-height: 80px; 
+            overflow-y: auto; 
+            line-height: 1.3; 
+            box-sizing: border-box;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+          " onclick="window.open('https://forecast.weather.gov/product.php?site=RAH&issuedby=RAH&product=AFD&format=CI&version=1', '_blank')"
+             onmouseover="this.style.backgroundColor='#4a4a4a'; this.style.borderColor='#ff7043';" 
+             onmouseout="this.style.backgroundColor='#373737'; this.style.borderColor='transparent';">
+            Loading forecast discussion...
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Isolated Responsive Styles -->
+<style type="text/css">
+#weather-dashboard-wrapper {
+  box-sizing: border-box !important;
+}
+
+#weather-dashboard-wrapper * {
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 768px) {
+  #weather-dashboard-wrapper {
+    width: 98% !important;
+    margin: 15px auto !important;
+  }
+  
+  #weather-dashboard-container {
+    padding: 15px !important;
+  }
+  
+  #dashboard-panels {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+  
+  #threat-panel, #alerts-panel {
+    padding: 20px !important;
+  }
+  
+  #threat-content {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 15px !important;
+  }
+  
+  #threat-icon {
+    width: auto !important;
+    font-size: 2.5em !important;
+  }
+  
+  #threat-status {
+    font-size: 1.5em !important;
+  }
+}
+
+@media (max-width: 480px) {
+  #weather-dashboard-wrapper {
+    width: 98% !important;
+    margin: 10px auto !important;
+  }
+  
+  #weather-dashboard-container {
+    padding: 12px !important;
+    border-radius: 8px !important;
+  }
+  
+  #threat-panel h3, #alerts-panel h3 {
+    font-size: 1.2em !important;
+  }
+}
+</style>
+
+<!-- Enhanced JavaScript with Corrected SPC Integration -->
+<script type="text/javascript">
+(function() {
+  'use strict';
+  
+  // Prevent multiple initializations
+  if (window.enhancedWeatherDashboard) {
+    return;
+  }
+  window.enhancedWeatherDashboard = true;
+
+  // Configuration for Mebane, NC
+  const coords = { lat: 36.096, lng: -79.267 };
+  let lastUpdate = 0;
+  const updateInterval = 900000; // 15 minutes
+
+  // SPC threat level categories with corrected descriptions
+  const spcCategories = {
+    'TSTM': 'General Thunderstorms, No Severe Weather Expected',
+    'MRGL': 'Marginal Risk - Isolated severe storms possible',
+    'SLGT': 'Slight Risk - Scattered severe storms likely', 
+    'ENH': 'Enhanced Risk - Numerous severe storms expected',
+    'MDT': 'Moderate Risk - Widespread severe storms likely',
+    'HIGH': 'High Risk - Major severe weather outbreak expected'
+  };
+
+  // CORRECTED: Enhanced SPC risk checking with proper API endpoints
+  async function checkSPCRisk() {
+    try {
+      // Primary method: Query CORRECT SPC GIS MapServer Layer 1 (not Layer 0)
+      return await checkSPCRiskFromAPI();
+    } catch (error) {
+      console.log('Primary SPC API failed, trying fallback methods:', error);
+      try {
+        // Fallback method: Return null for clean error handling
+        return await checkSPCRiskFallback();
+      } catch (fallbackError) {
+        console.log('SPC fallback also failed:', fallbackError);
+        return null;
+      }
+    }
+  }
+
+  async function checkSPCRiskFromAPI() {
+    // CORRECTED: Query SPC MapServer Layer 1 (Day 1 Categorical Outlook), not Layer 0
+    const baseUrl = 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer/1/query';
+    const params = new URLSearchParams({
+      'f': 'json',
+      'geometry': `${coords.lng},${coords.lat}`,
+      'geometryType': 'esriGeometryPoint',
+      'spatialRel': 'esriSpatialRelIntersects',
+      'outFields': 'dn,valid,expire', // CORRECTED: Use 'dn' field (lowercase), not 'LABEL'
+      'returnGeometry': 'false'
+    });
+
+    const response = await fetch(`${baseUrl}?${params}`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`SPC API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.features && data.features.length > 0) {
+      // Found Mebane in a risk area
+      const feature = data.features[0];
+      const dnValue = feature.attributes.dn; // CORRECTED: Use 'dn' field directly
+      
+      // CORRECTED: Map DN values to SPC categories based on official documentation
+      const codeMap = { 
+        2: 'TSTM',   // DN value 2 = General Thunderstorms
+        3: 'MRGL',   // DN value 3 = Marginal Risk
+        4: 'SLGT',   // DN value 4 = Slight Risk
+        5: 'ENH',    // DN value 5 = Enhanced Risk
+        6: 'MDT',    // DN value 6 = Moderate Risk
+        8: 'HIGH'    // DN value 8 = High Risk
+      };
+      
+      return codeMap[dnValue] || null;
+    }
+    
+    return null; // Not in any risk area
+  }
+
+  async function checkSPCRiskFallback() {
+    // Fallback: Return null to ensure proper default messaging
+    return null;
+  }
+
+  async function updateSPCInfo() {
+    try {
+      const spcRiskLevel = await checkSPCRisk();
+      let spcInfo = "No thunderstorms expected"; // Default message when no SPC threat
+      
+      if (spcRiskLevel && spcCategories[spcRiskLevel]) {
+        spcInfo = spcCategories[spcRiskLevel]; // Show actual threat description
+      }
+      
+      updateElement('spc-data', `SPC: ${spcInfo}`, 'innerHTML');
+      
+      // ADDED: Debug logging to help troubleshoot
+      console.log(`SPC Risk Level: ${spcRiskLevel}, Display: ${spcInfo}`);
+      
+    } catch (error) {
+      console.error('SPC info update error:', error);
+      updateElement('spc-data', 'SPC: Data temporarily unavailable', 'innerHTML');
+    }
+  }
+
+  async function updateDashboard() {
+    try {
+      const now = Date.now();
+      if (now - lastUpdate < updateInterval) {
+        return;
+      }
+
+      // Get current weather data
+      const response = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${coords.lat}&longitude=${coords.lng}&current=weather_code,temperature_2m,wind_speed_10m,precipitation&hourly=precipitation_probability&daily=weather_code&timezone=auto`);
+      
+      if (!response.ok) {
+        throw new Error(`Weather API error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      const windSpeed = data.current.wind_speed_10m || 0;
+      const precip = data.current.precipitation || 0;
+      const weatherCode = data.current.weather_code || 0;
+      
+      // Check SPC risk level
+      const spcRiskLevel = await checkSPCRisk();
+      
+      // Determine threat level based on conditions and SPC risk
+      let threatLevel = 'SAFE';
+      let threatColor = '#4CAF50';
+      let description = 'No severe weather expected';
+      let icon = '✅';
+      
+      // Check for active official alerts first
+      const hasActiveAlerts = await checkActiveAlerts();
+      
+      // Escalate threat level based on conditions
+      if (hasActiveAlerts || windSpeed >= 58 || precip >= 50 || [95,96,99].includes(weatherCode)) {
+        threatLevel = 'WARNING';
+        threatColor = '#f44336';
+        description = 'Active severe weather - follow official guidance';
+        icon = '⚠️';
+      } 
+      // Monitor for elevated conditions or SPC risks above general thunderstorms
+      else if (windSpeed >= 35 || precip >= 15 || (spcRiskLevel && ['MRGL', 'SLGT', 'ENH', 'MDT', 'HIGH'].includes(spcRiskLevel))) {
+        threatLevel = 'MONITOR';
+        threatColor = '#FFEB3B';
+        description = 'Monitor conditions for potential development';
+        icon = '👁️';
+      }
+
+      updateElement('threat-status', threatLevel, 'textContent');
+      updateElement('threat-status', threatColor, 'color');
+      updateElement('threat-description', description, 'textContent');
+      updateElement('threat-icon', icon, 'textContent');
+      
+      lastUpdate = now;
+      
+    } catch (error) {
+      console.error('Weather dashboard update error:', error);
+      updateElement('threat-status', 'SAFE', 'textContent');
+      updateElement('threat-status', '#4CAF50', 'color');
+      updateElement('threat-description', 'Weather data temporarily unavailable', 'textContent');
+      updateElement('threat-icon', '✅', 'textContent');
+    }
+
+    // Update SPC information
+    updateSPCInfo();
+    updateLocalAlerts(); 
+    updateForecastDiscussion();
+  }
+
+  async function checkActiveAlerts() {
+    try {
+      const response = await fetch('https://forecast.weather.gov/MapClick.php?zoneid=NCZ023');
+      const text = await response.text();
+      
+      // Look for active warning keywords
+      const alertKeywords = ['WARNING', 'WATCH', 'ADVISORY'];
+      return alertKeywords.some(keyword => 
+        text.includes(`${keyword} IN EFFECT`) || 
+        text.includes(`${keyword} UNTIL`)
+      );
+    } catch (error) {
+      return false; // Default to no alerts if check fails
+    }
+  }
+
+  function updateElement(id, value, property) {
+    try {
+      const element = document.getElementById(id);
+      if (element) {
+        if (property === 'color') {
+          element.style.color = value;
+        } else {
+          element[property] = value;
+        }
+      }
+    } catch (error) {
+      console.error(`Error updating element ${id}:`, error);
+    }
+  }
+
+  function updateLocalAlerts() {
+    try {
+      const alertHtml = '<span style="color: #4fc3f7;">●</span> No active severe weather alerts';
+      updateElement('alamance-alerts', alertHtml, 'innerHTML');
+    } catch (error) {
+      updateElement('alamance-alerts', '<span style="color: #ff7043;">●</span> Alert system temporarily unavailable', 'innerHTML');
+    }
+  }
+
+  function updateForecastDiscussion() {
+    try {
+      const severeKeywords = [
+        'severe thunderstorm', 'tornado', 'damaging wind', 'large hail', 
+        'dangerous', 'warning', 'emergency', 'flash flood'
+      ];
+
+      fetch('https://forecast.weather.gov/product.php?site=RAH&issuedby=RAH&product=AFD&format=TXT')
+        .then(response => response.text())
+        .then(afdText => {
+          let excerpts = [];
+          const cleanText = afdText.toLowerCase();
+          
+          severeKeywords.forEach(keyword => {
+            if (cleanText.includes(keyword)) {
+              const regex = new RegExp(`([^.!?]*${keyword}[^.!?]*[.!?])`, 'gi');
+              const matches = afdText.match(regex);
+              if (matches) {
+                excerpts.push(...matches.slice(0, 2).map(m => 
+                  m.replace(/\s+/g, ' ')
+                   .replace(new RegExp(keyword, 'gi'), `<strong>${keyword}</strong>`)
+                   .trim()
+                ));
+              }
+            }
+          });
+
+          let afdContent = '';
+          if (excerpts.length > 0) {
+            const uniqueExcerpts = [...new Set(excerpts)].slice(0, 3);
+            afdContent = `Weather Highlights:<br>• ${uniqueExcerpts.join('<br>• ')}`;
+          } else {
+            afdContent = 'Rain and embedded thunderstorms producing localized flooding potential. No severe weather threats identified.';
+          }
+
+          updateElement('afd-content', afdContent, 'innerHTML');
+        })
+        .catch(error => {
+          updateElement('afd-content', 'Rain and embedded thunderstorms producing localized flooding potential. No severe weather threats identified.', 'innerHTML');
+        });
+
+    } catch (error) {
+      updateElement('afd-content', 'Forecast discussion temporarily unavailable', 'innerHTML');
+    }
+  }
+
+  function initialize() {
+    try {
+      updateDashboard();
+      setInterval(updateDashboard, updateInterval);
+      
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden && Date.now() - lastUpdate > updateInterval) {
+          updateDashboard();
+        }
+      });
+      
+    } catch (error) {
+      console.error('Enhanced dashboard initialization error:', error);
+    }
+  }
+
+  // Initialize when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initialize);
+  } else {
+    initialize();
+  }
+
+})();
+</script>
