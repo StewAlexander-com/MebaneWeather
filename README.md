@@ -21,6 +21,7 @@
 | 🔄 **Auto-Refresh** | Updates every 15 minutes with 3-minute alert polling | ✅ Active |
 | 🖱️ **Interactive Panels** | Clickable sections linking to official sources | ✅ Active |
 | 📝 **Intelligent AFD Summarization** | Extracts key severe weather highlights from forecast discussions | ✅ Active |
+| ❄️ **Winter Weather Detection** | Detects winter weather alerts and conditions from NWS alerts and forecast discussions | ✅ Active |
 | 🌐 **Weebly Optimized** | Self-contained HTML for easy Weebly integration | ✅ Active |
 
 ## 📑 Table of Contents
@@ -52,12 +53,14 @@ The dashboard uses a four-tier threat classification system with priority-based 
 
 | Threat Level | Icon | Color | Description | Trigger |
 |--------------|------|-------|-------------|---------|
-| **WARNING** | ⚠️ | 🔴 Red | Active weather warnings in effect | Active NWS warnings |
+| **WARNING** | ⚠️ | 🔴 Red | Active weather warnings in effect | Active NWS warnings (includes winter weather warnings) |
 | **CAUTION** | ⚡ | 🟠 Orange | Elevated severe weather risk | SPC Enhanced/Moderate/High risk |
-| **MONITOR** | □ | 🟡 Yellow | Monitor conditions for development | SPC Marginal/Slight risk |
+| **MONITOR** | ❄️/□ | 🟡 Yellow | Monitor conditions for development | Winter weather advisories, SPC Marginal/Slight risk |
 | **SAFE** | ✅ | 🟢 Green | No severe weather expected | No warnings, no SPC risk |
 
-**Priority**: Warnings override all other indicators, followed by elevated SPC risks (CAUTION), then lower risks (MONITOR).
+**Priority**: Warnings override all other indicators, followed by winter weather advisories (MONITOR), then elevated SPC risks (CAUTION), then lower risks (MONITOR).
+
+**Winter Weather**: Detects winter weather alerts and conditions, displaying "Winter Precipitation Imminent and/or Occurring" for warnings and "Monitor for Winter Conditions" for advisories.
 
 **SPC Risk Categories**: TSTM, MRGL, SLGT, ENH, MDT, HIGH - Maps official Storm Prediction Center outlook levels with intelligent forecast discussion summarization.
 
@@ -66,8 +69,8 @@ The dashboard uses a four-tier threat classification system with priority-based 
 ### API Integrations
 
 1. **SPC GIS MapServer** - Storm threat polygons via point-in-polygon spatial analysis (Mebane coordinates)
-2. **NWS Alerts API** - Zone-specific alerts (NCZ023) with statewide fallback, filtered for warnings/watches/advisories
-3. **NWS Forecast Discussion** - AFD from NWS Raleigh (RAH) with intelligent text processing and summarization
+2. **NWS Alerts API** - Zone-specific alerts (NCZ023) with statewide fallback, filtered for warnings/watches/advisories (includes winter weather detection)
+3. **NWS Forecast Discussion** - AFD from NWS Raleigh (RAH) with intelligent text processing and summarization (includes winter weather keyword detection)
 
 ### Update Cycle
 
@@ -174,7 +177,7 @@ The dashboard includes robust error handling for all external APIs:
 ./run-tests.sh  # or: python3 run_tests.py
 ```
 
-**Test Coverage (21 tests)**: SPC Risk Mapping (7), Threat Level Calculation (7), Alert Processing (3), Error Handling (4)
+**Test Coverage (34 tests)**: SPC Risk Mapping (7), Threat Level Calculation (7), Alert Processing (3), Winter Weather Detection (11), Error Handling (4)
 
 **Test Files**: `run_tests.py` (Python, primary), `run-tests.js` (Node.js, optional), `run-tests.sh` (shell wrapper), `test-dashboard.html` (browser test suite)
 

@@ -137,6 +137,7 @@
       <button id="test-threat-levels">Test Threat Levels</button>
       <button id="test-spc-mapping">Test SPC Mapping</button>
       <button id="test-alerts">Test Alerts</button>
+      <button id="test-winter-weather">Test Winter Weather</button>
       <button id="test-errors">Test Error Handling</button>
       <button id="reset-dashboard">Reset Dashboard</button>
     </div>
@@ -162,12 +163,17 @@
       </div>
 
       <div class="test-section">
-        <h2>4. Error Handling</h2>
+        <h2>4. Winter Weather Detection</h2>
+        <div id="winter-tests"></div>
+      </div>
+
+      <div class="test-section">
+        <h2>5. Error Handling</h2>
         <div id="error-tests"></div>
       </div>
 
       <div class="test-section">
-        <h2>5. Dashboard Preview</h2>
+        <h2>6. Dashboard Preview</h2>
         <div class="dashboard-preview">
           <iframe id="dashboard-iframe" src="Severe-Weather-Dashboard.html"></iframe>
         </div>
@@ -256,6 +262,7 @@
         document.getElementById('test-threat-levels').addEventListener('click', () => this.testThreatLevels());
         document.getElementById('test-spc-mapping').addEventListener('click', () => this.testSPCMapping());
         document.getElementById('test-alerts').addEventListener('click', () => this.testAlerts());
+        document.getElementById('test-winter-weather').addEventListener('click', () => this.testWinterWeather());
         document.getElementById('test-errors').addEventListener('click', () => this.testErrorHandling());
         document.getElementById('reset-dashboard').addEventListener('click', () => this.resetDashboard());
       }
@@ -268,6 +275,7 @@
         await this.testSPCMapping();
         await this.testThreatLevels();
         await this.testAlerts();
+        await this.testWinterWeather();
         await this.testErrorHandling();
         this.showSummary();
       }
@@ -464,6 +472,299 @@
           true,
           'Dashboard should display "No active alerts" when alerts array is empty'
         );
+      }
+
+      /**
+       * Test winter weather detection logic
+       */
+      async testWinterWeather() {
+        // Winter weather synonym dictionary (mirror from dashboard)
+        const WINTER_WEATHER_SYNONYMS = {
+          alerts: [
+            'winter weather advisory',
+            'winter storm warning',
+            'winter storm watch',
+            'ice storm warning',
+            'blizzard warning',
+            'freezing rain advisory',
+            'snow advisory',
+            'wind chill warning',
+            'wind chill advisory'
+          ],
+          phenomena: [
+            'snow', 'snowfall', 'snowing', 'snowstorm',
+            'freezing rain', 'freezing drizzle',
+            'sleet', 'sleeting',
+            'ice', 'icing', 'black ice',
+            'wintry', 'wintry mix', 'winter precipitation',
+            'winter conditions', 'winter weather',
+            'accumulating snow', 'snow accumulation',
+            'ice accumulation', 'ice buildup',
+            'blizzard', 'whiteout',
+            'snow squall', 'snow shower',
+            'flurries', 'wintry precipitation'
+          ],
+          severity: [
+            'imminent', 'occurring', 'expected',
+            'developing', 'arriving', 'approaching',
+            'significant', 'hazardous', 'dangerous'
+          ]
+        };
+
+        // Test winter weather alert detection
+        function isWinterWeatherAlert(eventName) {
+          if (!eventName || typeof eventName !== 'string') {
+            return false;
+          }
+          const eventLower = eventName.toLowerCase();
+          return WINTER_WEATHER_SYNONYMS.alerts.some(alert => eventLower.includes(alert));
+        }
+
+        // Test alert detection
+        const winterAlerts = [
+          { event: 'Winter Weather Advisory', expected: true },
+          { event: 'Winter Storm Warning', expected: true },
+          { event: 'Ice Storm Warning', expected: true },
+          { event: 'Blizzard Warning', expected: true },
+          { event: 'Freezing Rain Advisory', expected: true },
+          { event: 'Severe Thunderstorm Warning', expected: false },
+          { event: 'Tornado Watch', expected: false },
+          { event: 'Flood Advisory', expected: false }
+        ];
+
+        winterAlerts.forEach(test => {
+          const result = isWinterWeatherAlert(test.event);
+          this.addTestResult('winter-tests',
+            `Winter alert detection: "${test.event}"`,
+            result === test.expected,
+            result === test.expected 
+              ? `Correctly ${result ? 'detected' : 'rejected'} winter weather alert`
+              : `Expected ${test.expected}, got ${result}`
+          );
+        });
+
+        // Test winter weather detection from alerts
+        function detectWinterWeatherFromAlerts(alerts) {
+          if (!alerts || !Array.isArray(alerts) || alerts.length === 0) {
+            return { status: 'none', hasAdvisory: false, hasWarning: false };
+          }
+
+          let hasWarning = false;
+          let hasAdvisory = false;
+
+          for (const alert of alerts) {
+            if (!alert || typeof alert !== 'object' || !alert.properties) {
+              continue;
+            }
+            
+            const event = (alert.properties.event && typeof alert.properties.event === 'string')
+                         ? alert.properties.event
+                         : '';
+            
+            if (!isWinterWeatherAlert(event)) {
+              continue;
+            }
+
+            const eventLower = event.toLowerCase();
+
+            if (eventLower.includes('warning') && !eventLower.includes('watch') && !eventLower.includes('advisory')) {
+              hasWarning = true;
+            } else if (eventLower.includes('advisory') || (eventLower.includes('watch'))) {
+              hasAdvisory = true;
+            }
+          }
+
+          if (hasWarning) {
+            return { status: 'warning', hasAdvisory: true, hasWarning: true };
+          } else if (hasAdvisory) {
+            return { status: 'advisory', hasAdvisory: true, hasWarning: false };
+          }
+
+          return { status: 'none', hasAdvisory: false, hasWarning: false };
+        }
+
+        // Test winter weather detection scenarios
+        const winterDetectionTests = [
+          {
+            alerts: [
+              { properties: { event: 'Winter Storm Warning', severity: 'Severe' } }
+            ],
+            expected: 'warning',
+            name: 'Winter Storm Warning detection'
+          },
+          {
+            alerts: [
+              { properties: { event: 'Winter Weather Advisory', severity: 'Minor' } }
+            ],
+            expected: 'advisory',
+            name: 'Winter Weather Advisory detection'
+          },
+          {
+            alerts: [
+              { properties: { event: 'Ice Storm Warning', severity: 'Severe' } },
+              { properties: { event: 'Winter Weather Advisory', severity: 'Minor' } }
+            ],
+            expected: 'warning',
+            name: 'Warning takes priority over advisory'
+          },
+          {
+            alerts: [
+              { properties: { event: 'Severe Thunderstorm Warning', severity: 'Severe' } }
+            ],
+            expected: 'none',
+            name: 'Non-winter alerts ignored'
+          },
+          {
+            alerts: [],
+            expected: 'none',
+            name: 'Empty alerts array returns none'
+          }
+        ];
+
+        winterDetectionTests.forEach(test => {
+          const result = detectWinterWeatherFromAlerts(test.alerts);
+          const passed = result.status === test.expected;
+          this.addTestResult('winter-tests',
+            test.name,
+            passed,
+            passed 
+              ? `Correctly detected status: ${result.status}`
+              : `Expected ${test.expected}, got ${result.status}`
+          );
+        });
+
+        // Test threat level with winter weather
+        function calculateThreatLevelWithWinter(hasActiveWarnings, spcRiskLevel, winterStatus) {
+          if (hasActiveWarnings) {
+            if (winterStatus === 'warning') {
+              return { level: 'WARNING', description: 'Winter Precipitation Imminent and/or Occurring', icon: '⚠️' };
+            }
+            return { level: 'WARNING', description: 'Active weather warnings in effect', icon: '⚠️' };
+          } else if (winterStatus === 'advisory') {
+            return { level: 'MONITOR', description: 'Monitor for Winter Conditions', icon: '❄️' };
+          } else if (spcRiskLevel && ['ENH', 'MDT', 'HIGH'].includes(spcRiskLevel)) {
+            return { level: 'CAUTION', description: 'Elevated severe weather risk', icon: '⚡' };
+          } else if (spcRiskLevel && ['MRGL', 'SLGT'].includes(spcRiskLevel)) {
+            return { level: 'MONITOR', description: 'Monitor conditions', icon: '□' };
+          } else {
+            return { level: 'SAFE', description: 'No severe weather expected', icon: '✅' };
+          }
+        }
+
+        const winterThreatTests = [
+          {
+            warnings: true,
+            spc: null,
+            winter: 'warning',
+            expected: { level: 'WARNING', description: 'Winter Precipitation Imminent and/or Occurring' },
+            name: 'Winter warning → WARNING with winter message'
+          },
+          {
+            warnings: false,
+            spc: null,
+            winter: 'advisory',
+            expected: { level: 'MONITOR', description: 'Monitor for Winter Conditions' },
+            name: 'Winter advisory → MONITOR with winter message'
+          },
+          {
+            warnings: false,
+            spc: 'ENH',
+            winter: 'advisory',
+            expected: { level: 'MONITOR', description: 'Monitor for Winter Conditions' },
+            name: 'Winter advisory overrides SPC risk'
+          },
+          {
+            warnings: true,
+            spc: 'HIGH',
+            winter: 'none',
+            expected: { level: 'WARNING', description: 'Active weather warnings in effect' },
+            name: 'Non-winter warnings override everything'
+          }
+        ];
+
+        winterThreatTests.forEach(test => {
+          const result = calculateThreatLevelWithWinter(test.warnings, test.spc, test.winter);
+          const passed = result.level === test.expected.level && 
+                        result.description === test.expected.description;
+          this.addTestResult('winter-tests',
+            test.name,
+            passed,
+            passed
+              ? `Correct: ${result.level} - ${result.description}`
+              : `Expected ${test.expected.level} - ${test.expected.description}, got ${result.level} - ${result.description}`
+          );
+        });
+
+        // Test winter keyword detection in text
+        function detectWinterWeatherInText(text) {
+          if (!text || typeof text !== 'string') {
+            return { status: 'none', confidence: 0 };
+          }
+
+          const textLower = text.toLowerCase();
+          let score = 0;
+          let hasWarningTerms = false;
+
+          for (const term of WINTER_WEATHER_SYNONYMS.phenomena) {
+            if (textLower.includes(term)) {
+              score += 2;
+            }
+          }
+
+          for (const term of WINTER_WEATHER_SYNONYMS.severity) {
+            if (textLower.includes(term)) {
+              score += 1;
+              if (term === 'imminent' || term === 'occurring') {
+                hasWarningTerms = true;
+              }
+            }
+          }
+
+          if (score >= 5) {
+            if (hasWarningTerms || textLower.includes('winter storm warning')) {
+              return { status: 'warning', confidence: Math.min(score, 10) };
+            } else {
+              return { status: 'advisory', confidence: Math.min(score, 8) };
+            }
+          }
+
+          return { status: 'none', confidence: 0 };
+        }
+
+        const textDetectionTests = [
+          {
+            text: 'Winter storm warning issued for tonight with significant snowfall expected.',
+            expected: 'warning',
+            name: 'Text detection: Winter storm warning'
+          },
+          {
+            text: 'Winter weather advisory in effect for freezing rain and ice accumulation.',
+            expected: 'advisory',
+            name: 'Text detection: Winter weather advisory'
+          },
+          {
+            text: 'Snow and sleet expected to develop this evening with accumulating ice.',
+            expected: 'advisory',
+            name: 'Text detection: Winter precipitation mention'
+          },
+          {
+            text: 'Sunny skies and mild temperatures expected.',
+            expected: 'none',
+            name: 'Text detection: No winter weather'
+          }
+        ];
+
+        textDetectionTests.forEach(test => {
+          const result = detectWinterWeatherInText(test.text);
+          const passed = result.status === test.expected;
+          this.addTestResult('winter-tests',
+            test.name,
+            passed,
+            passed
+              ? `Correctly detected: ${result.status} (confidence: ${result.confidence})`
+              : `Expected ${test.expected}, got ${result.status}`
+          );
+        });
       }
 
       /**

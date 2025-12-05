@@ -169,6 +169,170 @@ class TestRunner:
             "Dashboard should display 'No active alerts' when alerts array is empty"
         )
     
+    def test_winter_weather(self):
+        """Test winter weather detection logic"""
+        print(f"\n{Colors.BLUE}Testing Winter Weather Detection...{Colors.RESET}")
+        
+        # Winter weather synonym dictionary (mirror from dashboard)
+        WINTER_WEATHER_SYNONYMS = {
+            'alerts': [
+                'winter weather advisory',
+                'winter storm warning',
+                'winter storm watch',
+                'ice storm warning',
+                'blizzard warning',
+                'freezing rain advisory',
+                'snow advisory',
+                'wind chill warning',
+                'wind chill advisory'
+            ]
+        }
+        
+        def is_winter_weather_alert(event_name):
+            """Check if alert is winter weather related"""
+            if not event_name or not isinstance(event_name, str):
+                return False
+            event_lower = event_name.lower()
+            return any(alert in event_lower for alert in WINTER_WEATHER_SYNONYMS['alerts'])
+        
+        # Test alert detection
+        alert_tests = [
+            {'event': 'Winter Weather Advisory', 'expected': True},
+            {'event': 'Winter Storm Warning', 'expected': True},
+            {'event': 'Ice Storm Warning', 'expected': True},
+            {'event': 'Blizzard Warning', 'expected': True},
+            {'event': 'Severe Thunderstorm Warning', 'expected': False},
+            {'event': 'Tornado Watch', 'expected': False}
+        ]
+        
+        for test in alert_tests:
+            result = is_winter_weather_alert(test['event'])
+            self.add_result(
+                f"Winter alert detection: \"{test['event']}\"",
+                result == test['expected'],
+                '' if result == test['expected'] else f"Expected {test['expected']}, got {result}"
+            )
+        
+        # Test winter weather detection from alerts
+        def detect_winter_weather_from_alerts(alerts):
+            """Detect winter weather status from alert array"""
+            if not alerts or not isinstance(alerts, list) or len(alerts) == 0:
+                return {'status': 'none', 'has_advisory': False, 'has_warning': False}
+            
+            has_warning = False
+            has_advisory = False
+            
+            for alert in alerts:
+                if not alert or not isinstance(alert, dict) or 'properties' not in alert:
+                    continue
+                
+                event = alert.get('properties', {}).get('event', '')
+                
+                if not is_winter_weather_alert(event):
+                    continue
+                
+                event_lower = event.lower()
+                
+                if 'warning' in event_lower and 'watch' not in event_lower and 'advisory' not in event_lower:
+                    has_warning = True
+                elif 'advisory' in event_lower or 'watch' in event_lower:
+                    has_advisory = True
+            
+            if has_warning:
+                return {'status': 'warning', 'has_advisory': True, 'has_warning': True}
+            elif has_advisory:
+                return {'status': 'advisory', 'has_advisory': True, 'has_warning': False}
+            
+            return {'status': 'none', 'has_advisory': False, 'has_warning': False}
+        
+        # Test detection scenarios
+        detection_tests = [
+            {
+                'alerts': [{'properties': {'event': 'Winter Storm Warning', 'severity': 'Severe'}}],
+                'expected': 'warning',
+                'name': 'Winter Storm Warning detection'
+            },
+            {
+                'alerts': [{'properties': {'event': 'Winter Weather Advisory', 'severity': 'Minor'}}],
+                'expected': 'advisory',
+                'name': 'Winter Weather Advisory detection'
+            },
+            {
+                'alerts': [
+                    {'properties': {'event': 'Ice Storm Warning', 'severity': 'Severe'}},
+                    {'properties': {'event': 'Winter Weather Advisory', 'severity': 'Minor'}}
+                ],
+                'expected': 'warning',
+                'name': 'Warning takes priority over advisory'
+            },
+            {
+                'alerts': [{'properties': {'event': 'Severe Thunderstorm Warning', 'severity': 'Severe'}}],
+                'expected': 'none',
+                'name': 'Non-winter alerts ignored'
+            }
+        ]
+        
+        for test in detection_tests:
+            result = detect_winter_weather_from_alerts(test['alerts'])
+            passed = result['status'] == test['expected']
+            self.add_result(
+                test['name'],
+                passed,
+                f"Status: {result['status']}" if passed else f"Expected {test['expected']}, got {result['status']}"
+            )
+        
+        # Test threat level with winter weather
+        def calculate_threat_level_with_winter(has_active_warnings, spc_risk_level, winter_status):
+            """Calculate threat level including winter weather"""
+            if has_active_warnings:
+                if winter_status == 'warning':
+                    return {'level': 'WARNING', 'description': 'Winter Precipitation Imminent and/or Occurring'}
+                return {'level': 'WARNING', 'description': 'Active weather warnings in effect'}
+            elif winter_status == 'advisory':
+                return {'level': 'MONITOR', 'description': 'Monitor for Winter Conditions'}
+            elif spc_risk_level and spc_risk_level in ['ENH', 'MDT', 'HIGH']:
+                return {'level': 'CAUTION', 'description': 'Elevated severe weather risk'}
+            elif spc_risk_level and spc_risk_level in ['MRGL', 'SLGT']:
+                return {'level': 'MONITOR', 'description': 'Monitor conditions'}
+            else:
+                return {'level': 'SAFE', 'description': 'No severe weather expected'}
+        
+        threat_tests = [
+            {
+                'warnings': True,
+                'spc': None,
+                'winter': 'warning',
+                'expected': {'level': 'WARNING', 'description': 'Winter Precipitation Imminent and/or Occurring'},
+                'name': 'Winter warning → WARNING with winter message'
+            },
+            {
+                'warnings': False,
+                'spc': None,
+                'winter': 'advisory',
+                'expected': {'level': 'MONITOR', 'description': 'Monitor for Winter Conditions'},
+                'name': 'Winter advisory → MONITOR with winter message'
+            },
+            {
+                'warnings': False,
+                'spc': 'ENH',
+                'winter': 'advisory',
+                'expected': {'level': 'MONITOR', 'description': 'Monitor for Winter Conditions'},
+                'name': 'Winter advisory overrides SPC risk'
+            }
+        ]
+        
+        for test in threat_tests:
+            result = calculate_threat_level_with_winter(test['warnings'], test['spc'], test['winter'])
+            passed = result['level'] == test['expected']['level'] and \
+                    result['description'] == test['expected']['description']
+            self.add_result(
+                test['name'],
+                passed,
+                f"{result['level']} - {result['description']}" if passed else
+                f"Expected {test['expected']['level']} - {test['expected']['description']}, "
+                f"got {result['level']} - {result['description']}"
+            )
+    
     def test_error_handling(self):
         """Test error handling scenarios"""
         print(f"\n{Colors.BLUE}Testing Error Handling...{Colors.RESET}")
@@ -212,6 +376,7 @@ class TestRunner:
         self.test_spc_mapping()
         self.test_threat_levels()
         self.test_alert_processing()
+        self.test_winter_weather()
         self.test_error_handling()
     
     def print_summary(self):

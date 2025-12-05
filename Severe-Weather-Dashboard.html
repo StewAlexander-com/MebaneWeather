@@ -359,6 +359,12 @@
   let lastAlertsChecked = 0;
 
   /**
+   * Winter weather detection state tracking
+   * Values: 'none', 'advisory', 'warning'
+   */
+  let winterWeatherStatus = 'none';
+
+  /**
    * SPC (Storm Prediction Center) risk category mappings
    * Maps SPC risk codes to human-readable descriptions
    * @constant {Object<string, string>}
@@ -553,6 +559,185 @@
   }
 
   // ==========================================================================
+  // Winter Weather Detection
+  // ==========================================================================
+  
+  /**
+   * Winter weather synonym dictionary for comprehensive detection.
+   * Includes NWS official alert types and common weather terminology.
+   * 
+   * @constant {Object<string, Array<string>>}
+   */
+  const WINTER_WEATHER_SYNONYMS = {
+    // Official NWS alert types
+    alerts: [
+      'winter weather advisory',
+      'winter storm warning',
+      'winter storm watch',
+      'ice storm warning',
+      'ice storm watch',
+      'blizzard warning',
+      'blizzard watch',
+      'freezing rain advisory',
+      'snow advisory',
+      'wind chill warning',
+      'wind chill advisory',
+      'freeze warning',
+      'frost advisory'
+    ],
+    // Weather phenomena keywords
+    phenomena: [
+      'snow', 'snowfall', 'snowing', 'snowstorm',
+      'freezing rain', 'freezing drizzle',
+      'sleet', 'sleeting',
+      'ice', 'icing', 'black ice',
+      'wintry', 'wintry mix', 'winter precipitation',
+      'winter conditions', 'winter weather',
+      'accumulating snow', 'snow accumulation',
+      'ice accumulation', 'ice buildup',
+      'snowfall rates', 'snow totals',
+      'freezing temperatures', 'below freezing',
+      'wind chill', 'windchill',
+      'blizzard', 'whiteout',
+      'snow squall', 'snow shower',
+      'flurries', 'wintry precipitation'
+    ],
+    // Timing/severity indicators
+    severity: [
+      'imminent', 'occurring', 'expected',
+      'developing', 'arriving', 'approaching',
+      'significant', 'hazardous', 'dangerous'
+    ]
+  };
+
+  /**
+   * Checks if an alert event name indicates winter weather.
+   * Uses comprehensive synonym matching to detect various winter weather alerts.
+   * 
+   * @param {string} eventName - Alert event name (case-insensitive)
+   * @returns {boolean} True if event is winter weather related
+   */
+  function isWinterWeatherAlert(eventName) {
+    if (!eventName || typeof eventName !== 'string') {
+      return false;
+    }
+    const eventLower = eventName.toLowerCase();
+    return WINTER_WEATHER_SYNONYMS.alerts.some(alert => eventLower.includes(alert));
+  }
+
+  /**
+   * Detects winter weather from alert data.
+   * Checks for winter weather advisories and warnings in active alerts.
+   * 
+   * @param {Array} alerts - Array of alert objects from NWS API
+   * @returns {Object} Object with status ('none'|'advisory'|'warning') and details
+   */
+  function detectWinterWeatherFromAlerts(alerts) {
+    if (!alerts || !Array.isArray(alerts) || alerts.length === 0) {
+      return { status: 'none', hasAdvisory: false, hasWarning: false };
+    }
+
+    let hasWarning = false;
+    let hasAdvisory = false;
+
+    for (const alert of alerts) {
+      if (!alert || typeof alert !== 'object' || !alert.properties) {
+        continue;
+      }
+      
+      const event = (alert.properties.event && typeof alert.properties.event === 'string')
+                   ? alert.properties.event
+                   : '';
+      
+      if (!isWinterWeatherAlert(event)) {
+        continue;
+      }
+
+      const eventLower = event.toLowerCase();
+      const severity = (alert.properties.severity && typeof alert.properties.severity === 'string')
+                      ? alert.properties.severity.toLowerCase()
+                      : '';
+
+      // Check for warnings (highest priority)
+      if (eventLower.includes('warning') && !eventLower.includes('watch') && !eventLower.includes('advisory')) {
+        hasWarning = true;
+      }
+      // Check for advisories (lower priority)
+      else if (eventLower.includes('advisory') || (eventLower.includes('watch') && severity !== 'severe')) {
+        hasAdvisory = true;
+      }
+    }
+
+    if (hasWarning) {
+      return { status: 'warning', hasAdvisory: true, hasWarning: true };
+    } else if (hasAdvisory) {
+      return { status: 'advisory', hasAdvisory: true, hasWarning: false };
+    }
+
+    return { status: 'none', hasAdvisory: false, hasWarning: false };
+  }
+
+  /**
+   * Checks forecast discussion text for winter weather keywords.
+   * Uses comprehensive synonym matching to detect winter weather mentions.
+   * 
+   * @param {string} text - Forecast discussion text (case-insensitive)
+   * @returns {Object} Object with detected status and confidence
+   */
+  function detectWinterWeatherInText(text) {
+    if (!text || typeof text !== 'string') {
+      return { status: 'none', confidence: 0 };
+    }
+
+    const textLower = text.toLowerCase();
+    let score = 0;
+    let hasWarningTerms = false;
+    let hasAdvisoryTerms = false;
+
+    // Check for winter weather phenomena
+    for (const term of WINTER_WEATHER_SYNONYMS.phenomena) {
+      if (textLower.includes(term)) {
+        score += 2;
+      }
+    }
+
+    // Check for severity/timing indicators
+    for (const term of WINTER_WEATHER_SYNONYMS.severity) {
+      if (textLower.includes(term)) {
+        score += 1;
+        if (term === 'imminent' || term === 'occurring') {
+          hasWarningTerms = true;
+        }
+      }
+    }
+
+    // Check for official alert terminology in text
+    for (const alert of WINTER_WEATHER_SYNONYMS.alerts) {
+      if (textLower.includes(alert)) {
+        score += 3;
+        if (alert.includes('warning')) {
+          hasWarningTerms = true;
+        } else if (alert.includes('advisory')) {
+          hasAdvisoryTerms = true;
+        }
+      }
+    }
+
+    // Determine status based on score and indicators
+    if (score >= 5) {
+      if (hasWarningTerms || textLower.includes('winter storm warning') || textLower.includes('blizzard warning')) {
+        return { status: 'warning', confidence: Math.min(score, 10) };
+      } else if (hasAdvisoryTerms || textLower.includes('winter weather advisory')) {
+        return { status: 'advisory', confidence: Math.min(score, 8) };
+      } else {
+        return { status: 'advisory', confidence: Math.min(score, 6) };
+      }
+    }
+
+    return { status: 'none', confidence: 0 };
+  }
+
+  // ==========================================================================
   // NWS Alert Functions
   // ==========================================================================
   
@@ -563,6 +748,8 @@
    * 
    * Filters alerts to show only warnings, watches, and advisories with
    * severe/moderate/minor severity levels.
+   * 
+   * Also detects and tracks winter weather status from alerts.
    * 
    * @returns {Promise<boolean>} True if active warnings (not watches/advisories) exist,
    *                            false otherwise or on error
@@ -601,6 +788,10 @@
       }
       
       if (data && data.features && Array.isArray(data.features) && data.features.length > 0) {
+        // Detect winter weather from alerts
+        const winterWeather = detectWinterWeatherFromAlerts(data.features);
+        winterWeatherStatus = winterWeather.status;
+        
         // Filter alerts to show only warnings/watches/advisories with valid severity
         // Excludes informational statements and other non-actionable alerts
         // Validates alert structure before processing
@@ -668,6 +859,11 @@
           return warningAlerts.length > 0;
         }
       }
+      // Reset winter weather status if no alerts found
+      if (!data || !data.features || data.features.length === 0) {
+        winterWeatherStatus = 'none';
+      }
+      
       const noAlertsHtml = '<span style="color: #4fc3f7;">●</span> No active severe weather alerts';
       updateElement('alamance-alerts', noAlertsHtml, 'innerHTML');
       currentAlertStatus = 'no-alerts';
@@ -706,10 +902,13 @@
    * 
    * Updates threat level based on:
    * 1. Active warnings (highest priority) -> WARNING status
-   * 2. SPC enhanced/moderate/high risk -> CAUTION status
-   * 3. SPC marginal/slight risk -> MONITOR status
-   * 4. No threats -> SAFE status
+   *    - Winter weather warnings -> "Winter Precipitation Imminent and/or Occurring"
+   * 2. Winter weather advisories -> MONITOR status with "Monitor for Winter Conditions"
+   * 3. SPC enhanced/moderate/high risk -> CAUTION status
+   * 4. SPC marginal/slight risk -> MONITOR status
+   * 5. No threats -> SAFE status
    * 
+   * Checks both NWS alerts and forecast discussion for winter weather indicators.
    * Respects updateInterval throttling to prevent excessive API calls.
    * Also triggers forecast discussion update.
    * 
@@ -741,6 +940,18 @@
         // Continue - SPC error already displayed in threat panel
       }
       
+      // Check forecast discussion for winter weather if not already detected from alerts
+      // This happens before threat level calculation so winter weather can be considered
+      // Only check if alerts haven't already found winter weather (alerts are primary source)
+      if (winterWeatherStatus === 'none') {
+        try {
+          await checkForecastDiscussionForWinterWeather();
+        } catch (error) {
+          console.log('Winter weather detection from forecast discussion skipped:', error.message);
+          // Continue - not critical, alerts are primary source
+        }
+      }
+      
       // Determine threat level using priority hierarchy (highest to lowest):
       let threatLevel = 'SAFE';
       let threatColor = '#4CAF50';
@@ -749,10 +960,25 @@
 
       // Priority 1: Active warnings override all other indicators
       if (hasActiveWarnings) {
-        threatLevel = 'WARNING';
-        threatColor = '#f44336';
-        description = 'Active weather warnings in effect - follow official guidance';
-        icon = '⚠️';
+        // Check for winter weather warnings specifically
+        if (winterWeatherStatus === 'warning') {
+          threatLevel = 'WARNING';
+          threatColor = '#f44336';
+          description = 'Winter Precipitation Imminent and/or Occurring';
+          icon = '⚠️';
+        } else {
+          threatLevel = 'WARNING';
+          threatColor = '#f44336';
+          description = 'Active weather warnings in effect - follow official guidance';
+          icon = '⚠️';
+        }
+      }
+      // Priority 1a: Winter weather advisory (high priority, but not as urgent as warnings)
+      else if (winterWeatherStatus === 'advisory') {
+        threatLevel = 'MONITOR';
+        threatColor = '#FFEB3B';
+        description = 'Monitor for Winter Conditions';
+        icon = '❄️';
       }
       // Priority 2: Enhanced/Moderate/High SPC risk levels
       else if (spcRiskLevel && ['ENH', 'MDT', 'HIGH'].includes(spcRiskLevel)) {
@@ -830,6 +1056,75 @@
   // ==========================================================================
   // Forecast Discussion (AFD) Functions
   // ==========================================================================
+  
+  /**
+   * Quickly checks forecast discussion for winter weather indicators.
+   * Used to update winter weather status before threat level calculation.
+   * Only updates if alerts haven't already detected winter weather.
+   * 
+   * @returns {Promise<void>}
+   * @private
+   */
+  async function checkForecastDiscussionForWinterWeather() {
+    // Skip if winter weather already detected from alerts
+    if (winterWeatherStatus !== 'none') {
+      return;
+    }
+
+    try {
+      // Quick fetch of AFD text (same logic as updateForecastDiscussion but focused)
+      const indexUrl = `https://api.weather.gov/products/types/AFD/locations/${NWS_OFFICE}?limit=1`;
+      let afdText = '';
+      
+      try {
+        const idxJson = await fetchJSON(indexUrl, 8000);
+        if (idxJson && typeof idxJson === 'object' && Array.isArray(idxJson.features) && idxJson.features.length > 0) {
+          const feature = idxJson.features[0];
+          const productUrl = feature.id || feature['@id'] || 
+                           (feature.properties && (
+                             feature.properties.id || 
+                             feature.properties['@id'] || 
+                             feature.properties.productURL || 
+                             feature.properties.productURI
+                           ));
+          
+          if (productUrl && typeof productUrl === 'string') {
+            const prodJson = await fetchJSON(productUrl, 10000);
+            if (prodJson && typeof prodJson === 'object') {
+              afdText = prodJson.productText || 
+                       (prodJson.properties && prodJson.properties.productText) || 
+                       '';
+            }
+          }
+        }
+      } catch (e) {
+        // Try HTML fallback
+        try {
+          const fallbackUrl = `https://forecast.weather.gov/product.php?site=${NWS_OFFICE}&issuedby=${NWS_OFFICE}&product=AFD&format=TXT`;
+          afdText = await fetchText(fallbackUrl, 10000);
+        } catch (e2) {
+          // Both methods failed, skip
+          return;
+        }
+      }
+
+      if (afdText && afdText.trim().length > 0) {
+        // Normalize and sanitize text for checking
+        const normalized = afdText.replace(/\r\n|\r|\n/g, ' ').toLowerCase();
+        const strippedTags = normalized.replace(/<[^>]*>/g, ' ');
+        const sanitized = strippedTags.replace(/\s{2,}/g, ' ').trim();
+        
+        // Check for winter weather
+        const winterDetected = detectWinterWeatherInText(sanitized);
+        if (winterDetected.status !== 'none') {
+          winterWeatherStatus = winterDetected.status;
+        }
+      }
+    } catch (error) {
+      // Silent fail - not critical for dashboard operation
+      console.log('Quick winter weather check failed:', error.message);
+    }
+  }
   
   /**
    * Fetches and intelligently summarizes the NWS Area Forecast Discussion (AFD).
@@ -981,7 +1276,20 @@
         hail: ['large hail', 'hailstones', 'hail up to', 'hail of'],
         thunder: ['severe thunderstorm', 'strong storms', 'severe storms', 'convection'],
         flood: ['flash flood', 'flooding', 'heavy rain', 'torrential', 'excessive rainfall'],
-        winter: ['snow', 'freezing rain', 'sleet', 'black ice', 'wintry', 'ice accumulation'],
+        winter: [
+          'snow', 'snowfall', 'snowing', 'snowstorm', 'snow shower', 'snow squall',
+          'freezing rain', 'freezing drizzle', 'freezing precipitation',
+          'sleet', 'sleeting',
+          'ice', 'icing', 'black ice', 'ice accumulation', 'ice buildup',
+          'wintry', 'wintry mix', 'winter precipitation', 'winter conditions', 'winter weather',
+          'accumulating snow', 'snow accumulation', 'snowfall rates', 'snow totals',
+          'freezing temperatures', 'below freezing',
+          'wind chill', 'windchill',
+          'blizzard', 'whiteout',
+          'flurries', 'wintry precipitation',
+          'winter weather advisory', 'winter storm warning', 'ice storm warning',
+          'blizzard warning', 'freezing rain advisory', 'snow advisory'
+        ],
         heat: ['heat advisory', 'excessive heat', 'heat index'],
         cold: ['wind chill', 'hard freeze', 'freeze warning'],
         fog: ['dense fog', 'patchy fog'],
@@ -1041,6 +1349,15 @@
           unique.push(item.s);
         }
         if (unique.length === 3) break;
+      }
+
+      // Backup check: Update winter weather status from forecast discussion if not already set
+      // (Primary check happens before threat level calculation in updateDashboard)
+      if (winterWeatherStatus === 'none') {
+        const winterDetected = detectWinterWeatherInText(sanitized);
+        if (winterDetected.status !== 'none') {
+          winterWeatherStatus = winterDetected.status;
+        }
       }
 
       let afdContent = '';

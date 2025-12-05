@@ -259,7 +259,124 @@ function runTestsDirect() {
     passed: warningTest
   });
   
-  // Test 4: Error Handling
+  // Test 4: Winter Weather Detection
+  console.log(`\n${colors.blue}Testing Winter Weather Detection...${colors.reset}`);
+  
+  const WINTER_WEATHER_SYNONYMS = {
+    alerts: [
+      'winter weather advisory',
+      'winter storm warning',
+      'winter storm watch',
+      'ice storm warning',
+      'blizzard warning',
+      'freezing rain advisory',
+      'snow advisory'
+    ]
+  };
+  
+  function isWinterWeatherAlert(eventName) {
+    if (!eventName || typeof eventName !== 'string') {
+      return false;
+    }
+    const eventLower = eventName.toLowerCase();
+    return WINTER_WEATHER_SYNONYMS.alerts.some(alert => eventLower.includes(alert));
+  }
+  
+  const winterAlertTests = [
+    { event: 'Winter Weather Advisory', expected: true },
+    { event: 'Winter Storm Warning', expected: true },
+    { event: 'Ice Storm Warning', expected: true },
+    { event: 'Severe Thunderstorm Warning', expected: false }
+  ];
+  
+  winterAlertTests.forEach(test => {
+    const result = isWinterWeatherAlert(test.event);
+    const passed = result === test.expected;
+    results.total++;
+    if (passed) {
+      results.pass++;
+      console.log(`  ${colors.green}✓${colors.reset} Winter alert detection: "${test.event}"`);
+    } else {
+      results.fail++;
+      console.log(`  ${colors.red}✗${colors.reset} Winter alert detection: "${test.event}" - Expected ${test.expected}, got ${result}`);
+    }
+    results.details.push({
+      name: `Winter alert: "${test.event}"`,
+      passed: passed
+    });
+  });
+  
+  function detectWinterWeatherFromAlerts(alerts) {
+    if (!alerts || !Array.isArray(alerts) || alerts.length === 0) {
+      return { status: 'none' };
+    }
+    
+    let hasWarning = false;
+    let hasAdvisory = false;
+    
+    for (const alert of alerts) {
+      if (!alert || typeof alert !== 'object' || !alert.properties) {
+        continue;
+      }
+      
+      const event = alert.properties.event || '';
+      if (!isWinterWeatherAlert(event)) {
+        continue;
+      }
+      
+      const eventLower = event.toLowerCase();
+      if (eventLower.includes('warning') && !eventLower.includes('watch') && !eventLower.includes('advisory')) {
+        hasWarning = true;
+      } else if (eventLower.includes('advisory') || eventLower.includes('watch')) {
+        hasAdvisory = true;
+      }
+    }
+    
+    if (hasWarning) {
+      return { status: 'warning' };
+    } else if (hasAdvisory) {
+      return { status: 'advisory' };
+    }
+    
+    return { status: 'none' };
+  }
+  
+  const winterDetectionTests = [
+    {
+      alerts: [{ properties: { event: 'Winter Storm Warning', severity: 'Severe' } }],
+      expected: 'warning',
+      name: 'Winter Storm Warning detection'
+    },
+    {
+      alerts: [{ properties: { event: 'Winter Weather Advisory', severity: 'Minor' } }],
+      expected: 'advisory',
+      name: 'Winter Weather Advisory detection'
+    },
+    {
+      alerts: [{ properties: { event: 'Severe Thunderstorm Warning', severity: 'Severe' } }],
+      expected: 'none',
+      name: 'Non-winter alerts ignored'
+    }
+  ];
+  
+  winterDetectionTests.forEach(test => {
+    const result = detectWinterWeatherFromAlerts(test.alerts);
+    const passed = result.status === test.expected;
+    results.total++;
+    if (passed) {
+      results.pass++;
+      console.log(`  ${colors.green}✓${colors.reset} ${test.name}`);
+    } else {
+      results.fail++;
+      console.log(`  ${colors.red}✗${colors.reset} ${test.name} - Expected ${test.expected}, got ${result.status}`);
+    }
+    results.details.push({
+      name: test.name,
+      passed: passed
+    });
+  });
+  
+  // Test 5: Error Handling
   console.log(`\n${colors.blue}Testing Error Handling...${colors.reset}`);
   
   const missingData = { features: [] };
