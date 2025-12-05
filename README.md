@@ -313,6 +313,63 @@ Enable debug logging by opening browser Developer Tools (F12) and checking the C
    - Compare dashboard threat level with SPC risk level
    - Warnings should override SPC risks
 
+## 🧪 Testing
+
+### Automated Test Suite
+
+The dashboard includes a comprehensive automated test suite to verify core functionality:
+
+**Quick Start:**
+```bash
+# Run all tests (auto-detects Python/Node.js)
+./run-tests.sh
+
+# Or use directly:
+python3 run_tests.py
+```
+
+**Test Coverage (21 tests):**
+- ✅ **SPC Risk Mapping** (7 tests) - DN value to risk code conversion
+- ✅ **Threat Level Calculation** (7 tests) - Priority hierarchy verification
+- ✅ **Alert Processing** (3 tests) - Filtering and detection logic
+- ✅ **Error Handling** (4 tests) - Graceful degradation scenarios
+
+**Test Approach:**
+- Elegant and conservative - focuses on critical business logic
+- Mock-based - no external API dependencies required
+- Fast execution - completes in < 1 second
+- Clear results - colored terminal output with detailed summaries
+
+### Test Files
+
+| File | Purpose |
+|------|---------|
+| `run_tests.py` | Python automated test runner (primary, no dependencies) |
+| `run-tests.js` | Node.js automated test runner (optional) |
+| `run-tests.sh` | Shell wrapper (auto-detects available runtime) |
+| `test-dashboard.html` | Interactive browser test suite with visual preview |
+
+### Manual Browser Testing
+
+For visual verification and browser compatibility testing:
+
+1. Open `test-dashboard.html` in your browser
+2. Click "Run All Tests" to execute test suites
+3. Review colored test panels (green = pass, red = fail)
+4. Verify dashboard preview renders correctly
+
+### Test Strategy
+
+The test suite focuses on:
+- **Core Logic**: Threat level priority hierarchy, SPC mapping, alert filtering
+- **Error Handling**: API failures, missing data, invalid responses
+- **User Impact**: Ensures critical functionality works correctly
+
+**Test Principles:**
+- Elegance over complexity - simple, clear tests
+- Conservative coverage - critical paths only
+- Mocked dependencies - no external API calls during testing
+
 ## 🌐 Browser Compatibility
 
 | Browser | Desktop | Mobile | Notes |

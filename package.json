@@ -1,0 +1,21 @@
+{
+  "name": "mebane-weather-dashboard",
+  "version": "1.0.0",
+  "description": "Severe Weather Dashboard for Mebane, NC with automated testing",
+  "scripts": {
+    "test": "node run-tests.js",
+    "test:install": "npm install puppeteer --save-dev"
+  },
+  "keywords": [
+    "weather",
+    "dashboard",
+    "testing",
+    "automation"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "puppeteer": "^21.0.0"
+  }
+}
+
