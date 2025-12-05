@@ -503,7 +503,8 @@
         throw new Error(`HTTP ${resp.status}: ${resp.statusText || 'Request failed'}`);
       }
       const contentType = resp.headers.get('content-type');
-      if (contentType && !contentType.includes('application/json')) {
+      // Accept both application/json and application/geo+json (GeoJSON is valid JSON)
+      if (contentType && !contentType.includes('application/json') && !contentType.includes('application/geo+json')) {
         console.warn(`Unexpected content-type: ${contentType} for URL: ${url}`);
       }
       const text = await resp.text();
