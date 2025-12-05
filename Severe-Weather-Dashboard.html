@@ -147,7 +147,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             border: 1px solid transparent;
-          " id="alamance-alerts-click"
+          "
              onmouseover="this.style.backgroundColor='#4a4a4a'; this.style.borderColor='#4fc3f7';" 
              onmouseout="this.style.backgroundColor='#373737'; this.style.borderColor='transparent';">
             <span style="color: #4fc3f7;">●</span> No active severe weather alerts
@@ -173,7 +173,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             border: 1px solid transparent;
-          " id="afd-content-click"
+          "
              onmouseover="this.style.backgroundColor='#4a4a4a'; this.style.borderColor='#ff7043';" 
              onmouseout="this.style.backgroundColor='#373737'; this.style.borderColor='transparent';">
             Loading forecast discussion...
@@ -1455,12 +1455,12 @@
   function initialize() {
     try {
       // Set up location-specific click handlers
-      const alertsClickEl = document.getElementById('alamance-alerts-click');
+      const alertsClickEl = document.getElementById('alamance-alerts');
       if (alertsClickEl) {
         alertsClickEl.onclick = () => window.open(`https://forecast.weather.gov/MapClick.php?zoneid=${NWS_ZONE}`, '_blank');
       }
       
-      const afdClickEl = document.getElementById('afd-content-click');
+      const afdClickEl = document.getElementById('afd-content');
       if (afdClickEl) {
         afdClickEl.onclick = () => window.open(`https://forecast.weather.gov/product.php?site=${NWS_OFFICE}&issuedby=${NWS_OFFICE}&product=AFD&format=CI&version=1`, '_blank');
       }
