@@ -395,41 +395,47 @@
   /**
    * Fetches SPC convective outlook risk level from NOAA ArcGIS REST API.
    * Performs a spatial point-in-polygon query to find which outlook polygon
-   * contains the configured coordinates.
+   * contains the configured coordinates. Uses timeout protection and validates response.
    * 
-   * @returns {Promise<string|null>} SPC risk code from codeMap or null if no match
+   * @returns {Promise<string|null>} SPC risk code from codeMap or null if no match/error
    * @private
    */
   async function checkSPCRiskFromAPI() {
-    const baseUrl = 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer/1/query';
-    const params = new URLSearchParams({
-      'f': 'json',
-      'geometry': `${coords.lng},${coords.lat}`,
-      'geometryType': 'esriGeometryPoint',
-      'spatialRel': 'esriSpatialRelIntersects',
-      'outFields': 'dn,valid,expire',
-      'returnGeometry': 'false'
-    });
+    try {
+      const baseUrl = 'https://mapservices.weather.noaa.gov/vector/rest/services/outlooks/SPC_wx_outlks/MapServer/1/query';
+      const params = new URLSearchParams({
+        'f': 'json',
+        'geometry': `${coords.lng},${coords.lat}`,
+        'geometryType': 'esriGeometryPoint',
+        'spatialRel': 'esriSpatialRelIntersects',
+        'outFields': 'dn,valid,expire',
+        'returnGeometry': 'false'
+      });
 
-    const response = await fetch(`${baseUrl}?${params}`, {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json'
+      // Use fetchJSON for timeout protection and error handling
+      const data = await fetchJSON(`${baseUrl}?${params}`, 10000);
+      
+      // Validate response structure
+      if (!data || typeof data !== 'object') {
+        console.warn('SPC API: Invalid response structure');
+        return null;
       }
-    });
-    if (!response.ok) {
-      throw new Error(`SPC API request failed: ${response.status}`);
+      
+      if (data.features && Array.isArray(data.features) && data.features.length > 0) {
+        const feature = data.features[0];
+        if (feature && feature.attributes && typeof feature.attributes.dn !== 'undefined') {
+          const dnValue = feature.attributes.dn;
+          // Map SPC outlook DN (day number) values to risk category codes
+          // DN values correspond to outlook risk levels from SPC's classification system
+          const codeMap = { 2: 'TSTM', 3: 'MRGL', 4: 'SLGT', 5: 'ENH', 6: 'MDT', 8: 'HIGH' };
+          return codeMap[dnValue] || null;
+        }
+      }
+      return null;
+    } catch (error) {
+      console.error('SPC API fetch error:', error.message);
+      throw error; // Re-throw to be caught by wrapper
     }
-    const data = await response.json();
-    if (data.features && data.features.length > 0) {
-      const feature = data.features[0];
-      const dnValue = feature.attributes.dn;
-      // Map SPC outlook DN (day number) values to risk category codes
-      // DN values correspond to outlook risk levels from SPC's classification system
-      const codeMap = { 2: 'TSTM', 3: 'MRGL', 4: 'SLGT', 5: 'ENH', 6: 'MDT', 8: 'HIGH' };
-      return codeMap[dnValue] || null;
-    }
-    return null;
   }
 
   /**
@@ -455,25 +461,92 @@
   }
 
   // ==========================================================================
-  // Utility Functions
+  // Utility Functions with Robust Error Handling
   // ==========================================================================
   
   /**
-   * Fetches JSON data from a URL with configurable timeout.
+   * Error Handling Strategy:
+   * 
+   * 1. Timeout Protection: All external API calls use AbortController with configurable timeouts
+   * 2. Response Validation: Validate JSON structure before accessing properties
+   * 3. Fallback Mechanisms: Multiple fallback strategies for critical data sources
+   *    - Alerts: Zone → Statewide
+   *    - AFD: API → HTML scrape
+   * 4. Graceful Degradation: Dashboard remains functional even if some data sources fail
+   * 5. Error Logging: Detailed console logging for debugging while maintaining user experience
+   * 6. Network Error Detection: Specific handling for network failures vs API errors
+   * 7. JSON Parse Protection: Separate JSON parsing with error handling
+   */
+  
+  
+  /**
+   * Fetches JSON data from a URL with configurable timeout and robust error handling.
    * Uses AbortController to cancel request if timeout is exceeded.
    * 
    * @param {string} url - The URL to fetch
    * @param {number} timeoutMs - Timeout in milliseconds (default: 8000)
    * @returns {Promise<Object>} Parsed JSON response
-   * @throws {Error} If HTTP error or timeout occurs
+   * @throws {Error} If HTTP error, timeout, network error, or JSON parse error occurs
    */
   async function fetchJSON(url, timeoutMs = 8000) {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const resp = await fetch(url, { signal: controller.signal });
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      return await resp.json();
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}: ${resp.statusText || 'Request failed'}`);
+      }
+      const contentType = resp.headers.get('content-type');
+      if (contentType && !contentType.includes('application/json')) {
+        console.warn(`Unexpected content-type: ${contentType} for URL: ${url}`);
+      }
+      const text = await resp.text();
+      if (!text || text.trim().length === 0) {
+        throw new Error('Empty response received');
+      }
+      try {
+        return JSON.parse(text);
+      } catch (parseError) {
+        throw new Error(`JSON parse error: ${parseError.message}`);
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${timeoutMs}ms`);
+      }
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('Network error: Unable to reach server');
+      }
+      throw error;
+    } finally {
+      clearTimeout(id);
+    }
+  }
+
+  /**
+   * Fetches text data from a URL with configurable timeout and error handling.
+   * 
+   * @param {string} url - The URL to fetch
+   * @param {number} timeoutMs - Timeout in milliseconds (default: 8000)
+   * @returns {Promise<string>} Response text
+   * @throws {Error} If HTTP error, timeout, or network error occurs
+   */
+  async function fetchText(url, timeoutMs = 8000) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const resp = await fetch(url, { signal: controller.signal });
+      if (!resp.ok) {
+        throw new Error(`HTTP ${resp.status}: ${resp.statusText || 'Request failed'}`);
+      }
+      return await resp.text();
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        throw new Error(`Request timeout after ${timeoutMs}ms`);
+      }
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error('Network error: Unable to reach server');
+      }
+      throw error;
     } finally {
       clearTimeout(id);
     }
@@ -497,18 +570,52 @@
   async function updateLocalAlertsAndGetStatus() {
     try {
       // Primary: zone-specific alerts; Fallback: statewide alerts
-      let data;
+      let data = null;
+      let lastError = null;
+      
+      // Try zone-specific alerts first
       try {
         data = await fetchJSON(`https://api.weather.gov/alerts/active?zone=${NWS_ZONE}`, 8000);
+        // Validate response structure
+        if (data && typeof data === 'object' && Array.isArray(data.features)) {
+          // Success - use zone-specific data
+        } else {
+          throw new Error('Invalid zone alert response structure');
+        }
       } catch (e) {
-        data = await fetchJSON(`https://api.weather.gov/alerts/active?area=${STATE_CODE}`, 8000);
+        lastError = e;
+        console.log(`Zone-specific alerts unavailable, trying statewide fallback: ${e.message}`);
+        
+        // Fallback to statewide alerts
+        try {
+          data = await fetchJSON(`https://api.weather.gov/alerts/active?area=${STATE_CODE}`, 8000);
+          // Validate response structure
+          if (!data || typeof data !== 'object' || !Array.isArray(data.features)) {
+            throw new Error('Invalid statewide alert response structure');
+          }
+        } catch (fallbackError) {
+          lastError = fallbackError;
+          console.error('Both zone and statewide alert queries failed:', fallbackError.message);
+          throw new Error(`Alert API unavailable: ${fallbackError.message}`);
+        }
       }
-      if (data.features && data.features.length > 0) {
+      
+      if (data && data.features && Array.isArray(data.features) && data.features.length > 0) {
         // Filter alerts to show only warnings/watches/advisories with valid severity
         // Excludes informational statements and other non-actionable alerts
+        // Validates alert structure before processing
         const displayAlerts = data.features.filter(alert => {
-          const event = alert.properties.event?.toLowerCase() || '';
-          const severity = alert.properties.severity?.toLowerCase() || '';
+          // Validate alert structure
+          if (!alert || typeof alert !== 'object' || !alert.properties) {
+            return false;
+          }
+          const properties = alert.properties;
+          const event = (properties.event && typeof properties.event === 'string') 
+                       ? properties.event.toLowerCase() 
+                       : '';
+          const severity = (properties.severity && typeof properties.severity === 'string') 
+                          ? properties.severity.toLowerCase() 
+                          : '';
           return (event.includes('warning') || event.includes('watch') || 
                   event.includes('advisory')) && 
                  (severity === 'severe' || severity === 'moderate' || severity === 'minor');
@@ -516,22 +623,37 @@
         // Separate warnings (highest priority) from watches/advisories
         // Used to determine if threat level should be WARNING vs CAUTION/MONITOR
         const warningAlerts = data.features.filter(alert => {
-          const event = alert.properties.event?.toLowerCase() || '';
+          // Validate alert structure
+          if (!alert || typeof alert !== 'object' || !alert.properties) {
+            return false;
+          }
+          const event = (alert.properties.event && typeof alert.properties.event === 'string')
+                       ? alert.properties.event.toLowerCase()
+                       : '';
           return event.includes('warning') && 
                  !event.includes('watch') && !event.includes('advisory');
         });
         if (displayAlerts.length > 0) {
           const alertsHtml = displayAlerts.slice(0, 3).map(alert => {
-            const event = alert.properties.event || 'Weather Alert';
+            // Validate alert structure before accessing properties
+            if (!alert || !alert.properties) {
+              return '<span style="color: #4fc3f7;">●</span> Weather Alert';
+            }
+            const event = (alert.properties.event && typeof alert.properties.event === 'string')
+                         ? alert.properties.event
+                         : 'Weather Alert';
             let color = '#4fc3f7';
-            if (event.toLowerCase().includes('warning')) {
+            const eventLower = event.toLowerCase();
+            if (eventLower.includes('warning')) {
               color = '#f44336';
-            } else if (event.toLowerCase().includes('watch')) {
+            } else if (eventLower.includes('watch')) {
               color = '#ff9800';
-            } else if (event.toLowerCase().includes('advisory')) {
+            } else if (eventLower.includes('advisory')) {
               color = '#ffeb3b';
             }
-            return `<span style="color: ${color};">●</span> ${event}`;
+            // Escape HTML in event names for safety
+            const safeEvent = event.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `<span style="color: ${color};">●</span> ${safeEvent}`;
           }).join('<br>');
           updateElement('alamance-alerts', alertsHtml, 'innerHTML');
           currentAlertStatus = 'active-alerts';
@@ -600,8 +722,24 @@
       if (now - lastUpdate < updateInterval) {
         return;
       }
-      const hasActiveWarnings = await updateLocalAlertsAndGetStatus();
-      const spcRiskLevel = await updateSPCInfo();
+      
+      // Fetch data with independent error handling - one failure doesn't block others
+      let hasActiveWarnings = false;
+      let spcRiskLevel = null;
+      
+      try {
+        hasActiveWarnings = await updateLocalAlertsAndGetStatus();
+      } catch (error) {
+        console.error('Alert update failed, continuing with other data:', error.message);
+        // Continue - alerts error already displayed in alert panel
+      }
+      
+      try {
+        spcRiskLevel = await updateSPCInfo();
+      } catch (error) {
+        console.error('SPC info update failed, continuing with alerts data:', error.message);
+        // Continue - SPC error already displayed in threat panel
+      }
       
       // Determine threat level using priority hierarchy (highest to lowest):
       let threatLevel = 'SAFE';
@@ -655,7 +793,14 @@
       updateElement('threat-description', 'Weather data temporarily unavailable', 'textContent');
       updateElement('threat-icon', '✅', 'textContent');
     }
-    updateForecastDiscussion();
+    
+    // Update forecast discussion independently - don't let errors here block dashboard
+    try {
+      await updateForecastDiscussion();
+    } catch (error) {
+      console.error('Forecast discussion update failed:', error.message);
+      // Error already handled in updateForecastDiscussion - continue silently
+    }
   }
 
   /**
@@ -712,7 +857,7 @@
       ];
 
       /**
-       * Attempts to fetch AFD text via NWS API.
+       * Attempts to fetch AFD text via NWS API with timeout protection.
        * First fetches the product index, then retrieves the full product text.
        * 
        * @returns {Promise<string>} AFD product text or empty string on failure
@@ -720,28 +865,67 @@
        */
       async function getAFDProductText() {
         try {
+          // Fetch product index with timeout protection
           const indexUrl = `https://api.weather.gov/products/types/AFD/locations/${NWS_OFFICE}?limit=1`;
-          const idxResp = await fetch(indexUrl);
-          if (!idxResp.ok) throw new Error('index fetch failed');
-          const idxJson = await idxResp.json();
-          const feature = idxJson && (idxJson.features && idxJson.features[0]);
-          const productUrl = feature && (feature.id || feature['@id'] || (feature.properties && (feature.properties.id || feature.properties['@id'] || feature.properties.productURL || feature.properties.productURI)));
-          if (!productUrl) throw new Error('no product url');
-          const prodResp = await fetch(productUrl);
-          if (!prodResp.ok) throw new Error('product fetch failed');
-          const prodJson = await prodResp.json();
-          return (prodJson && (prodJson.productText || (prodJson.properties && prodJson.properties.productText))) || '';
+          const idxJson = await fetchJSON(indexUrl, 8000);
+          
+          // Validate index response structure
+          if (!idxJson || typeof idxJson !== 'object') {
+            throw new Error('Invalid index response structure');
+          }
+          
+          const features = idxJson.features;
+          if (!Array.isArray(features) || features.length === 0) {
+            throw new Error('No AFD products available');
+          }
+          
+          const feature = features[0];
+          if (!feature) {
+            throw new Error('Invalid feature structure');
+          }
+          
+          // Extract product URL from various possible locations
+          const productUrl = feature.id || feature['@id'] || 
+                           (feature.properties && (
+                             feature.properties.id || 
+                             feature.properties['@id'] || 
+                             feature.properties.productURL || 
+                             feature.properties.productURI
+                           ));
+          
+          if (!productUrl || typeof productUrl !== 'string') {
+            throw new Error('No product URL found in response');
+          }
+          
+          // Fetch actual product text with timeout protection
+          const prodJson = await fetchJSON(productUrl, 10000);
+          
+          // Extract product text from various possible locations
+          if (prodJson && typeof prodJson === 'object') {
+            return prodJson.productText || 
+                   (prodJson.properties && prodJson.properties.productText) || 
+                   '';
+          }
+          return '';
         } catch (e) {
+          console.log(`AFD API fetch failed, will try fallback: ${e.message}`);
           return '';
         }
       }
 
+      // Try API method first
       let afdText = await getAFDProductText();
-      if (!afdText) {
+      
+      // Fallback to HTML scrape if API method fails
+      if (!afdText || afdText.trim().length === 0) {
         try {
-          const resp = await fetch(`https://forecast.weather.gov/product.php?site=${NWS_OFFICE}&issuedby=${NWS_OFFICE}&product=AFD&format=TXT`);
-          afdText = await resp.text();
+          const fallbackUrl = `https://forecast.weather.gov/product.php?site=${NWS_OFFICE}&issuedby=${NWS_OFFICE}&product=AFD&format=TXT`;
+          afdText = await fetchText(fallbackUrl, 10000);
+          if (!afdText || afdText.trim().length === 0) {
+            afdText = '';
+          }
         } catch (e) {
+          console.log(`AFD HTML fallback also failed: ${e.message}`);
           afdText = '';
         }
       }

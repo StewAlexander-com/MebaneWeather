@@ -139,13 +139,31 @@ const LOCATION_CONFIG = {
 
 | Issue | Solution |
 |-------|----------|
-| "SPC: Data temporarily unavailable" | Wait 15min auto-retry, check console - defaults to SAFE if unavailable |
+| "SPC: Data temporarily unavailable" | Wait 15min auto-retry, check console - defaults to SAFE if unavailable. Dashboard continues functioning. |
 | "Loading threat assessment..." persists | Check console (F12) for JS errors, verify code embedding, check browser compatibility |
+| "Alert system temporarily unavailable" | Alert API failed - dashboard automatically falls back from zone to statewide alerts. Check network connection. |
 | Not responsive on mobile | Code includes `!important` overrides - check responsive breakpoints if issues persist |
 | Alerts not updating quickly | Alert polling is 3min - adjust `180000ms` interval if needed (mind API rate limits) |
-| "No significant weather" in AFD | Check console for fetch errors - scoring algorithm requires specific keywords |
+| "No significant weather" in AFD | Check console for fetch errors - uses API then HTML fallback. Scoring algorithm requires specific keywords. |
 
-**Debug Mode**: Open Developer Tools (F12) → Console tab shows SPC detection, API responses, alert processing, update timing, and errors.
+### Error Handling & Resilience
+
+The dashboard includes robust error handling for all external APIs:
+
+**Timeout Protection**: All API calls have configurable timeouts (8-10 seconds) to prevent hanging requests
+
+**Fallback Strategies**:
+- **Alerts**: Zone-specific → Statewide fallback if zone query fails
+- **Forecast Discussion**: NWS API → HTML scrape fallback if API unavailable
+- **SPC Data**: Graceful degradation - defaults to SAFE if unavailable
+
+**Response Validation**: All API responses are validated before processing to prevent crashes from malformed data
+
+**Independent Error Handling**: Each data source (SPC, alerts, AFD) has independent error handling - one failure doesn't block others
+
+**Network Error Detection**: Specific handling for network failures vs API errors vs timeout errors
+
+**Debug Mode**: Open Developer Tools (F12) → Console tab shows detailed error messages, API responses, and processing status
 
 **Verify Functionality**: Check console for fetch requests to `mapservices.weather.noaa.gov`, `api.weather.gov`, `forecast.weather.gov`. Compare threat level with [SPC outlook](https://www.spc.noaa.gov/products/outlook/).
 
