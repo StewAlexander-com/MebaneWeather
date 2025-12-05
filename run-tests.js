@@ -264,13 +264,35 @@ function runTestsDirect() {
   
   const WINTER_WEATHER_SYNONYMS = {
     alerts: [
+      // Advisories
       'winter weather advisory',
+      'freezing rain advisory',
+      'snow advisory',
+      'wind chill advisory',
+      'frost advisory',
+      'lake effect snow advisory',
+      'winter weather statement',
+      // Warnings
       'winter storm warning',
-      'winter storm watch',
+      'winter weather warning',
       'ice storm warning',
       'blizzard warning',
-      'freezing rain advisory',
-      'snow advisory'
+      'wind chill warning',
+      'freeze warning',
+      'freezing rain warning',
+      'snow squall warning',
+      'lake effect snow warning',
+      'extreme cold warning',
+      'hard freeze warning',
+      // Watches
+      'winter storm watch',
+      'ice storm watch',
+      'blizzard watch',
+      'wind chill watch',
+      'extreme cold watch',
+      'freeze watch',
+      'freezing rain watch',
+      'lake effect snow watch'
     ]
   };
   
@@ -283,10 +305,23 @@ function runTestsDirect() {
   }
   
   const winterAlertTests = [
+    // Advisories
     { event: 'Winter Weather Advisory', expected: true },
+    { event: 'Freezing Rain Advisory', expected: true },
+    { event: 'Lake Effect Snow Advisory', expected: true },
+    { event: 'Winter Weather Statement', expected: true },
+    // Warnings
     { event: 'Winter Storm Warning', expected: true },
+    { event: 'Winter Weather Warning', expected: true },
     { event: 'Ice Storm Warning', expected: true },
-    { event: 'Severe Thunderstorm Warning', expected: false }
+    { event: 'Blizzard Warning', expected: true },
+    { event: 'Snow Squall Warning', expected: true },
+    { event: 'Extreme Cold Warning', expected: true },
+    { event: 'Lake Effect Snow Warning', expected: true },
+    { event: 'Freezing Rain Warning', expected: true },
+    // Non-winter (should be rejected)
+    { event: 'Severe Thunderstorm Warning', expected: false },
+    { event: 'Tornado Watch', expected: false }
   ];
   
   winterAlertTests.forEach(test => {
@@ -325,9 +360,17 @@ function runTestsDirect() {
       }
       
       const eventLower = event.toLowerCase();
-      if (eventLower.includes('warning') && !eventLower.includes('watch') && !eventLower.includes('advisory')) {
+      // Check for warnings (highest priority) - must exclude watch/advisory/statement
+      if (eventLower.includes('warning') && 
+          !eventLower.includes('watch') && 
+          !eventLower.includes('advisory') &&
+          !eventLower.includes('statement')) {
         hasWarning = true;
-      } else if (eventLower.includes('advisory') || eventLower.includes('watch')) {
+      } 
+      // Check for advisories, watches, and statements (lower priority)
+      else if (eventLower.includes('advisory') || 
+               eventLower.includes('statement') ||
+               eventLower.includes('watch')) {
         hasAdvisory = true;
       }
     }
@@ -351,6 +394,26 @@ function runTestsDirect() {
       alerts: [{ properties: { event: 'Winter Weather Advisory', severity: 'Minor' } }],
       expected: 'advisory',
       name: 'Winter Weather Advisory detection'
+    },
+    {
+      alerts: [{ properties: { event: 'Blizzard Warning', severity: 'Severe' } }],
+      expected: 'warning',
+      name: 'Blizzard Warning detection'
+    },
+    {
+      alerts: [{ properties: { event: 'Snow Squall Warning', severity: 'Severe' } }],
+      expected: 'warning',
+      name: 'Snow Squall Warning detection'
+    },
+    {
+      alerts: [{ properties: { event: 'Extreme Cold Warning', severity: 'Severe' } }],
+      expected: 'warning',
+      name: 'Extreme Cold Warning detection'
+    },
+    {
+      alerts: [{ properties: { event: 'Winter Weather Statement', severity: 'Minor' } }],
+      expected: 'advisory',
+      name: 'Winter Weather Statement detection'
     },
     {
       alerts: [{ properties: { event: 'Severe Thunderstorm Warning', severity: 'Severe' } }],

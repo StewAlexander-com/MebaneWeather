@@ -173,18 +173,38 @@ class TestRunner:
         """Test winter weather detection logic"""
         print(f"\n{Colors.BLUE}Testing Winter Weather Detection...{Colors.RESET}")
         
-        # Winter weather synonym dictionary (mirror from dashboard)
+        # Winter weather synonym dictionary (mirror from dashboard - comprehensive)
         WINTER_WEATHER_SYNONYMS = {
             'alerts': [
+                # Advisories
                 'winter weather advisory',
-                'winter storm warning',
-                'winter storm watch',
-                'ice storm warning',
-                'blizzard warning',
                 'freezing rain advisory',
                 'snow advisory',
+                'wind chill advisory',
+                'frost advisory',
+                'lake effect snow advisory',
+                'winter weather statement',
+                # Warnings
+                'winter storm warning',
+                'winter weather warning',
+                'ice storm warning',
+                'blizzard warning',
                 'wind chill warning',
-                'wind chill advisory'
+                'freeze warning',
+                'freezing rain warning',
+                'snow squall warning',
+                'lake effect snow warning',
+                'extreme cold warning',
+                'hard freeze warning',
+                # Watches
+                'winter storm watch',
+                'ice storm watch',
+                'blizzard watch',
+                'wind chill watch',
+                'extreme cold watch',
+                'freeze watch',
+                'freezing rain watch',
+                'lake effect snow watch'
             ]
         }
         
@@ -195,12 +215,26 @@ class TestRunner:
             event_lower = event_name.lower()
             return any(alert in event_lower for alert in WINTER_WEATHER_SYNONYMS['alerts'])
         
-        # Test alert detection
+        # Test alert detection - comprehensive coverage
         alert_tests = [
+            # Advisories
             {'event': 'Winter Weather Advisory', 'expected': True},
+            {'event': 'Freezing Rain Advisory', 'expected': True},
+            {'event': 'Lake Effect Snow Advisory', 'expected': True},
+            {'event': 'Winter Weather Statement', 'expected': True},
+            # Warnings
             {'event': 'Winter Storm Warning', 'expected': True},
+            {'event': 'Winter Weather Warning', 'expected': True},
             {'event': 'Ice Storm Warning', 'expected': True},
             {'event': 'Blizzard Warning', 'expected': True},
+            {'event': 'Snow Squall Warning', 'expected': True},
+            {'event': 'Extreme Cold Warning', 'expected': True},
+            {'event': 'Lake Effect Snow Warning', 'expected': True},
+            {'event': 'Freezing Rain Warning', 'expected': True},
+            # Watches
+            {'event': 'Winter Storm Watch', 'expected': True},
+            {'event': 'Extreme Cold Watch', 'expected': True},
+            # Non-winter (should be rejected)
             {'event': 'Severe Thunderstorm Warning', 'expected': False},
             {'event': 'Tornado Watch', 'expected': False}
         ]
@@ -233,9 +267,16 @@ class TestRunner:
                 
                 event_lower = event.lower()
                 
-                if 'warning' in event_lower and 'watch' not in event_lower and 'advisory' not in event_lower:
+                # Check for warnings (highest priority) - must exclude watch/advisory/statement
+                if ('warning' in event_lower and 
+                    'watch' not in event_lower and 
+                    'advisory' not in event_lower and
+                    'statement' not in event_lower):
                     has_warning = True
-                elif 'advisory' in event_lower or 'watch' in event_lower:
+                # Check for advisories, watches, and statements (lower priority)
+                elif ('advisory' in event_lower or 
+                      'statement' in event_lower or
+                      'watch' in event_lower):
                     has_advisory = True
             
             if has_warning:
@@ -245,7 +286,7 @@ class TestRunner:
             
             return {'status': 'none', 'has_advisory': False, 'has_warning': False}
         
-        # Test detection scenarios
+        # Test detection scenarios - comprehensive coverage
         detection_tests = [
             {
                 'alerts': [{'properties': {'event': 'Winter Storm Warning', 'severity': 'Severe'}}],
@@ -264,6 +305,31 @@ class TestRunner:
                 ],
                 'expected': 'warning',
                 'name': 'Warning takes priority over advisory'
+            },
+            {
+                'alerts': [{'properties': {'event': 'Blizzard Warning', 'severity': 'Severe'}}],
+                'expected': 'warning',
+                'name': 'Blizzard Warning detection'
+            },
+            {
+                'alerts': [{'properties': {'event': 'Snow Squall Warning', 'severity': 'Severe'}}],
+                'expected': 'warning',
+                'name': 'Snow Squall Warning detection'
+            },
+            {
+                'alerts': [{'properties': {'event': 'Extreme Cold Warning', 'severity': 'Severe'}}],
+                'expected': 'warning',
+                'name': 'Extreme Cold Warning detection'
+            },
+            {
+                'alerts': [{'properties': {'event': 'Lake Effect Snow Warning', 'severity': 'Severe'}}],
+                'expected': 'warning',
+                'name': 'Lake Effect Snow Warning detection'
+            },
+            {
+                'alerts': [{'properties': {'event': 'Winter Weather Statement', 'severity': 'Minor'}}],
+                'expected': 'advisory',
+                'name': 'Winter Weather Statement detection'
             },
             {
                 'alerts': [{'properties': {'event': 'Severe Thunderstorm Warning', 'severity': 'Severe'}}],

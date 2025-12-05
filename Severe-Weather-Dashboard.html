@@ -569,38 +569,65 @@
    * @constant {Object<string, Array<string>>}
    */
   const WINTER_WEATHER_SYNONYMS = {
-    // Official NWS alert types
+    // Official NWS alert types - comprehensive list
     alerts: [
+      // Advisories
       'winter weather advisory',
-      'winter storm warning',
-      'winter storm watch',
-      'ice storm warning',
-      'ice storm watch',
-      'blizzard warning',
-      'blizzard watch',
       'freezing rain advisory',
       'snow advisory',
-      'wind chill warning',
       'wind chill advisory',
+      'frost advisory',
+      'lake effect snow advisory',
+      'winter weather statement',
+      // Warnings
+      'winter storm warning',
+      'winter weather warning',
+      'ice storm warning',
+      'blizzard warning',
+      'wind chill warning',
       'freeze warning',
-      'frost advisory'
+      'freezing rain warning',
+      'snow squall warning',
+      'lake effect snow warning',
+      'extreme cold warning',
+      'hard freeze warning',
+      // Watches
+      'winter storm watch',
+      'ice storm watch',
+      'blizzard watch',
+      'wind chill watch',
+      'extreme cold watch',
+      'freeze watch',
+      'freezing rain watch',
+      'lake effect snow watch'
     ],
-    // Weather phenomena keywords
+    // Weather phenomena keywords - comprehensive coverage
     phenomena: [
-      'snow', 'snowfall', 'snowing', 'snowstorm',
-      'freezing rain', 'freezing drizzle',
-      'sleet', 'sleeting',
-      'ice', 'icing', 'black ice',
+      // Snow terms
+      'snow', 'snowfall', 'snowing', 'snowstorm', 'snowfall',
+      'snow squall', 'snow shower', 'snow flurries', 'flurries',
+      'blowing snow', 'drifting snow', 'snowdrift',
+      'lake effect snow', 'upslope snow',
+      'accumulating snow', 'snow accumulation', 'snow totals',
+      'snowfall rates', 'heavy snow', 'significant snow',
+      // Ice terms
+      'ice', 'icing', 'black ice', 'glaze ice',
+      'freezing rain', 'freezing drizzle', 'freezing fog',
+      'ice accumulation', 'ice buildup', 'ice storm',
+      'ice formation', 'ice coating',
+      // Mixed precipitation
+      'sleet', 'sleeting', 'sleet pellets',
       'wintry', 'wintry mix', 'winter precipitation',
-      'winter conditions', 'winter weather',
-      'accumulating snow', 'snow accumulation',
-      'ice accumulation', 'ice buildup',
-      'snowfall rates', 'snow totals',
+      'freezing precipitation', 'mixed precipitation',
+      // Cold conditions
       'freezing temperatures', 'below freezing',
-      'wind chill', 'windchill',
-      'blizzard', 'whiteout',
-      'snow squall', 'snow shower',
-      'flurries', 'wintry precipitation'
+      'wind chill', 'windchill', 'wind chill factor',
+      'extreme cold', 'bitter cold', 'dangerous cold',
+      'hard freeze', 'freeze', 'frost',
+      // Visibility/conditions
+      'blizzard', 'whiteout', 'near-zero visibility',
+      'winter conditions', 'winter weather',
+      'hazardous winter weather', 'winter storm'
     ],
     // Timing/severity indicators
     severity: [
@@ -658,19 +685,30 @@
                       ? alert.properties.severity.toLowerCase()
                       : '';
 
-      // Check for warnings (highest priority)
-      if (eventLower.includes('warning') && !eventLower.includes('watch') && !eventLower.includes('advisory')) {
+      // Check for warnings (highest priority) - comprehensive detection
+      // Look for "warning" keyword but exclude "watch" and "advisory" variations
+      if (eventLower.includes('warning') && 
+          !eventLower.includes('watch') && 
+          !eventLower.includes('advisory') &&
+          !eventLower.includes('statement')) {
         hasWarning = true;
+        console.log(`[Winter Weather] WARNING detected: "${event}"`);
       }
       // Check for advisories (lower priority)
-      else if (eventLower.includes('advisory') || (eventLower.includes('watch') && severity !== 'severe')) {
+      // Includes advisory, watch (unless severe), and statements
+      else if (eventLower.includes('advisory') || 
+               eventLower.includes('statement') ||
+               (eventLower.includes('watch') && severity !== 'severe')) {
         hasAdvisory = true;
+        console.log(`[Winter Weather] ADVISORY/WATCH detected: "${event}"`);
       }
     }
 
     if (hasWarning) {
+      console.log(`[Winter Weather] Status determined: WARNING (has ${hasWarning ? 'warning' : ''}, ${hasAdvisory ? 'advisory' : ''})`);
       return { status: 'warning', hasAdvisory: true, hasWarning: true };
     } else if (hasAdvisory) {
+      console.log(`[Winter Weather] Status determined: ADVISORY`);
       return { status: 'advisory', hasAdvisory: true, hasWarning: false };
     }
 
@@ -711,13 +749,16 @@
       }
     }
 
-    // Check for official alert terminology in text
+    // Check for official alert terminology in text (higher weight for official terms)
     for (const alert of WINTER_WEATHER_SYNONYMS.alerts) {
       if (textLower.includes(alert)) {
         score += 3;
-        if (alert.includes('warning')) {
+        // Check for warning terms (higher priority)
+        if (alert.includes('warning') && !alert.includes('watch') && !alert.includes('advisory')) {
           hasWarningTerms = true;
-        } else if (alert.includes('advisory')) {
+        } 
+        // Check for advisory/watch/statement terms
+        else if (alert.includes('advisory') || alert.includes('watch') || alert.includes('statement')) {
           hasAdvisoryTerms = true;
         }
       }
@@ -725,11 +766,27 @@
 
     // Determine status based on score and indicators
     if (score >= 5) {
-      if (hasWarningTerms || textLower.includes('winter storm warning') || textLower.includes('blizzard warning')) {
+      // Check for winter weather warning terms (comprehensive detection)
+      const warningPatterns = [
+        'winter storm warning', 'winter weather warning', 'ice storm warning',
+        'blizzard warning', 'freezing rain warning', 'snow squall warning',
+        'wind chill warning', 'extreme cold warning'
+      ];
+      const hasWarningPattern = warningPatterns.some(pattern => textLower.includes(pattern));
+      
+      if (hasWarningTerms || hasWarningPattern) {
+        console.log('[Winter Weather] Text detection: WARNING status');
         return { status: 'warning', confidence: Math.min(score, 10) };
-      } else if (hasAdvisoryTerms || textLower.includes('winter weather advisory')) {
+      } 
+      // Check for advisory/watch/statement terms
+      else if (hasAdvisoryTerms || 
+               textLower.includes('winter weather advisory') ||
+               textLower.includes('winter storm watch') ||
+               textLower.includes('winter weather statement')) {
+        console.log('[Winter Weather] Text detection: ADVISORY status');
         return { status: 'advisory', confidence: Math.min(score, 8) };
       } else {
+        console.log('[Winter Weather] Text detection: ADVISORY status (generic winter weather)');
         return { status: 'advisory', confidence: Math.min(score, 6) };
       }
     }
@@ -790,7 +847,13 @@
       if (data && data.features && Array.isArray(data.features) && data.features.length > 0) {
         // Detect winter weather from alerts
         const winterWeather = detectWinterWeatherFromAlerts(data.features);
+        const previousWinterStatus = winterWeatherStatus;
         winterWeatherStatus = winterWeather.status;
+        
+        // Debug: Log winter weather detection
+        if (winterWeatherStatus !== 'none') {
+          console.log(`Winter weather detected: ${winterWeatherStatus} (was: ${previousWinterStatus})`);
+        }
         
         // Filter alerts to show only warnings/watches/advisories with valid severity
         // Excludes informational statements and other non-actionable alerts
@@ -966,6 +1029,7 @@
           threatColor = '#f44336';
           description = 'Winter Precipitation Imminent and/or Occurring';
           icon = '⚠️';
+          console.log('[Threat Level] Set to WARNING due to winter weather warning');
         } else {
           threatLevel = 'WARNING';
           threatColor = '#f44336';
@@ -979,6 +1043,7 @@
         threatColor = '#FFEB3B';
         description = 'Monitor for Winter Conditions';
         icon = '❄️';
+        console.log('Threat level set to MONITOR due to winter weather advisory');
       }
       // Priority 2: Enhanced/Moderate/High SPC risk levels
       else if (spcRiskLevel && ['ENH', 'MDT', 'HIGH'].includes(spcRiskLevel)) {
@@ -1406,19 +1471,34 @@
       setInterval(updateDashboard, updateInterval);
       
       // Independent 3-minute polling for alerts to keep them fresh
-      // This allows warnings to appear quickly without waiting for full refresh
+      // This allows warnings and winter weather advisories to appear quickly without waiting for full refresh
       setInterval(async function() {
         try {
+          const previousWinterStatus = winterWeatherStatus;
           const hadWarnings = await updateLocalAlertsAndGetStatus();
-          // If warning state has changed, refresh threat card quickly
           const currentThreat = document.getElementById('threat-status')?.textContent || '';
-          if ((hadWarnings && currentThreat !== 'WARNING') || (!hadWarnings && currentThreat === 'WARNING')) {
+          
+          // Check if warning state has changed
+          const warningStateChanged = (hadWarnings && currentThreat !== 'WARNING') || (!hadWarnings && currentThreat === 'WARNING');
+          
+          // Check if winter weather status has changed
+          const winterStatusChanged = previousWinterStatus !== winterWeatherStatus;
+          
+          // Check if current threat level doesn't match the winter weather status
+          const threatMismatch = (winterWeatherStatus === 'advisory' && currentThreat !== 'MONITOR') ||
+                                (winterWeatherStatus === 'warning' && currentThreat !== 'WARNING') ||
+                                (winterWeatherStatus === 'none' && previousWinterStatus !== 'none' && currentThreat !== 'SAFE');
+          
+          // Update if any of these conditions are true
+          if (warningStateChanged || winterStatusChanged || threatMismatch) {
             const prevLast = lastUpdate;
             lastUpdate = 0; // force refresh
             await updateDashboard();
             lastUpdate = prevLast || Date.now();
           }
-        } catch (e) {}
+        } catch (e) {
+          console.error('Alert polling error:', e);
+        }
       }, 180000);
       document.addEventListener('visibilitychange', function() {
         if (!document.hidden && Date.now() - lastUpdate > updateInterval) {

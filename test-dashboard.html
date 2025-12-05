@@ -478,31 +478,65 @@
        * Test winter weather detection logic
        */
       async testWinterWeather() {
-        // Winter weather synonym dictionary (mirror from dashboard)
+        // Winter weather synonym dictionary (mirror from dashboard - comprehensive)
         const WINTER_WEATHER_SYNONYMS = {
           alerts: [
+            // Advisories
             'winter weather advisory',
-            'winter storm warning',
-            'winter storm watch',
-            'ice storm warning',
-            'blizzard warning',
             'freezing rain advisory',
             'snow advisory',
+            'wind chill advisory',
+            'frost advisory',
+            'lake effect snow advisory',
+            'winter weather statement',
+            // Warnings
+            'winter storm warning',
+            'winter weather warning',
+            'ice storm warning',
+            'blizzard warning',
             'wind chill warning',
-            'wind chill advisory'
+            'freeze warning',
+            'freezing rain warning',
+            'snow squall warning',
+            'lake effect snow warning',
+            'extreme cold warning',
+            'hard freeze warning',
+            // Watches
+            'winter storm watch',
+            'ice storm watch',
+            'blizzard watch',
+            'wind chill watch',
+            'extreme cold watch',
+            'freeze watch',
+            'freezing rain watch',
+            'lake effect snow watch'
           ],
           phenomena: [
+            // Snow terms
             'snow', 'snowfall', 'snowing', 'snowstorm',
-            'freezing rain', 'freezing drizzle',
-            'sleet', 'sleeting',
-            'ice', 'icing', 'black ice',
+            'snow squall', 'snow shower', 'snow flurries', 'flurries',
+            'blowing snow', 'drifting snow', 'snowdrift',
+            'lake effect snow', 'upslope snow',
+            'accumulating snow', 'snow accumulation', 'snow totals',
+            'snowfall rates', 'heavy snow', 'significant snow',
+            // Ice terms
+            'ice', 'icing', 'black ice', 'glaze ice',
+            'freezing rain', 'freezing drizzle', 'freezing fog',
+            'ice accumulation', 'ice buildup', 'ice storm',
+            'ice formation', 'ice coating',
+            // Mixed precipitation
+            'sleet', 'sleeting', 'sleet pellets',
             'wintry', 'wintry mix', 'winter precipitation',
+            'freezing precipitation', 'mixed precipitation',
+            // Cold conditions
+            'freezing temperatures', 'below freezing',
+            'wind chill', 'windchill', 'wind chill factor',
+            'extreme cold', 'bitter cold', 'dangerous cold',
+            'hard freeze', 'freeze', 'frost',
+            // Visibility/conditions
+            'blizzard', 'whiteout', 'near-zero visibility',
             'winter conditions', 'winter weather',
-            'accumulating snow', 'snow accumulation',
-            'ice accumulation', 'ice buildup',
-            'blizzard', 'whiteout',
-            'snow squall', 'snow shower',
-            'flurries', 'wintry precipitation'
+            'hazardous winter weather', 'winter storm'
           ],
           severity: [
             'imminent', 'occurring', 'expected',
@@ -520,13 +554,32 @@
           return WINTER_WEATHER_SYNONYMS.alerts.some(alert => eventLower.includes(alert));
         }
 
-        // Test alert detection
+        // Test alert detection - comprehensive coverage
         const winterAlerts = [
+          // Advisories
           { event: 'Winter Weather Advisory', expected: true },
+          { event: 'Freezing Rain Advisory', expected: true },
+          { event: 'Snow Advisory', expected: true },
+          { event: 'Wind Chill Advisory', expected: true },
+          { event: 'Lake Effect Snow Advisory', expected: true },
+          { event: 'Winter Weather Statement', expected: true },
+          // Warnings
           { event: 'Winter Storm Warning', expected: true },
+          { event: 'Winter Weather Warning', expected: true },
           { event: 'Ice Storm Warning', expected: true },
           { event: 'Blizzard Warning', expected: true },
-          { event: 'Freezing Rain Advisory', expected: true },
+          { event: 'Freezing Rain Warning', expected: true },
+          { event: 'Snow Squall Warning', expected: true },
+          { event: 'Lake Effect Snow Warning', expected: true },
+          { event: 'Extreme Cold Warning', expected: true },
+          { event: 'Hard Freeze Warning', expected: true },
+          { event: 'Wind Chill Warning', expected: true },
+          // Watches
+          { event: 'Winter Storm Watch', expected: true },
+          { event: 'Ice Storm Watch', expected: true },
+          { event: 'Blizzard Watch', expected: true },
+          { event: 'Extreme Cold Watch', expected: true },
+          // Non-winter (should be rejected)
           { event: 'Severe Thunderstorm Warning', expected: false },
           { event: 'Tornado Watch', expected: false },
           { event: 'Flood Advisory', expected: false }
@@ -567,9 +620,17 @@
 
             const eventLower = event.toLowerCase();
 
-            if (eventLower.includes('warning') && !eventLower.includes('watch') && !eventLower.includes('advisory')) {
+            // Check for warnings (highest priority) - must exclude watch/advisory/statement
+            if (eventLower.includes('warning') && 
+                !eventLower.includes('watch') && 
+                !eventLower.includes('advisory') &&
+                !eventLower.includes('statement')) {
               hasWarning = true;
-            } else if (eventLower.includes('advisory') || (eventLower.includes('watch'))) {
+            } 
+            // Check for advisories, watches, and statements (lower priority)
+            else if (eventLower.includes('advisory') || 
+                     eventLower.includes('statement') ||
+                     (eventLower.includes('watch'))) {
               hasAdvisory = true;
             }
           }
@@ -583,7 +644,7 @@
           return { status: 'none', hasAdvisory: false, hasWarning: false };
         }
 
-        // Test winter weather detection scenarios
+        // Test winter weather detection scenarios - comprehensive coverage
         const winterDetectionTests = [
           {
             alerts: [
@@ -606,6 +667,48 @@
             ],
             expected: 'warning',
             name: 'Warning takes priority over advisory'
+          },
+          {
+            alerts: [
+              { properties: { event: 'Blizzard Warning', severity: 'Severe' } }
+            ],
+            expected: 'warning',
+            name: 'Blizzard Warning detection'
+          },
+          {
+            alerts: [
+              { properties: { event: 'Snow Squall Warning', severity: 'Severe' } }
+            ],
+            expected: 'warning',
+            name: 'Snow Squall Warning detection'
+          },
+          {
+            alerts: [
+              { properties: { event: 'Extreme Cold Warning', severity: 'Severe' } }
+            ],
+            expected: 'warning',
+            name: 'Extreme Cold Warning detection'
+          },
+          {
+            alerts: [
+              { properties: { event: 'Lake Effect Snow Warning', severity: 'Severe' } }
+            ],
+            expected: 'warning',
+            name: 'Lake Effect Snow Warning detection'
+          },
+          {
+            alerts: [
+              { properties: { event: 'Freezing Rain Warning', severity: 'Severe' } }
+            ],
+            expected: 'warning',
+            name: 'Freezing Rain Warning detection'
+          },
+          {
+            alerts: [
+              { properties: { event: 'Winter Weather Statement', severity: 'Minor' } }
+            ],
+            expected: 'advisory',
+            name: 'Winter Weather Statement detection'
           },
           {
             alerts: [
