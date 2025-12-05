@@ -18,6 +18,9 @@
   - Intelligent forecast discussion summarization highlighting severe weather hazards
   
   Location: Mebane, NC (36.096°N, -79.267°W)
+  
+  To customize for a different location, modify the LOCATION_CONFIG object
+  in the Configuration Constants section (see LOCATION_CONFIG for details).
   ==============================================================================
 -->
 <div id="weather-dashboard-wrapper" style="
@@ -144,7 +147,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             border: 1px solid transparent;
-          " onclick="window.open('https://forecast.weather.gov/MapClick.php?zoneid=NCZ023', '_blank')"
+          " id="alamance-alerts-click"
              onmouseover="this.style.backgroundColor='#4a4a4a'; this.style.borderColor='#4fc3f7';" 
              onmouseout="this.style.backgroundColor='#373737'; this.style.borderColor='transparent';">
             <span style="color: #4fc3f7;">●</span> No active severe weather alerts
@@ -170,7 +173,7 @@
             cursor: pointer;
             transition: all 0.3s ease;
             border: 1px solid transparent;
-          " onclick="window.open('https://forecast.weather.gov/product.php?site=RAH&issuedby=RAH&product=AFD&format=CI&version=1', '_blank')"
+          " id="afd-content-click"
              onmouseover="this.style.backgroundColor='#4a4a4a'; this.style.borderColor='#ff7043';" 
              onmouseout="this.style.backgroundColor='#373737'; this.style.borderColor='transparent';">
             Loading forecast discussion...
@@ -304,11 +307,36 @@
   // Configuration Constants
   // ==========================================================================
   
+  // ==========================================================================
+  // LOCATION CONFIGURATION - Modify these values to change dashboard location
+  // ==========================================================================
+  
   /**
-   * Geographic coordinates for Mebane, NC
-   * Used for SPC outlook spatial queries
+   * Location Configuration Object
+   * 
+   * To customize for a different location, update all of the following:
+   * 
+   * @property {Object} coords - Geographic coordinates (latitude, longitude)
+   * @property {string} nwsZone - NWS zone code for alerts (format: STATEZONENUMBER)
+   *                              Find your zone: https://forecast.weather.gov/MapClick.php
+   * @property {string} stateCode - Two-letter state code for fallback alerts (e.g., 'NC', 'TX', 'CA')
+   * @property {string} nwsOffice - NWS office identifier for forecast discussions (e.g., 'RAH', 'OUN', 'SFO')
+   *                                 Find your office: https://www.weather.gov/organization.php
+   * @property {string} locationName - Display name for the location
    */
-  const coords = { lat: 36.096, lng: -79.267 };
+  const LOCATION_CONFIG = {
+    coords: { lat: 36.096, lng: -79.267 },  // Mebane, NC coordinates
+    nwsZone: 'NCZ023',                       // Alamance County, NC zone code
+    stateCode: 'NC',                         // North Carolina state code
+    nwsOffice: 'RAH',                        // Raleigh, NC NWS office
+    locationName: 'Mebane, NC'               // Location display name
+  };
+  
+  // Extract individual values for backward compatibility and easy access
+  const coords = LOCATION_CONFIG.coords;
+  const NWS_ZONE = LOCATION_CONFIG.nwsZone;
+  const STATE_CODE = LOCATION_CONFIG.stateCode;
+  const NWS_OFFICE = LOCATION_CONFIG.nwsOffice;
   
   /**
    * Dashboard update interval in milliseconds (15 minutes)
@@ -468,12 +496,12 @@
    */
   async function updateLocalAlertsAndGetStatus() {
     try {
-      // Primary: zone-specific alerts for NCZ023; Fallback: statewide NC alerts
+      // Primary: zone-specific alerts; Fallback: statewide alerts
       let data;
       try {
-        data = await fetchJSON('https://api.weather.gov/alerts/active?zone=NCZ023', 8000);
+        data = await fetchJSON(`https://api.weather.gov/alerts/active?zone=${NWS_ZONE}`, 8000);
       } catch (e) {
-        data = await fetchJSON('https://api.weather.gov/alerts/active?area=NC', 8000);
+        data = await fetchJSON(`https://api.weather.gov/alerts/active?area=${STATE_CODE}`, 8000);
       }
       if (data.features && data.features.length > 0) {
         // Filter alerts to show only warnings/watches/advisories with valid severity
@@ -692,7 +720,7 @@
        */
       async function getAFDProductText() {
         try {
-          const indexUrl = 'https://api.weather.gov/products/types/AFD/locations/RAH?limit=1';
+          const indexUrl = `https://api.weather.gov/products/types/AFD/locations/${NWS_OFFICE}?limit=1`;
           const idxResp = await fetch(indexUrl);
           if (!idxResp.ok) throw new Error('index fetch failed');
           const idxJson = await idxResp.json();
@@ -711,7 +739,7 @@
       let afdText = await getAFDProductText();
       if (!afdText) {
         try {
-          const resp = await fetch('https://forecast.weather.gov/product.php?site=RAH&issuedby=RAH&product=AFD&format=TXT');
+          const resp = await fetch(`https://forecast.weather.gov/product.php?site=${NWS_OFFICE}&issuedby=${NWS_OFFICE}&product=AFD&format=TXT`);
           afdText = await resp.text();
         } catch (e) {
           afdText = '';
@@ -859,6 +887,17 @@
    */
   function initialize() {
     try {
+      // Set up location-specific click handlers
+      const alertsClickEl = document.getElementById('alamance-alerts-click');
+      if (alertsClickEl) {
+        alertsClickEl.onclick = () => window.open(`https://forecast.weather.gov/MapClick.php?zoneid=${NWS_ZONE}`, '_blank');
+      }
+      
+      const afdClickEl = document.getElementById('afd-content-click');
+      if (afdClickEl) {
+        afdClickEl.onclick = () => window.open(`https://forecast.weather.gov/product.php?site=${NWS_OFFICE}&issuedby=${NWS_OFFICE}&product=AFD&format=CI&version=1`, '_blank');
+      }
+      
       // Initial load
       updateDashboard();
       

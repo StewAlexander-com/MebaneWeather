@@ -25,16 +25,26 @@
 
 ## 📑 Table of Contents
 
-- [Smart Threat Assessment](#-smart-threat-assessment)
-- [Technical Architecture](#-technical-architecture)
-- [Installation & Configuration](#-installation--configuration)
-- [Troubleshooting](#-troubleshooting)
-- [Testing](#-testing)
-- [Browser Compatibility](#-browser-compatibility)
-- [Code Documentation](#-code-documentation)
-- [Contributing](#-contributing)
-- [License & Project Info](#-license--project-info)
-- [Emergency Weather Information](#-emergency-weather-information)
+- [🌩️ MebaneWeather.com - Enhanced Severe Weather Dashboard](#️-mebaneweathercom---enhanced-severe-weather-dashboard)
+  - [🎯 Project Overview](#-project-overview)
+    - [🚀 Key Features](#-key-features)
+  - [📑 Table of Contents](#-table-of-contents)
+  - [🛡️ Smart Threat Assessment](#️-smart-threat-assessment)
+  - [🔧 Technical Architecture](#-technical-architecture)
+    - [API Integrations](#api-integrations)
+    - [Update Cycle](#update-cycle)
+  - [🚀 Installation \& Configuration](#-installation--configuration)
+    - [Quick Install (Weebly)](#quick-install-weebly)
+    - [Customization](#customization)
+      - [Changing Location](#changing-location)
+  - [🔍 Troubleshooting](#-troubleshooting)
+    - [Common Issues](#common-issues)
+  - [🧪 Testing](#-testing)
+  - [🌐 Browser Compatibility](#-browser-compatibility)
+  - [📝 Code Documentation](#-code-documentation)
+  - [🤝 Contributing](#-contributing)
+  - [📜 License \& Project Info](#-license--project-info)
+  - [🚨 Emergency Weather Information](#-emergency-weather-information)
 
 ## 🛡️ Smart Threat Assessment
 
@@ -80,17 +90,48 @@ The dashboard uses a four-tier threat classification system with priority-based 
 
 ### Customization
 
-**Location**: Update coordinates and NWS zone code
+#### Changing Location
+
+To customize the dashboard for a different location, modify the `LOCATION_CONFIG` object in the JavaScript section:
+
+1. **Open** `Severe-Weather-Dashboard.html` and find the `LOCATION_CONFIG` section (near the top of the JavaScript code)
+
+2. **Update all values** in the configuration object:
+
 ```javascript
-const coords = { lat: 36.096, lng: -79.267 }; // Mebane, NC
-// Also update: api.weather.gov/alerts/active?zone=YOUR_ZONE
+const LOCATION_CONFIG = {
+  coords: { lat: 36.096, lng: -79.267 },  // Your location coordinates
+  nwsZone: 'NCZ023',                       // Your NWS zone code
+  stateCode: 'NC',                         // Your state code
+  nwsOffice: 'RAH',                        // Your NWS office identifier
+  locationName: 'Mebane, NC'               // Display name
+};
 ```
 
-**Update Intervals**: Modify `updateInterval` (default: 900000ms = 15min) and alert polling (default: 180000ms = 3min)
+**Finding Your Location Values:**
 
-**Visual Styling**: Edit inline CSS - Backgrounds (`#1a1a1a`, `#2d2d2d`, `#373737`), Accent colors (primary `#4fc3f7`, warning `#f44336`, etc.)
+- **Coordinates** (lat/lng): Use [Google Maps](https://www.google.com/maps) - right-click your location → coordinates
+- **NWS Zone Code**: Visit [forecast.weather.gov](https://forecast.weather.gov/MapClick.php) → click your location → check the URL for `zoneid=` (format: STATEZONENUMBER, e.g., `TXZ123`, `CAZ045`)
+- **State Code**: Two-letter state abbreviation (e.g., `TX`, `CA`, `FL`, `NY`)
+- **NWS Office**: Find your office at [weather.gov/organization](https://www.weather.gov/organization.php) (e.g., `OUN` for Norman, OK; `SFO` for San Francisco, CA)
+- **Location Name**: Any display name you prefer
 
-**Advanced**: Modify alert filtering in `updateLocalAlertsAndGetStatus()` or AFD scoring in `updateForecastDiscussion()`
+**Example for Oklahoma City, OK:**
+```javascript
+const LOCATION_CONFIG = {
+  coords: { lat: 35.4676, lng: -97.5164 },
+  nwsZone: 'OKZ020',
+  stateCode: 'OK',
+  nwsOffice: 'OUN',
+  locationName: 'Oklahoma City, OK'
+};
+```
+
+**Other Customizations:**
+
+- **Update Intervals**: Modify `updateInterval` (default: 900000ms = 15min) and alert polling (default: 180000ms = 3min)
+- **Visual Styling**: Edit inline CSS - Backgrounds (`#1a1a1a`, `#2d2d2d`, `#373737`), Accent colors (primary `#4fc3f7`, warning `#f44336`, etc.)
+- **Advanced**: Modify alert filtering in `updateLocalAlertsAndGetStatus()` or AFD scoring in `updateForecastDiscussion()`
 
 ## 🔍 Troubleshooting
 
