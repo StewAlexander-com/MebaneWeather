@@ -330,3 +330,6 @@ site/
 
 # Browser cache and temp files
 .browser_cache/
+
+# MebaneWeather Forecast CSS file
+MebaneWeather Forecast.css
