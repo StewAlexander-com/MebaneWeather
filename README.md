@@ -21,8 +21,15 @@
 | 🔄 **Auto-Refresh** | Updates every 15 minutes with 3-minute alert polling | ✅ Active |
 | 🖱️ **Interactive Panels** | Clickable sections linking to official sources | ✅ Active |
 | 📝 **Intelligent AFD Summarization** | Extracts key severe weather highlights from forecast discussions | ✅ Active |
-| ❄️ **Winter Weather Detection** | Detects winter weather alerts and conditions from NWS alerts and forecast discussions | ✅ Active |
+| ❄️ **Winter Weather Detection** | Detects winter weather alerts from NWS alerts API (advisories only from alerts, warnings from alerts or forecast discussion) | ✅ Active |
 | 🌐 **Weebly Optimized** | Self-contained HTML for easy Weebly integration | ✅ Active |
+
+### 📅 Recent Updates
+
+**December 2024** - Fixed winter weather advisory detection logic:
+- **Issue**: Dashboard was showing "Monitor for Winter Conditions" based on forecast discussion text analysis even when no active winter weather advisories existed
+- **Fix**: Modified detection logic so that advisories only come from actual NWS alerts API. Text detection from forecast discussions now only sets warning status, not advisory status
+- **Result**: "Monitor for Winter Conditions" now only appears when there are active winter weather advisories from official NWS alerts
 
 ## 📑 Table of Contents
 
@@ -60,7 +67,7 @@ The dashboard uses a four-tier threat classification system with priority-based 
 
 **Priority**: Warnings override all other indicators, followed by winter weather advisories (MONITOR), then elevated SPC risks (CAUTION), then lower risks (MONITOR).
 
-**Winter Weather**: Detects winter weather alerts and conditions, displaying "Winter Precipitation Imminent and/or Occurring" for warnings and "Monitor for Winter Conditions" for advisories.
+**Winter Weather**: Detects winter weather alerts and conditions. "Winter Precipitation Imminent and/or Occurring" displays for active warnings. "Monitor for Winter Conditions" only displays when there are active winter weather advisories from the NWS alerts API (not from forecast discussion text analysis).
 
 **SPC Risk Categories**: TSTM, MRGL, SLGT, ENH, MDT, HIGH - Maps official Storm Prediction Center outlook levels with intelligent forecast discussion summarization.
 
@@ -221,3 +228,27 @@ Comprehensive inline documentation in docstring style: File headers, JSDoc-style
 ---
 
 *Built with ❤️ for the Mebane, NC community*
+
+## Git Commands to Push to Remote
+
+Run these commands in your terminal:
+
+```bash
+# Check current status
+git status
+
+# Add the changed file
+git add Severe-Weather-Dashboard.html
+
+# Commit with a descriptive message
+git commit -m "Fix: Only show 'Monitor for Winter Conditions' when active winter weather advisories exist
+
+- Modified text detection to only set winter weather status to 'warning' from forecast discussion
+- Advisories now only come from actual NWS alerts API
+- Prevents false 'Monitor for Winter Conditions' when no active alerts exist"
+
+# Push to remote (assuming main/master branch)
+git push origin main
+# OR if your branch is named 'master':
+# git push origin master
+```

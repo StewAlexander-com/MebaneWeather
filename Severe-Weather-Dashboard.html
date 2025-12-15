@@ -1182,9 +1182,12 @@
         
         // Check for winter weather
         const winterDetected = detectWinterWeatherInText(sanitized);
-        if (winterDetected.status !== 'none') {
+        // Only use text detection for warnings, not advisories
+        // Advisories should only come from actual alerts
+        if (winterDetected.status === 'warning') {
           winterWeatherStatus = winterDetected.status;
         }
+        // If text detection found advisory, ignore it - advisories must come from alerts
       }
     } catch (error) {
       // Silent fail - not critical for dashboard operation
@@ -1419,11 +1422,15 @@
 
       // Backup check: Update winter weather status from forecast discussion if not already set
       // (Primary check happens before threat level calculation in updateDashboard)
+      // Note: Only use text detection for warnings, not advisories
       if (winterWeatherStatus === 'none') {
         const winterDetected = detectWinterWeatherInText(sanitized);
-        if (winterDetected.status !== 'none') {
+        // Only use text detection for warnings, not advisories
+        // Advisories should only come from actual alerts
+        if (winterDetected.status === 'warning') {
           winterWeatherStatus = winterDetected.status;
         }
+        // If text detection found advisory, ignore it - advisories must come from alerts
       }
 
       let afdContent = '';
