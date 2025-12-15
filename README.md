@@ -228,27 +228,3 @@ Comprehensive inline documentation in docstring style: File headers, JSDoc-style
 ---
 
 *Built with ❤️ for the Mebane, NC community*
-
-## Git Commands to Push to Remote
-
-Run these commands in your terminal:
-
-```bash
-# Check current status
-git status
-
-# Add the changed file
-git add Severe-Weather-Dashboard.html
-
-# Commit with a descriptive message
-git commit -m "Fix: Only show 'Monitor for Winter Conditions' when active winter weather advisories exist
-
-- Modified text detection to only set winter weather status to 'warning' from forecast discussion
-- Advisories now only come from actual NWS alerts API
-- Prevents false 'Monitor for Winter Conditions' when no active alerts exist"
-
-# Push to remote (assuming main/master branch)
-git push origin main
-# OR if your branch is named 'master':
-# git push origin master
-```
