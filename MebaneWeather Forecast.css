@@ -416,7 +416,10 @@
   /** One-sentence AFD summary (max 15 words) for Current Conditions. Returns null if none. */
   function summarizeAFD(text) {
     if (!text || typeof text !== 'string') return null;
-    var norm = text.replace(/\r\n|\r|\n/g, ' ');
+    var body = text;
+    var bodyMatch = text.match(/(?:\n\s*\.(?:SYNOPSIS|DISCUSSION|SHORT TERM|LONG TERM|AVIATION|FIRE WEATHER|MARINE)|\n\s*&&\s*\n)[\s\S]*/i);
+    if (bodyMatch && bodyMatch[0]) body = bodyMatch[0].replace(/^\s+/, '');
+    var norm = body.replace(/\r\n|\r|\n/g, ' ');
     var idx = norm.toUpperCase().indexOf('WATCHES/WARNINGS/ADVISORIES');
     var trunc = idx !== -1 ? norm.slice(0, idx) : norm;
     var clean = trunc.replace(/<[^>]*>/g, ' ')
@@ -424,8 +427,9 @@
       .replace(/\b(?:www\.)?weather\.gov\b/gi, ' ')
       .replace(/\s{2,}/g, ' ').trim();
     var low = clean.toLowerCase();
+    var headerLike = /^\d{3}\s+FXUS|^AFD\w*\.?\s*$|^Area Forecast Discussion\.?\s*$|^National Weather Service/i;
     var sentences = clean.split(/(?<=[.!?])\s+/).map(function(s){ return s.replace(/\s+/g, ' ').trim(); })
-      .filter(function(s){ return s.length >= 20 && s.length < 220; });
+      .filter(function(s){ return s.length >= 20 && s.length < 220 && !headerLike.test(s); });
     var hazard = ['tornado','damaging wind','gusts','large hail','severe thunderstorm','severe storms','flash flood','heavy rain','snow','freezing rain','ice','wind chill','heat advisory','dense fog'];
     var severity = ['warning','watch','advisory','moderate','enhanced','slight','elevated','severe'];
     var timeframe = ['today','tonight','this afternoon','this evening','overnight','morning','afternoon','evening'];
