@@ -1,0 +1,492 @@
+<!-- Weebly Embed Code: paste this entire file into an Embed Code element. No DOCTYPE/html/body needed. -->
+<!-- MebaneWeather Live Radar - RainViewer precipitation radar, past + nowcast, updated every 10 min. Responsive: one embed for desktop and mobile. -->
+<div class="mw-radar-wrap">
+<div id="rainviewer-container">
+    <div id="radar-header">
+        <h3>MebaneWeather Live Radar - Local Area</h3>
+        <p>RainViewer precipitation radar · past and nowcast frames · updated every 10 minutes</p>
+    </div>
+    <div id="control-panel">
+        <div class="radar-buttons">
+            <button type="button" onclick="previousFrame()" aria-label="Previous frame">◀ Previous</button>
+            <button type="button" id="playButton" onclick="togglePlay()" aria-label="Play or pause animation">▶ Play</button>
+            <button type="button" onclick="nextFrame()" aria-label="Next frame">Next ▶</button>
+        </div>
+        <div class="radar-speed-row">
+            <label for="radar-speed">Speed:</label>
+            <input type="range" id="radar-speed" min="200" max="1500" step="100" value="900" aria-label="Animation speed (right = faster)"/>
+            <span id="radar-speed-value">800</span> ms/frame
+        </div>
+        <div id="timestamp-display">Loading Mebane radar data...</div>
+        <div id="radar-error" style="display:none;"><span id="radar-error-msg"></span> <button type="button" id="radar-retry-btn">Retry</button></div>
+    </div>
+    <div id="map-container">
+        <div id="loading-indicator">
+            <div>Initializing Weather Radar...</div>
+        </div>
+    </div>
+</div>
+</div>
+<style>
+.mw-radar-wrap { width: 100%; max-width: 1121px; margin: 0 auto; box-sizing: border-box; }
+#rainviewer-container { width: 100%; border: 1px solid #ddd; border-radius: 8px; overflow: hidden; background: #fff; }
+#radar-header { padding: clamp(12px, 3vw, 16px) clamp(12px, 4vw, 20px); background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; text-align: center; }
+#radar-header h3 { margin: 0 0 4px 0; font-size: clamp(1rem, 4vw, 1.125rem); font-weight: 600; letter-spacing: -0.02em; }
+#radar-header p { margin: 0; font-size: clamp(0.75rem, 2.5vw, 0.8125rem); opacity: 0.9; }
+#control-panel { background: #f8f9fa; padding: clamp(8px, 2vw, 12px); text-align: center; border-bottom: 1px solid #ddd; }
+.radar-buttons { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: clamp(8px, 2vw, 12px); margin-bottom: 8px; }
+.radar-buttons button { min-height: 44px; min-width: 88px; padding: 10px 16px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: clamp(0.8125rem, 2.5vw, 0.875rem); white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.radar-buttons button:focus { outline: 2px solid #0056b3; outline-offset: 2px; }
+#playButton { background: #28a745; min-width: 72px; }
+#playButton:hover, .radar-buttons button:hover { filter: brightness(1.05); }
+.radar-speed-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; font-size: clamp(0.75rem, 2vw, 0.8125rem); color: #555; }
+.radar-speed-row label { margin: 0; }
+.radar-speed-row input[type="range"] { width: 120px; min-width: 100px; max-width: 180px; accent-color: #007bff; }
+#radar-speed-value { font-weight: 600; min-width: 2.5em; }
+#timestamp-display { font-size: clamp(0.75rem, 2vw, 0.8125rem); color: #666; font-weight: 600; text-align: center; word-break: break-word; padding: 0 4px; }
+#radar-error { margin-top: 6px; font-size: clamp(0.6875rem, 2vw, 0.75rem); color: #c00; }
+#radar-retry-btn { min-height: 44px; padding: 8px 16px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8125rem; margin-left: 6px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#map-container { position: relative; width: 100%; min-height: 220px; height: clamp(220px, 45vmin, 320px); }
+#loading-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10; font-size: clamp(0.875rem, 2.5vw, 1rem); color: #666; }
+@media (max-width: 480px) {
+    .mw-radar-wrap { padding: 0 6px; }
+    .radar-buttons { gap: 8px; }
+    .radar-buttons button { min-width: 80px; padding: 10px 12px; }
+}
+</style>
+
+<!-- Leaflet CSS and JS -->
+<link href="https://unpkg.com/leaflet/dist/leaflet.css" rel="stylesheet"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+// MebaneWeather Live Radar - HA/resilient (cache, retries + backoff, timeout, offline, in-flight guard)
+var RADAR_API_URL = 'https://api.rainviewer.com/public/weather-maps.json';
+var CACHE_KEY = 'mw_radar_v1', CACHE_TTL = 600000;       /* 10 min */
+var REFRESH = 600000;                                    /* 10 min */
+var WATCHDOG_INTERVAL_MS = 420000;                       /* 7 min - refresh when visible only if newer frame */
+var TIMEOUT = 10000, TIMEOUT_RETRY_BOOST_MS = 3000, TIMEOUT_MAX_MS = 25000;
+var MAX_RETRIES = 3, BACKOFF_BASE_MS = 2000, BACKOFF_MAX_MS = 20000;
+var MIN_RADAR_INTERVAL_MS = 90000;                       /* don't start fetch if one started in last 1.5 min (have cache) */
+var radarInFlight = false, lastRadarFetchStartTime = 0, radarRetries = 0;
+var watchdogTimer = null;                                /* 7 min timer when tab visible; cleared when hidden */
+var radarFromCache = false, radarCacheAgeMs = null;
+
+var map;
+var apiData = {};
+var mapFrames = [];
+var radarLayers = [];
+var animationPosition = 0;
+var animationTimer = false;
+var isPlaying = false;
+var animationDelayMs = 800;
+var preloadScheduled = false;
+var lastPastFrameIndex = -1;  /* index in mapFrames of most recent observation (closest to current time) */
+
+function fetchT(url, timeoutMs) {
+    var t = timeoutMs != null ? timeoutMs : TIMEOUT;
+    var ctrl = new AbortController();
+    var tid = setTimeout(function() { ctrl.abort(); }, t);
+    return fetch(url, { signal: ctrl.signal })
+        .then(function(r) { clearTimeout(tid); return r; }, function(e) { clearTimeout(tid); throw e; });
+}
+function backoffDelay(attempt, baseMs, maxMs) {
+    var d = Math.min(baseMs * Math.pow(2, attempt), maxMs);
+    var jitter = 0.8 + Math.random() * 0.4;
+    return Math.round(d * jitter);
+}
+function retryTimeout(attempt) {
+    return Math.min(TIMEOUT + attempt * TIMEOUT_RETRY_BOOST_MS, TIMEOUT_MAX_MS);
+}
+function saveRadarCache(data) {
+    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d: data })); } catch (e) {}
+}
+function loadRadarCache() {
+    try {
+        var raw = sessionStorage.getItem(CACHE_KEY);
+        if (!raw) return null;
+        var obj = JSON.parse(raw);
+        if (Date.now() - obj.t < CACHE_TTL) return { data: obj.d, age: Date.now() - obj.t };
+    } catch (e) {}
+    return null;
+}
+function getLatestFrameTimeFromData(data) {
+    var t = 0;
+    if (data && data.radar) {
+        var frames = [].concat(data.radar.past || [], data.radar.nowcast || []);
+        for (var i = 0; i < frames.length; i++) if (frames[i] && frames[i].time && frames[i].time > t) t = frames[i].time;
+    }
+    return t;
+}
+function getCurrentDisplayedFrameTime() {
+    if (!mapFrames.length || animationPosition < 0 || animationPosition >= mapFrames.length) return 0;
+    var f = mapFrames[animationPosition];
+    return (f && f.time) ? f.time : 0;
+}
+
+function hideRadarError() {
+    var el = document.getElementById('radar-error');
+    if (el) el.style.display = 'none';
+}
+function showRadarError(msg) {
+    var msgEl = document.getElementById('radar-error-msg');
+    var row = document.getElementById('radar-error');
+    if (msgEl) msgEl.textContent = msg || 'Unable to load radar data.';
+    if (row) row.style.display = 'block';
+}
+
+// Initialize the weather radar (responsive container; Leaflet will use current size)
+function initializeWeatherRadar() {
+    var container = document.getElementById('map-container');
+    if (!container) return;
+    map = L.map('map-container').setView([36.095918, -79.266536], 9);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    L.marker([36.095918, -79.266536])
+        .addTo(map)
+        .bindPopup('Mebane, NC')
+        .openPopup();
+    map.on('zoomend moveend', function() {
+        if (mapFrames && mapFrames.length > 0 && apiData && apiData.host) {
+            var pos = (animationPosition >= 0 && animationPosition < mapFrames.length) ? animationPosition : (lastPastFrameIndex >= 0 ? lastPastFrameIndex : mapFrames.length - 1);
+            if (showFrame(pos)) {
+                var path = mapFrames[animationPosition] && mapFrames[animationPosition].path;
+                var layer = path && radarLayers[path];
+                if (layer && map.hasLayer(layer)) {
+                    map.removeLayer(layer);
+                    map.addLayer(layer);
+                }
+            }
+        }
+    });
+    // After layout stabilizes (responsive container), ensure map size is correct and show latest radar frame
+    setTimeout(function() {
+        if (map) {
+            map.invalidateSize();
+            if (mapFrames && mapFrames.length > 0 && apiData && apiData.host) {
+                var pos = (animationPosition >= 0 && animationPosition < mapFrames.length) ? animationPosition : (lastPastFrameIndex >= 0 ? lastPastFrameIndex : mapFrames.length - 1);
+                showFrame(pos);
+            }
+        }
+    }, 400);
+
+    var cached = loadRadarCache();
+    if (cached && cached.data) {
+        apiData = cached.data;
+        radarFromCache = true;
+        radarCacheAgeMs = cached.age;
+        processRadarFrames();
+        document.getElementById('loading-indicator').style.display = 'none';
+        updateTimestamp(apiData.radar && apiData.radar.past && apiData.radar.past.length ? apiData.radar.past[apiData.radar.past.length - 1].time : null, true, cached.age);
+        hideRadarError();
+        loadRadarData(true);
+    } else {
+        loadRadarData(false);
+    }
+}
+
+// Load radar data: in-flight guard, offline, min-interval skip, timeout fetch, retries + backoff, cache fallback
+// onlyUpdateIfNewer (optional): when true, only call processRadarFrames() if new data has a newer latest frame than currently displayed
+function loadRadarData(background, onlyUpdateIfNewer) {
+    if (radarInFlight) return;
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        var c = loadRadarCache();
+        if (c && c.data) {
+            apiData = c.data;
+            radarFromCache = true;
+            radarCacheAgeMs = c.age;
+            processRadarFrames();
+            document.getElementById('loading-indicator').style.display = 'none';
+            var lastT = apiData.radar && apiData.radar.past && apiData.radar.past.length ? apiData.radar.past[apiData.radar.past.length - 1].time : null;
+            updateTimestamp(lastT, true, c.age);
+        } else {
+            document.getElementById('timestamp-display').textContent = 'Offline. Connect to load radar.';
+        }
+        hideRadarError();
+        return;
+    }
+    if (!onlyUpdateIfNewer && loadRadarCache() && (Date.now() - lastRadarFetchStartTime) < MIN_RADAR_INTERVAL_MS) return;
+    lastRadarFetchStartTime = Date.now();
+    radarInFlight = true;
+    if (!background) {
+        document.getElementById('timestamp-display').textContent = 'Loading radar…';
+        hideRadarError();
+    }
+
+    function tryFetch(attempt) {
+        attempt = attempt || 0;
+        var timeout = retryTimeout(attempt);
+        fetchT(RADAR_API_URL, timeout)
+            .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+            .then(function(data) {
+                radarRetries = 0;
+                radarInFlight = false;
+                var doUpdate = true;
+                if (onlyUpdateIfNewer) {
+                    var newLatest = getLatestFrameTimeFromData(data);
+                    var currentDisplayed = getCurrentDisplayedFrameTime();
+                    doUpdate = newLatest > currentDisplayed;
+                }
+                apiData = data;
+                saveRadarCache(data);
+                if (doUpdate) {
+                    radarFromCache = false;
+                    radarCacheAgeMs = null;
+                    processRadarFrames();
+                }
+                document.getElementById('loading-indicator').style.display = 'none';
+                hideRadarError();
+            })
+            .catch(function(e) {
+                console.warn('Radar fetch (attempt ' + (attempt + 1) + '):', e.message);
+                if (attempt + 1 < MAX_RETRIES) {
+                    if (!background) document.getElementById('timestamp-display').textContent = 'Retrying… (' + (attempt + 1) + '/' + MAX_RETRIES + ')';
+                    var delay = backoffDelay(attempt, BACKOFF_BASE_MS, BACKOFF_MAX_MS);
+                    setTimeout(function() { tryFetch(attempt + 1); }, delay);
+                } else {
+                    radarRetries = 0;
+                    radarInFlight = false;
+                    var cached = loadRadarCache();
+                    if (cached && cached.data) {
+                        apiData = cached.data;
+                        radarFromCache = true;
+                        radarCacheAgeMs = cached.age;
+                        processRadarFrames();
+                        document.getElementById('loading-indicator').style.display = 'none';
+                        hideRadarError();
+                    } else {
+                        document.getElementById('loading-indicator').style.display = 'none';
+                        document.getElementById('timestamp-display').textContent = '';
+                        showRadarError('Unable to load radar. Check connection.');
+                    }
+                }
+            });
+    }
+    tryFetch(0);
+}
+
+// Process radar frames from API response: only use frames that have path; show latest observation (last past = closest to current time).
+function processRadarFrames() {
+    mapFrames = [];
+    preloadScheduled = false;
+    lastPastFrameIndex = -1;
+    function validFrame(f) { return f && typeof f.path === 'string'; }
+    var pastFrames = [];
+    if (apiData && apiData.radar) {
+        if (apiData.radar.past) pastFrames = apiData.radar.past.filter(validFrame);
+        mapFrames = pastFrames.slice();
+        if (apiData.radar.nowcast) mapFrames = mapFrames.concat(apiData.radar.nowcast.filter(validFrame));
+    }
+    if (mapFrames.length > 0) {
+        lastPastFrameIndex = pastFrames.length > 0 ? pastFrames.length - 1 : mapFrames.length - 1;
+        var latestIdx = lastPastFrameIndex;
+        showFrame(latestIdx);
+        setTimeout(function() {
+            if (map && mapFrames && mapFrames.length > 0) showFrame(latestIdx);
+        }, 500);
+        if (!preloadScheduled && map) {
+            preloadScheduled = true;
+            setTimeout(preloadRadarFrames, 1000);
+        }
+    } else {
+        var el = document.getElementById('timestamp-display');
+        if (el) el.textContent = 'No radar frames available';
+    }
+    if (mapFrames.length === 0 && isPlaying) stopAnimation();
+}
+
+// Preload frame layers in background (HA: one frame at a time, try/catch, no block). Run after initial load.
+function preloadRadarFrames() {
+    if (!map || !mapFrames.length || !apiData.host) return;
+    var maxPreload = Math.min(mapFrames.length, 12);
+    var idx = 0;
+    function doOne() {
+        if (idx >= maxPreload) return;
+        try {
+            var frame = mapFrames[idx];
+            if (!radarLayers[frame.path]) {
+                radarLayers[frame.path] = L.tileLayer(
+                    apiData.host + frame.path + '/256/{z}/{x}/{y}/5/1_1.png',
+                    { tileSize: 256, opacity: 0.75, zIndex: frame.time }
+                );
+            }
+            map.addLayer(radarLayers[frame.path]);
+            setTimeout(function() {
+                try {
+                    var currentPath = mapFrames.length && animationPosition >= 0 && mapFrames[animationPosition] ? mapFrames[animationPosition].path : null;
+                    if (frame.path !== currentPath && map && map.hasLayer(radarLayers[frame.path])) map.removeLayer(radarLayers[frame.path]);
+                } catch (e) {}
+                idx++;
+                if (idx < maxPreload) setTimeout(doOne, 120);
+            }, 80);
+        } catch (e) {
+            idx++;
+            if (idx < maxPreload) setTimeout(doOne, 120);
+        }
+    }
+    doOne();
+}
+
+// Display specific radar frame (add new layer first, then remove others to avoid blink). Returns false on error.
+// Only updates animationPosition on success so we never "show" a failed frame; last good frame stays visible.
+function showFrame(position) {
+    if (!map || !mapFrames || mapFrames.length === 0) return false;
+    if (!apiData || typeof apiData.host !== 'string') return false;
+    while (position >= mapFrames.length) position -= mapFrames.length;
+    while (position < 0) position += mapFrames.length;
+    var frame = mapFrames[position];
+    if (!frame || typeof frame.path !== 'string') return false;
+    try {
+        if (!radarLayers[frame.path]) {
+            radarLayers[frame.path] = L.tileLayer(
+                apiData.host + frame.path + '/256/{z}/{x}/{y}/5/1_1.png',
+                { tileSize: 256, opacity: 0.75, zIndex: frame.time }
+            );
+        }
+        map.addLayer(radarLayers[frame.path]);
+        for (var path in radarLayers) {
+            if (path !== frame.path && map.hasLayer(radarLayers[path])) map.removeLayer(radarLayers[path]);
+        }
+        updateTimestamp(frame.time, radarFromCache, radarCacheAgeMs);
+        animationPosition = position;
+        return true;
+    } catch (e) {
+        console.warn('Radar showFrame error:', e && e.message ? e.message : e);
+        return false;
+    }
+}
+
+// Update timestamp display: optional "Live" or "Cached (X min ago)" prefix
+function updateTimestamp(unixTime, fromCache, cacheAgeMs) {
+    var pre = fromCache ? 'Cached' + (cacheAgeMs != null ? ' (' + (cacheAgeMs < 60000 ? Math.round(cacheAgeMs / 1000) + ' s ago' : Math.round(cacheAgeMs / 60000) + ' min ago') + ')' : '') + ' · ' : 'Live · ';
+    var timePart = '';
+    if (unixTime != null) {
+        var date = new Date(unixTime * 1000);
+        var now = Date.now() / 1000;
+        var isPast = unixTime <= now;
+        var status = isPast ? 'PAST' : 'FORECAST';
+        timePart = status + ': ' + date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }) + ' - Mebane Weather Radar';
+    } else {
+        timePart = 'Mebane Weather Radar';
+    }
+    var el = document.getElementById('timestamp-display');
+    if (el) el.textContent = pre + timePart;
+}
+
+// Animation control functions (HA: validate state, clear timer before start, catch frame errors, sync button)
+function togglePlay() {
+    if (isPlaying) {
+        stopAnimation();
+    } else {
+        startAnimation();
+    }
+}
+
+function startAnimation() {
+    if (!map || !mapFrames || mapFrames.length === 0) return;
+    if (animationTimer) {
+        clearInterval(animationTimer);
+        animationTimer = null;
+    }
+    isPlaying = true;
+    var btn = document.getElementById('playButton');
+    if (btn) btn.innerHTML = '⏸ Pause';
+    var delay = Math.max(200, Math.min(2000, animationDelayMs));
+    animationTimer = setInterval(function() {
+        try {
+            if (!mapFrames || mapFrames.length === 0) { stopAnimation(); return; }
+            var ok = showFrame(animationPosition + 1);
+            if (!ok) {
+                // Skip this frame; keep showing last good frame; next tick will try following frame
+            }
+        } catch (e) {
+            console.warn('Radar animation tick error:', e && e.message ? e.message : e);
+            stopAnimation();
+        }
+    }, delay);
+}
+
+function stopAnimation() {
+    isPlaying = false;
+    if (animationTimer != null) {
+        try { clearInterval(animationTimer); } catch (e) {}
+        animationTimer = null;
+    }
+    var btn = document.getElementById('playButton');
+    if (btn) btn.innerHTML = '▶ Play';
+}
+
+function previousFrame() {
+    stopAnimation();
+    try { showFrame(animationPosition - 1); } catch (e) { console.warn('previousFrame:', e && e.message ? e.message : e); }
+}
+
+function nextFrame() {
+    stopAnimation();
+    try { showFrame(animationPosition + 1); } catch (e) { console.warn('nextFrame:', e && e.message ? e.message : e); }
+}
+
+window.addEventListener('load', function() {
+    setTimeout(initializeWeatherRadar, 800);
+    var retryBtn = document.getElementById('radar-retry-btn');
+    if (retryBtn) retryBtn.addEventListener('click', function() { radarRetries = 0; loadRadarData(false); });
+    var speedEl = document.getElementById('radar-speed');
+    var speedVal = document.getElementById('radar-speed-value');
+    if (speedEl && speedVal) {
+        var SPEED_SLIDER_MIN = 200, SPEED_SLIDER_MAX = 1500;
+        function sliderToDelay(v) { return SPEED_SLIDER_MIN + SPEED_SLIDER_MAX - v; }
+        function updateSpeed() {
+            var v = parseInt(speedEl.value, 10);
+            if (isNaN(v) || v < SPEED_SLIDER_MIN || v > SPEED_SLIDER_MAX) return;
+            animationDelayMs = sliderToDelay(v);
+            speedVal.textContent = animationDelayMs;
+            if (isPlaying) {
+                if (animationTimer) clearInterval(animationTimer);
+                animationTimer = setInterval(function() { showFrame(animationPosition + 1); }, animationDelayMs);
+            }
+        }
+        speedEl.addEventListener('input', updateSpeed);
+        speedEl.addEventListener('change', updateSpeed);
+        animationDelayMs = sliderToDelay(parseInt(speedEl.value, 10));
+        speedVal.textContent = animationDelayMs;
+    }
+});
+
+window.addEventListener('resize', function() {
+    if (map) setTimeout(function() { map.invalidateSize(); }, 200);
+});
+
+// Refresh on reconnect
+if (typeof window !== 'undefined') {
+    window.addEventListener('online', function() { radarRetries = 0; loadRadarData(true); });
+}
+
+// Auto-refresh every 10 min (loadRadarData respects in-flight, offline, min-interval)
+setInterval(function() { loadRadarData(true); }, REFRESH);
+
+// Watchdog: every 7 min while tab is visible, fetch and update only if a newer radar frame is available (HA: same fetch/retry/timeout, no UI flash when nothing new)
+function scheduleWatchdog() {
+    if (watchdogTimer) return;
+    watchdogTimer = setTimeout(function() {
+        watchdogTimer = null;
+        if (typeof document === 'undefined' || document.visibilityState !== 'visible') return;
+        if (typeof navigator !== 'undefined' && !navigator.onLine) { scheduleWatchdog(); return; }
+        loadRadarData(true, true);
+        if (document.visibilityState === 'visible') scheduleWatchdog();
+    }, WATCHDOG_INTERVAL_MS);
+}
+function cancelWatchdog() {
+    if (watchdogTimer) {
+        clearTimeout(watchdogTimer);
+        watchdogTimer = null;
+    }
+}
+if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') scheduleWatchdog();
+        else cancelWatchdog();
+    });
+    if (document.visibilityState === 'visible') scheduleWatchdog();
+}
+</script>

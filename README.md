@@ -15,6 +15,7 @@
 |-----------|------|-------------|
 | **Severe Weather Dashboard** | `Severe-Weather-Dashboard.html` | SPC threat levels, NWS alerts, AFD summarization, winter weather detection |
 | **Forecast Widget** | `MebaneWeather Forecast.css` | Current conditions (Open-Meteo + NWS AFD blend), 7-day forecast, NWS alerts, SPC Day 1; resilient, cache + retries, "From the NWS:" link to AFD |
+| **Live Radar Map** | `LiveRadarMap.css` | RainViewer precipitation radar (past + nowcast), Play/Pause animation, speed slider; HA/resilient; shows latest frame on load and when zooming; 7‑min watchdog when tab visible |
 
 Both are self-contained HTML for Weebly Embed Code (or any platform that accepts embedded HTML).
 
@@ -32,8 +33,16 @@ Both are self-contained HTML for Weebly Embed Code (or any platform that accepts
 | 🌐 **Weebly Optimized** | Self-contained HTML for Embed Code | ✅ Active |
 | 📶 **Resilience (Forecast)** | Exponential backoff, jitter, cache fallback, offline handling, per-attempt timeout growth | ✅ Active |
 | 📋 **Audit Trail (Forecast)** | Footer data sources; Live vs Cached + age in status bar; verify-at-source links | ✅ Active |
+| 🗺️ **Live Radar (RainViewer)** | Past + nowcast frames, latest observation on load; zoom/pan reloads tiles so radar shows in expanded view without pressing Play; 7‑min watchdog when tab visible (update only if newer frame) | ✅ Active |
 
 ### 📅 Recent Updates
+
+**March 2025** – Live Radar Map (`LiveRadarMap.css`):
+- RainViewer API; single responsive embed (desktop + mobile). Shows **latest radar frame** (closest to current time = last past frame) on load and after data refresh.
+- **Zoom/pan:** On `zoomend`/`moveend`, the current radar layer is removed and re-added so Leaflet requests tiles for the new view; radar appears in the expanded area (e.g. Wichita, KS) **without pressing Play**.
+- **HA/resilience:** sessionStorage cache (10 min TTL), timeout fetch, 3 retries with exponential backoff + jitter, in-flight guard, min-interval (90 s) when cache exists, offline → cache or message, Live vs Cached + age, Retry button, `online` refresh. Play path: guards (map/frames), timer hygiene, try/catch in `showFrame` and animation tick; only valid frames (with `path`); preload never removes the currently displayed frame.
+- **Watchdog:** When the tab is visible, every 7 min a background fetch runs and the map updates **only if** the API has a newer latest frame than the one displayed (no flash when nothing new). When the tab is hidden, the watchdog is cleared.
+- **Animation:** Play/Pause, Previous/Next, speed slider (200–1500 ms/frame, right = faster); frame preload (first 12, sequential); add-before-remove in `showFrame` to avoid blink.
 
 **February 2025** – Forecast widget (`MebaneWeather Forecast.css`):
 - Open-Meteo + NWS alerts + SPC Day 1 outlook; cards link to NWS/SPC for verification
@@ -106,6 +115,16 @@ The dashboard uses a four-tier threat classification system with priority-based 
 
 **Resilience:** sessionStorage cache (weather 2 h, NWS 10 min, SPC 30 min, AFD 30 min); retries with exponential backoff + jitter for weather, NWS, SPC, and AFD; per-attempt timeout growth (10s → 25s cap); offline skip + refresh on `online`; in-flight guard.
 
+### Live Radar Map
+
+**Data source:** RainViewer public API (`api.rainviewer.com/public/weather-maps.json`) — past and nowcast precipitation frames.
+
+**Behavior:** Displays the **latest observation** (last past frame) on load. Play/Pause animates through past + nowcast; Previous/Next step one frame; speed slider controls ms per frame. On zoom or pan, the current radar layer is removed and re-added so tiles load for the new view — radar appears in the expanded area (e.g. central US) without pressing Play. Preload warms the first 12 frame layers without removing the displayed frame.
+
+**Update cycle:** Full refresh every 10 min (`REFRESH`). When the tab is **visible**, a 7‑min **watchdog** runs a background fetch and updates the map only if the API has a newer latest frame; when the tab is hidden, the watchdog is cleared. Min 90 s between fetches when cache exists.
+
+**Resilience:** sessionStorage cache (10 min TTL); fetch with AbortController timeout (10 s, up to 25 s on retries); 3 retries with exponential backoff + jitter; in-flight guard; offline → use cache or show message; Live vs “Cached (X min ago)” in timestamp; Retry button; `online` listener. Play/animation: guards (map, frames), single timer, try/catch in `showFrame` and tick; only frames with valid `path`; preload skips removing the currently displayed layer.
+
 ## 📸 Live Dashboard
 
 Screenshot of the live dashboard at [MebaneWeather.com](https://www.stewalexander.com/weather.html):
@@ -119,6 +138,8 @@ Screenshot of the live dashboard at [MebaneWeather.com](https://www.stewalexande
 **Severe Weather Dashboard:** Copy all of `Severe-Weather-Dashboard.html` into an Embed Code element → Publish.
 
 **Forecast Widget:** Copy all of `MebaneWeather Forecast.css` into an Embed Code element → Publish. (File is HTML + CSS + JS; no `.css` build step.)
+
+**Live Radar Map:** Copy all of `LiveRadarMap.css` into an Embed Code element → Publish. (File is HTML + CSS + JS; no build step. Requires Leaflet from unpkg in the embed.)
 
 **Other platforms:** Use an HTML/embed block (WordPress, Squarespace, Wix, static HTML, GitHub Pages).
 
@@ -234,7 +255,7 @@ Comprehensive inline documentation in docstring style: File headers, JSDoc-style
 
 **License**: MIT License - see [LICENSE](LICENSE) file for details
 
-**Project Stats**: Created June 2025 • Last Updated February 2025 • Location: Mebane, NC (Alamance County, Zone NCZ023) • NWS Office: Raleigh, NC (RAH) • Maintainer: [@StewAlexander-com](https://github.com/StewAlexander-com)
+**Project Stats**: Created June 2025 • Last Updated March 2025 • Location: Mebane, NC (Alamance County, Zone NCZ023) • NWS Office: Raleigh, NC (RAH) • Maintainer: [@StewAlexander-com](https://github.com/StewAlexander-com)
 
 **Acknowledgments**: NOAA/National Weather Service, Storm Prediction Center, Weebly Platform
 
