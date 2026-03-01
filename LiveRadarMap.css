@@ -24,6 +24,7 @@
         <div id="loading-indicator">
             <div>Initializing Weather Radar...</div>
         </div>
+        <button type="button" id="radar-fullscreen-btn" aria-label="Full screen">⛶ Full screen</button>
     </div>
 </div>
 </div>
@@ -48,6 +49,13 @@
 #radar-retry-btn { min-height: 44px; padding: 8px 16px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8125rem; margin-left: 6px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
 #map-container { position: relative; width: 100%; min-height: 220px; height: clamp(220px, 45vmin, 320px); }
 #loading-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10; font-size: clamp(0.875rem, 2.5vw, 1rem); color: #666; }
+#radar-fullscreen-btn { display: none; position: absolute; bottom: 8px; left: 8px; z-index: 600; min-height: 36px; min-width: 44px; padding: 6px 10px; font-size: clamp(0.6875rem, 2vw, 0.75rem); background: rgba(255,255,255,0.95); border: 1px solid #ccc; border-radius: 4px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#radar-fullscreen-btn.mw-fs-available { display: block; }
+#radar-fullscreen-btn:hover { background: #fff; }
+#radar-fullscreen-btn:focus { outline: 2px solid #007bff; outline-offset: 2px; }
+/* Fullscreen = map container only (like iframe fullscreen: browser gives it full viewport, no black band) */
+#map-container:fullscreen, #map-container:-webkit-full-screen, #map-container:-moz-full-screen, #map-container:-ms-fullscreen { width: 100%; height: 100%; background: #fff; }
+#map-container.mw-map-fullscreen-fallback { position: fixed; inset: 0; z-index: 99999; width: 100%; height: 100%; background: #fff; }
 @media (max-width: 480px) {
     .mw-radar-wrap { padding: 0 6px; }
     .radar-buttons { gap: 8px; }
@@ -61,6 +69,12 @@
 
 <script>
 // MebaneWeather Live Radar - HA/resilient (cache, retries + backoff, timeout, offline, in-flight guard)
+//
+// HA & additive features: Core (loadRadarData, processRadarFrames, showFrame, play/zoom) must stay resilient.
+// Add new features without affecting current functionality: run them in a separate scope (e.g. IIFE), wrap in
+// try/catch, guard DOM/API use, fail silently (no throw, no required console). Do not let new code depend on
+// or replace core; core must never depend on optional features.
+//
 var RADAR_API_URL = 'https://api.rainviewer.com/public/weather-maps.json';
 var CACHE_KEY = 'mw_radar_v1', CACHE_TTL = 600000;       /* 10 min */
 var REFRESH = 600000;                                    /* 10 min */
@@ -456,6 +470,124 @@ window.addEventListener('load', function() {
 window.addEventListener('resize', function() {
     if (map) setTimeout(function() { map.invalidateSize(); }, 200);
 });
+
+// Fullscreen toggle: fullscreen the map container only (like lightning iframe – browser gives it full viewport, no black band)
+(function() {
+    try {
+        var mapContainer = document.getElementById('map-container');
+        var btn = document.getElementById('radar-fullscreen-btn');
+        if (!mapContainer || !btn) return;
+        var api = mapContainer.requestFullscreen || mapContainer.webkitRequestFullscreen || mapContainer.mozRequestFullScreen || mapContainer.msRequestFullscreen;
+        if (!api) return;
+        btn.classList.add('mw-fs-available');
+        function doRadarRedraw() {
+            try {
+                if (typeof map === 'undefined' || !map) return;
+                if (typeof mapFrames === 'undefined' || !mapFrames || mapFrames.length === 0 || typeof showFrame !== 'function') return;
+                var pos = (typeof animationPosition !== 'undefined' && animationPosition >= 0 && animationPosition < mapFrames.length) ? animationPosition : (typeof lastPastFrameIndex !== 'undefined' && lastPastFrameIndex >= 0 ? lastPastFrameIndex : mapFrames.length - 1);
+                showFrame(pos);
+                var path = mapFrames[animationPosition] && mapFrames[animationPosition].path;
+                var layer = path && typeof radarLayers !== 'undefined' && radarLayers[path];
+                if (layer && map.hasLayer(layer)) {
+                    map.removeLayer(layer);
+                    map.addLayer(layer);
+                    if (typeof layer.redraw === 'function') layer.redraw();
+                }
+            } catch (e) {}
+        }
+        function refreshMapAndRadarInFullscreen() {
+            try {
+                if (typeof map === 'undefined' || !map) return;
+                map.invalidateSize();
+                setTimeout(function() {
+                    try {
+                        if (map) map.invalidateSize();
+                    } catch (e) {}
+                }, 100);
+                setTimeout(function() {
+                    try {
+                        if (typeof map !== 'undefined' && map) map.invalidateSize();
+                        doRadarRedraw();
+                    } catch (e) {}
+                }, 400);
+                setTimeout(function() {
+                    try {
+                        if (typeof map !== 'undefined' && map) map.invalidateSize();
+                        doRadarRedraw();
+                    } catch (e) {}
+                }, 900);
+                if (map && typeof map.once === 'function') {
+                    map.once('moveend', function() { doRadarRedraw(); });
+                }
+            } catch (e) {}
+        }
+        function isFullscreen() {
+            try {
+                var d = document;
+                return (d.fullscreenElement || d.webkitFullscreenElement || d.mozFullScreenElement || d.msFullscreenElement) === mapContainer || (mapContainer && mapContainer.classList && mapContainer.classList.contains('mw-map-fullscreen-fallback'));
+            } catch (e) { return false; }
+        }
+        function exitFullscreen() {
+            try {
+                var d = document;
+                if (d.fullscreenElement) d.exitFullscreen();
+                else if (d.webkitFullscreenElement) d.webkitExitFullscreen();
+                else if (d.mozFullScreenElement) d.mozCancelFullScreen();
+                else if (d.msFullscreenElement) d.msExitFullscreen();
+                if (mapContainer && mapContainer.classList) mapContainer.classList.remove('mw-map-fullscreen-fallback');
+                btn.textContent = '⛶ Full screen';
+                btn.setAttribute('aria-label', 'Full screen');
+                if (typeof map !== 'undefined' && map) setTimeout(function() { try { map.invalidateSize(); } catch (e) {} }, 150);
+            } catch (e) {}
+        }
+        function enterFullscreen() {
+            try {
+                var r = mapContainer.requestFullscreen || mapContainer.webkitRequestFullscreen || mapContainer.mozRequestFullScreen || mapContainer.msRequestFullscreen;
+                if (r) {
+                    r.call(mapContainer).then(function() {
+                        try {
+                            btn.textContent = '✕ Exit full screen';
+                            btn.setAttribute('aria-label', 'Exit full screen');
+                            setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 50);
+                        } catch (e) {}
+                    }).catch(function() {
+                        try {
+                            mapContainer.classList.add('mw-map-fullscreen-fallback');
+                            btn.textContent = '✕ Exit full screen';
+                            btn.setAttribute('aria-label', 'Exit full screen');
+                            setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 50);
+                        } catch (e) {}
+                    });
+                } else {
+                    mapContainer.classList.add('mw-map-fullscreen-fallback');
+                    btn.textContent = '✕ Exit full screen';
+                    btn.setAttribute('aria-label', 'Exit full screen');
+                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 50);
+                }
+            } catch (e) {}
+        }
+        function onFullscreenChange() {
+            try {
+                if (!isFullscreen()) {
+                    if (mapContainer && mapContainer.classList) mapContainer.classList.remove('mw-map-fullscreen-fallback');
+                    btn.textContent = '⛶ Full screen';
+                    btn.setAttribute('aria-label', 'Full screen');
+                    if (typeof map !== 'undefined' && map) setTimeout(function() { try { map.invalidateSize(); } catch (e) {} }, 150);
+                } else if ((document.fullscreenElement || document.webkitFullscreenElement) === mapContainer) {
+                    btn.textContent = '✕ Exit full screen';
+                    btn.setAttribute('aria-label', 'Exit full screen');
+                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 50);
+                }
+            } catch (e) {}
+        }
+        document.addEventListener('fullscreenchange', onFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', onFullscreenChange);
+        document.addEventListener('mozfullscreenchange', onFullscreenChange);
+        document.addEventListener('MSFullscreenChange', onFullscreenChange);
+        btn.addEventListener('click', function() { try { if (isFullscreen()) exitFullscreen(); else enterFullscreen(); } catch (e) {} });
+        document.addEventListener('keydown', function(e) { try { if (e.key === 'Escape' && isFullscreen()) exitFullscreen(); } catch (e) {} });
+    } catch (e) {}
+})();
 
 // Refresh on reconnect
 if (typeof window !== 'undefined') {
