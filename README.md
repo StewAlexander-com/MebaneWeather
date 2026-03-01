@@ -163,12 +163,13 @@ const LOCATION_CONFIG = {
 | `LON` | Longitude | `-79.2670` |
 | `NWS_FORECAST_URL` | NWS point forecast (temp, 7-day, alerts) | `https://forecast.weather.gov/MapClick.php?lat=36.0957&lon=-79.2670` |
 | `SPC_OUTLOOK_URL` | SPC Day 1 convective outlook | `https://www.spc.noaa.gov/products/outlook/day1otlk.html` (same for all US) |
+| `NWS_OFFICE` | NWS office for AFD (Current Conditions sentence and "From the NWS:" link) | `'RAH'` (Raleigh); find yours at [weather.gov/organization](https://www.weather.gov/organization.php) |
 
 3. Build your NWS URL: go to [forecast.weather.gov/MapClick.php](https://forecast.weather.gov/MapClick.php), click your location, copy the URL (it will contain `lat=` and `lon=`).
 4. Replace the footer links: in the static HTML footer, search for `lat=36.0957` and `lon=-79.2670` and replace with your coordinates in both NWS href URLs.
 5. Save and paste the full file into your Embed Code element.
 
-Alerts and SPC are fetched by point (`LAT`,`LON`); no zone or office IDs needed for the Forecast widget.
+Alerts and SPC are fetched by point (`LAT`,`LON`). Set `NWS_OFFICE` so the AFD summary and "From the NWS:" link use your area's forecast discussion.
 
 **Other Customizations:**
 
