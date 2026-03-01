@@ -15,7 +15,7 @@
 |-----------|------|-------------|
 | **Severe Weather Dashboard** | `Severe-Weather-Dashboard.html` | SPC threat levels, NWS alerts, AFD summarization, winter weather detection |
 | **Forecast Widget** | `MebaneWeather Forecast.css` | Current conditions (Open-Meteo + NWS AFD blend), 7-day forecast, NWS alerts, SPC Day 1; resilient, cache + retries, "From the NWS:" link to AFD |
-| **Live Radar Map** | `LiveRadarMap.css` | RainViewer precipitation radar (past + nowcast), Play/Pause animation, speed slider; HA/resilient; shows latest frame on load and when zooming; 7‑min watchdog when tab visible |
+| **Live Radar Map** | `LiveRadarMap.css` | RainViewer precipitation radar (past + nowcast), Play/Pause animation, speed slider; fullscreen on desktop and smartphones (iOS CSS fallback); HA/resilient; 7‑min watchdog when tab visible |
 
 Both are self-contained HTML for Weebly Embed Code (or any platform that accepts embedded HTML).
 
@@ -33,12 +33,13 @@ Both are self-contained HTML for Weebly Embed Code (or any platform that accepts
 | 🌐 **Weebly Optimized** | Self-contained HTML for Embed Code | ✅ Active |
 | 📶 **Resilience (Forecast)** | Exponential backoff, jitter, cache fallback, offline handling, per-attempt timeout growth | ✅ Active |
 | 📋 **Audit Trail (Forecast)** | Footer data sources; Live vs Cached + age in status bar; verify-at-source links | ✅ Active |
-| 🗺️ **Live Radar (RainViewer)** | Past + nowcast frames, latest observation on load; zoom/pan reloads tiles so radar shows in expanded view without pressing Play; 7‑min watchdog when tab visible (update only if newer frame) | ✅ Active |
+| 🗺️ **Live Radar (RainViewer)** | Past + nowcast frames, latest on load; zoom/pan reloads tiles; fullscreen on desktop and smartphones (iPhone/iPad use CSS fallback); 7‑min watchdog when tab visible | ✅ Active |
 
 ### 📅 Recent Updates
 
 **March 2025** – Live Radar Map (`LiveRadarMap.css`):
 - RainViewer API; single responsive embed (desktop + mobile). Shows **latest radar frame** (closest to current time = last past frame) on load and after data refresh.
+- **Fullscreen:** Desktop uses the Fullscreen API; smartphones (iPhone/iPad) get a fullscreen option via CSS fallback (no API support for divs on iOS), with safe-area insets for notched devices.
 - **Zoom/pan:** On `zoomend`/`moveend`, the current radar layer is removed and re-added so Leaflet requests tiles for the new view; radar appears in the expanded area (e.g. Wichita, KS) **without pressing Play**.
 - **HA/resilience:** sessionStorage cache (10 min TTL), timeout fetch, 3 retries with exponential backoff + jitter, in-flight guard, min-interval (90 s) when cache exists, offline → cache or message, Live vs Cached + age, Retry button, `online` refresh. Play path: guards (map/frames), timer hygiene, try/catch in `showFrame` and animation tick; only valid frames (with `path`); preload never removes the currently displayed frame.
 - **Watchdog:** When the tab is visible, every 7 min a background fetch runs and the map updates **only if** the API has a newer latest frame than the one displayed (no flash when nothing new). When the tab is hidden, the watchdog is cleared.
