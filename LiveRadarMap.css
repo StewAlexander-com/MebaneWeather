@@ -165,6 +165,9 @@ function initializeWeatherRadar() {
         .bindPopup('Mebane, NC')
         .openPopup();
     map.on('zoomend moveend', function() {
+        var mc = document.getElementById('map-container');
+        var inFullscreen = mc && ((document.fullscreenElement || document.webkitFullscreenElement) === mc || mc.classList.contains('mw-map-fullscreen-fallback'));
+        map.invalidateSize();
         if (mapFrames && mapFrames.length > 0 && apiData && apiData.host) {
             var pos = (animationPosition >= 0 && animationPosition < mapFrames.length) ? animationPosition : (lastPastFrameIndex >= 0 ? lastPastFrameIndex : mapFrames.length - 1);
             if (showFrame(pos)) {
@@ -173,9 +176,11 @@ function initializeWeatherRadar() {
                 if (layer && map.hasLayer(layer)) {
                     map.removeLayer(layer);
                     map.addLayer(layer);
+                    if (typeof layer.redraw === 'function') layer.redraw();
                 }
             }
         }
+        if (inFullscreen && map && typeof map.once === 'function' && typeof window !== 'undefined' && window.mwRadarRefreshFullscreen) map.once('moveend', function() { window.mwRadarRefreshFullscreen(); });
     });
     // After layout stabilizes (responsive container), ensure map size is correct and show latest radar frame
     setTimeout(function() {
@@ -484,7 +489,7 @@ window.addEventListener('resize', function() {
         var api = !isIOS && (mapContainer.requestFullscreen || mapContainer.webkitRequestFullscreen || mapContainer.mozRequestFullScreen || mapContainer.msRequestFullscreen);
         if (!api && !isIOS) return;
         btn.classList.add('mw-fs-available');
-        function doRadarRedraw() {
+        function doRadarRedraw(forceTileReset) {
             try {
                 if (typeof map === 'undefined' || !map) return;
                 if (typeof mapFrames === 'undefined' || !mapFrames || mapFrames.length === 0 || typeof showFrame !== 'function') return;
@@ -494,34 +499,53 @@ window.addEventListener('resize', function() {
                 var layer = path && typeof radarLayers !== 'undefined' && radarLayers[path];
                 if (layer && map.hasLayer(layer)) {
                     map.removeLayer(layer);
+                    if (forceTileReset && typeof layer._reset === 'function') layer._reset();
                     map.addLayer(layer);
                     if (typeof layer.redraw === 'function') layer.redraw();
+                    if (forceTileReset && typeof layer._update === 'function') setTimeout(function() { try { if (map && map.hasLayer(layer)) layer._update(); } catch (e) {} }, 60);
                 }
             } catch (e) {}
         }
+        var refreshTimeouts = [];
         function refreshMapAndRadarInFullscreen() {
             try {
+                var i;
+                for (i = 0; i < refreshTimeouts.length; i++) clearTimeout(refreshTimeouts[i]);
+                refreshTimeouts = [];
                 if (typeof map === 'undefined' || !map) return;
+                doRadarRedraw(false);
                 map.invalidateSize();
-                setTimeout(function() {
+                refreshTimeouts.push(setTimeout(function() {
+                    try {
+                        if (map) map.invalidateSize();
+                        doRadarRedraw(true);
+                    } catch (e) {}
+                }, 80));
+                refreshTimeouts.push(setTimeout(function() {
                     try {
                         if (map) map.invalidateSize();
                     } catch (e) {}
-                }, 100);
-                setTimeout(function() {
+                }, 150));
+                refreshTimeouts.push(setTimeout(function() {
                     try {
                         if (typeof map !== 'undefined' && map) map.invalidateSize();
-                        doRadarRedraw();
+                        doRadarRedraw(true);
                     } catch (e) {}
-                }, 400);
-                setTimeout(function() {
+                }, 450));
+                refreshTimeouts.push(setTimeout(function() {
                     try {
                         if (typeof map !== 'undefined' && map) map.invalidateSize();
-                        doRadarRedraw();
+                        doRadarRedraw(true);
                     } catch (e) {}
-                }, 900);
+                }, 1000));
+                refreshTimeouts.push(setTimeout(function() {
+                    try {
+                        if (typeof map !== 'undefined' && map) map.invalidateSize();
+                        doRadarRedraw(true);
+                    } catch (e) {}
+                }, 1800));
                 if (map && typeof map.once === 'function') {
-                    map.once('moveend', function() { doRadarRedraw(); });
+                    map.once('moveend', function() { doRadarRedraw(true); });
                 }
             } catch (e) {}
         }
@@ -550,7 +574,8 @@ window.addEventListener('resize', function() {
                     mapContainer.classList.add('mw-map-fullscreen-fallback');
                     btn.textContent = '✕ Exit full screen';
                     btn.setAttribute('aria-label', 'Exit full screen');
-                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 50);
+                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
+                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
                     return;
                 }
                 var r = mapContainer.requestFullscreen || mapContainer.webkitRequestFullscreen || mapContainer.mozRequestFullScreen || mapContainer.msRequestFullscreen;
@@ -559,21 +584,24 @@ window.addEventListener('resize', function() {
                         try {
                             btn.textContent = '✕ Exit full screen';
                             btn.setAttribute('aria-label', 'Exit full screen');
-                            setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 50);
+                            setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
+                            setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
                         } catch (e) {}
                     }).catch(function() {
                         try {
                             mapContainer.classList.add('mw-map-fullscreen-fallback');
                             btn.textContent = '✕ Exit full screen';
                             btn.setAttribute('aria-label', 'Exit full screen');
-                            setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 50);
+                            setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
+                            setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
                         } catch (e) {}
                     });
                 } else {
                     mapContainer.classList.add('mw-map-fullscreen-fallback');
                     btn.textContent = '✕ Exit full screen';
                     btn.setAttribute('aria-label', 'Exit full screen');
-                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 50);
+                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
+                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
                 }
             } catch (e) {}
         }
@@ -587,7 +615,8 @@ window.addEventListener('resize', function() {
                 } else if ((document.fullscreenElement || document.webkitFullscreenElement) === mapContainer) {
                     btn.textContent = '✕ Exit full screen';
                     btn.setAttribute('aria-label', 'Exit full screen');
-                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 50);
+                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
+                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
                 }
             } catch (e) {}
         }
@@ -597,6 +626,7 @@ window.addEventListener('resize', function() {
         document.addEventListener('MSFullscreenChange', onFullscreenChange);
         btn.addEventListener('click', function() { try { if (isFullscreen()) exitFullscreen(); else enterFullscreen(); } catch (e) {} });
         document.addEventListener('keydown', function(e) { try { if (e.key === 'Escape' && isFullscreen()) exitFullscreen(); } catch (e) {} });
+        if (typeof window !== 'undefined') window.mwRadarRefreshFullscreen = refreshMapAndRadarInFullscreen;
     } catch (e) {}
 })();
 
