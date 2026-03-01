@@ -25,7 +25,7 @@ Both are self-contained HTML for Weebly Embed Code (or any platform that accepts
 | ⚡ **SPC Threat Integration** | Real-time Storm Prediction Center risk levels | ✅ Active |
 | 🎯 **Location-Specific** | Mebane, NC (36.096°N, -79.267°W); configurable for other locations | ✅ Active |
 | 📱 **Mobile Responsive** | Optimized for all device sizes | ✅ Active |
-| 🔄 **Auto-Refresh** | Severe dashboard: 15 min + 3 min alert polling. Forecast: 5 min + 3 min alerts/SPC | ✅ Active |
+| 🔄 **Auto-Refresh** | Severe dashboard: 15 min + 3 min alert polling. Forecast: 4 min weather, 3 min alerts/SPC; skips fetch if one started recently (reduces API load) | ✅ Active |
 | 🖱️ **Interactive Panels** | Clickable sections linking to NWS/SPC sources | ✅ Active |
 | 📝 **AFD Summarization** | Severe: bullet highlights. Forecast: one-sentence NWS AFD in Current Conditions with "From the NWS:" link | ✅ Active |
 | ❄️ **Winter Weather Detection** | Severe dashboard: NWS alerts + AFD text | ✅ Active |
@@ -102,7 +102,7 @@ The dashboard uses a four-tier threat classification system with priority-based 
 
 **Current Conditions card:** Meteo line (temp, condition, feels like, wind); line break; optional "From the NWS:" (link to AFD) + one-sentence AFD summary (smaller font). Summary is trimmed so it never ends in "and", "to", "or", or lone adjectives. AFD is best-effort (cache 30 min, retries with exponential backoff); UI paints immediately, then enhances when AFD is ready.
 
-**Update cycle:** Main weather 5 min (`REFRESH` 300000); NWS/SPC 3 min (`ALERTS_REFRESH_MS` 180000); visibility and `online` event trigger refresh.
+**Update cycle:** Main weather 4 min (`REFRESH` 240000); NWS/SPC 3 min (`ALERTS_REFRESH_MS` 180000). No new fetch if one started in the last 1.5 min (weather: when cache exists; alerts: always). Visibility and `online` trigger refresh.
 
 **Resilience:** sessionStorage cache (weather 2 h, NWS 10 min, SPC 30 min, AFD 30 min); retries with exponential backoff + jitter for weather, NWS, SPC, and AFD; per-attempt timeout growth (10s → 25s cap); offline skip + refresh on `online`; in-flight guard.
 
@@ -174,7 +174,7 @@ Alerts and SPC are fetched by point (`LAT`,`LON`). Set `NWS_OFFICE` so the AFD s
 **Other Customizations:**
 
 - **Severe dashboard**: `updateInterval` = 900000 (15 min), alert polling = 180000 (3 min). Visual styling: inline CSS in the file (e.g. `#1a1a1a`, `#4fc3f7`). Advanced: `updateLocalAlertsAndGetStatus()`, `updateForecastDiscussion()`.
-- **Forecast widget**: In the script, `REFRESH` = 300000 (5 min main weather), `ALERTS_REFRESH_MS` = 180000 (3 min NWS/SPC). Timeouts: `TIMEOUT` = 10000, `TIMEOUT_MAX_MS` = 25000. Cache TTLs: `CACHE_TTL` = 7200000 (2 h), `NWS_CACHE_TTL` = 600000 (10 min), `SPC_CACHE_TTL` = 1800000 (30 min), `AFD_CACHE_TTL` = 1800000 (30 min). AFD: `NWS_OFFICE` = 'RAH' (change for other locations); `NWS_AFD_URL` is derived; AFD retries use exponential backoff (`AFD_BACKOFF_BASE_MS`, `AFD_BACKOFF_MAX_MS`).
+- **Forecast widget**: In the script, `REFRESH` = 240000 (4 min main weather), `ALERTS_REFRESH_MS` = 180000 (3 min NWS/SPC). `MIN_WEATHER_INTERVAL_MS` / `MIN_ALERTS_INTERVAL_MS` = 90000 (1.5 min) prevent starting a new fetch too soon after the last one to stay within API tolerance and reduce duplicate lookups. Timeouts: `TIMEOUT` = 10000, `TIMEOUT_MAX_MS` = 25000. Cache TTLs: `CACHE_TTL` = 7200000 (2 h), `NWS_CACHE_TTL` = 600000 (10 min), `SPC_CACHE_TTL` = 1800000 (30 min), `AFD_CACHE_TTL` = 1800000 (30 min). AFD: `NWS_OFFICE` = 'RAH' (change for other locations); `NWS_AFD_URL` is derived; AFD retries use exponential backoff (`AFD_BACKOFF_BASE_MS`, `AFD_BACKOFF_MAX_MS`).
 
 ## 🔍 Troubleshooting
 
@@ -187,7 +187,7 @@ Alerts and SPC are fetched by point (`LAT`,`LON`). Set `NWS_OFFICE` so the AFD s
 | "Alert system temporarily unavailable" (Severe) | Zone → statewide fallback; check network. |
 | Forecast shows "Cached data" (Forecast) | Live fetch failed; data from sessionStorage. NWS/SPC still refresh every 3 min. Retry or check network. |
 | Not responsive on mobile | Check responsive breakpoints; both components use mobile overrides. |
-| Alerts not updating quickly | Severe: 3 min polling (180000). Forecast: 3 min (ALERTS_REFRESH_MS). |
+| Alerts not updating quickly | Severe: 3 min polling (180000). Forecast: 3 min (ALERTS_REFRESH_MS 180000); minimum 1.5 min between alert fetch starts. |
 | "No significant weather" in AFD (Severe) | API then HTML fallback; scoring needs specific keywords. Check console. |
 
 ### Error Handling & Resilience
