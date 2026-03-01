@@ -1,0 +1,952 @@
+<!-- Weebly Embed Code: paste this entire file into an Embed Code element. No DOCTYPE/html/body needed. -->
+<div class="custom-forecast7-widget-container">
+  <!-- Header Bar matching Rain Accumulation Map style -->
+  <div class="forecast7-header">
+    <h3>MebaneWeather Forecast - Local Area</h3>
+    <p class="forecast7-subtitle">7-day weather forecast updated every 6 hours</p>
+  </div>
+
+  <!-- Weather Widget - Open-Meteo + NWS + SPC (high availability) -->
+  <div class="forecast7-widget-wrapper" id="forecast7-wrapper">
+<style>
+  #mw-widget {
+    --mw-bg:    #0f172a; --mw-bg2: #1e293b; --mw-bg3: #334155;
+    --mw-t1:    #f1f5f9; --mw-t2:  #cbd5e1; --mw-t3:  #94a3b8;
+    --mw-acc:   #38bdf8; --mw-acc2:#0ea5e9;
+    --mw-warn:  #fbbf24; --mw-err: #ef4444; --mw-ok: #10b981;
+    --mw-r: 12px; --mw-xs:8px; --mw-sm:12px; --mw-md:16px; --mw-lg:24px;
+    --mw-sh:   0 4px 6px -1px rgba(0,0,0,.3),0 2px 4px -1px rgba(0,0,0,.2);
+    --mw-shlg: 0 10px 15px -3px rgba(0,0,0,.4),0 4px 6px -2px rgba(0,0,0,.3);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--mw-bg); color: var(--mw-t1); line-height: 1.6;
+    padding: var(--mw-md); border-radius: var(--mw-r);
+    -webkit-text-size-adjust: 100%;
+  }
+  @media (prefers-color-scheme: light) {
+    #mw-widget {
+      --mw-bg:#eef2f7;  --mw-bg2:#f1f5f9; --mw-bg3:#cbd5e1;
+      --mw-t1:#0f172a;  --mw-t2:#334155;  --mw-t3:#475569;
+      --mw-acc:#0284c7; --mw-acc2:#0369a1;
+      --mw-sh:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -1px rgba(0,0,0,.06);
+      --mw-shlg:0 10px 15px -3px rgba(0,0,0,.15),0 4px 6px -2px rgba(0,0,0,.1);
+    }
+  }
+  #mw-widget *, #mw-widget *::before, #mw-widget *::after {
+    box-sizing: border-box; margin: 0; padding: 0;
+  }
+
+  /* wrap */
+  #mw-widget .mw-w   { max-width: 1200px; margin: 0 auto; }
+
+  /* header */
+  #mw-widget .mw-hd     { text-align:center; margin-bottom:var(--mw-lg); animation:mwFade .5s ease-in; }
+  #mw-widget .mw-hd h1  { font-size:clamp(1.25rem,4vw,2.25rem); font-weight:700; margin-bottom:var(--mw-xs); color:var(--mw-t1); }
+  #mw-widget .mw-hd p   { color:var(--mw-t2); font-size:clamp(.8125rem,2vw,.9375rem); }
+
+  /* status bar */
+  #mw-widget .mw-sb     { display:flex; align-items:center; flex-wrap:wrap; gap:var(--mw-sm);
+                           margin-bottom:var(--mw-lg); padding:var(--mw-sm) var(--mw-md);
+                           background:var(--mw-bg2); border-radius:var(--mw-r); box-shadow:var(--mw-sh); }
+  #mw-widget .mw-dot    { width:8px; height:8px; border-radius:50%; background:var(--mw-ok);
+                           animation:mwPulse 2s ease-in-out infinite; flex-shrink:0; }
+  #mw-widget .mw-dot.loading { background:var(--mw-warn); }
+  #mw-widget .mw-dot.error   { background:var(--mw-err); animation:none; }
+  #mw-widget .mw-stxt   { font-size:.875rem; color:var(--mw-t2); }
+  #mw-widget .mw-upd    { font-size:.75rem; color:var(--mw-t3); margin-left:auto; }
+
+  /* stale data banner */
+  #mw-widget .mw-stale  { display:none; background:rgba(251,191,36,.08); border:1px solid var(--mw-warn);
+                           border-radius:var(--mw-r); padding:var(--mw-xs) var(--mw-md);
+                           font-size:.8125rem; color:var(--mw-warn); text-align:center;
+                           margin-bottom:var(--mw-md); }
+  #mw-widget .mw-stale.mw-on { display:block; }
+
+  /* NWS alert (active) */
+  #mw-widget .mw-nws    { background:linear-gradient(135deg,rgba(239,68,68,.12),rgba(239,68,68,.05));
+                           border:2px solid var(--mw-err); border-radius:var(--mw-r);
+                           padding:var(--mw-md) var(--mw-lg); margin-bottom:var(--mw-lg);
+                           animation:mwSlideD .5s ease-out; }
+  #mw-widget .mw-nws.mw-hide { display:none; }
+  #mw-widget .mw-nws-ok { background:rgba(16,185,129,.07); border:1px solid var(--mw-ok);
+                           border-radius:var(--mw-r); padding:var(--mw-sm) var(--mw-lg);
+                           margin-bottom:var(--mw-md); display:flex; align-items:center;
+                           gap:var(--mw-sm); font-size:.875rem; color:var(--mw-ok); }
+  #mw-widget .mw-nws-ok.mw-hide { display:none; }
+  #mw-widget .mw-nws-hd { display:flex; align-items:center; gap:var(--mw-sm); margin-bottom:var(--mw-sm); }
+  #mw-widget .mw-nws-ic { font-size:1.5rem; line-height:1; }
+  #mw-widget .mw-nws-tt { font-size:1.0625rem; font-weight:700; color:var(--mw-err); }
+  #mw-widget .mw-nws-bd { font-size:.9375rem; color:var(--mw-t1); line-height:1.6; }
+
+  /* SPC outlook bar — critical for severe weather; high-visibility and touch-friendly */
+  #mw-widget .mw-spc    { display:flex; align-items:center; gap:var(--mw-md); flex-wrap:wrap;
+                           border-radius:var(--mw-r); padding:var(--mw-md) var(--mw-lg);
+                           margin-bottom:var(--mw-lg); box-shadow:var(--mw-sh);
+                           transition:background .3s ease, border .3s ease;
+                           min-height:44px; }
+  #mw-widget .mw-spc.mw-hide { display:none; }
+  #mw-widget .mw-spc-bdg { font-size:1.125rem; font-weight:800; padding:6px var(--mw-md);
+                             border-radius:8px; letter-spacing:1px; white-space:nowrap;
+                             min-height:44px; display:flex; align-items:center; }
+  #mw-widget .mw-spc-inf h3 { font-size:.9375rem; font-weight:700; margin-bottom:2px; }
+  #mw-widget .mw-spc-inf p  { font-size:.8125rem; color:var(--mw-t2); }
+  #mw-widget .mw-spc-inf a  { text-decoration:underline; opacity:.85; }
+  #mw-widget .mw-spc-cached { font-size:.75rem; color:var(--mw-t3); margin-top:4px; }
+
+  /* main cards grid — 1→2→3 col breakpoints */
+  /* Cards grid: 1 col on small screens, 2 cols from 560px up (only 2 cards — avoids desktop whitespace) */
+  #mw-widget .mw-grid   { display:grid; grid-template-columns:1fr; gap:var(--mw-md); margin-bottom:var(--mw-lg); }
+  @media (min-width:560px) { #mw-widget .mw-grid { grid-template-columns:repeat(2,1fr); } }
+
+  /* card */
+  #mw-widget .mw-card   { background:var(--mw-bg2); border-radius:var(--mw-r); padding:var(--mw-lg);
+                           box-shadow:var(--mw-sh); animation:mwSlideU .5s ease-out;
+                           transition:transform .2s ease, box-shadow .2s ease; }
+  #mw-widget .mw-card:hover { transform:translateY(-3px); box-shadow:var(--mw-shlg); }
+  #mw-widget a.mw-card-link { display:block; color:inherit; text-decoration:none; cursor:pointer;
+                               -webkit-tap-highlight-color:transparent; }
+  #mw-widget a.mw-card-link:focus { outline:2px solid var(--mw-acc); outline-offset:2px; }
+  #mw-widget .mw-src     { font-size:.6875rem; color:var(--mw-t3); margin-top:var(--mw-sm);
+                           padding-top:var(--mw-xs); border-top:1px solid var(--mw-bg3); }
+  #mw-widget .mw-src-link, #mw-widget .mw-nws-ok a { color:var(--mw-acc); text-decoration:underline; }
+  #mw-widget .mw-src-link:hover, #mw-widget .mw-nws-ok a:hover { color:var(--mw-acc2); }
+  #mw-widget .mw-chd    { display:flex; align-items:center; justify-content:space-between;
+                           margin-bottom:var(--mw-md); padding-bottom:var(--mw-sm);
+                           border-bottom:2px solid var(--mw-bg3); }
+  #mw-widget .mw-ctt    { font-size:1rem; font-weight:600; color:var(--mw-t1); }
+  #mw-widget .mw-wxi    { font-size:2rem; line-height:1; }
+  #mw-widget .mw-tmp    { font-size:clamp(2.25rem,7vw,3.75rem); font-weight:700; color:var(--mw-acc);
+                           line-height:1; margin-bottom:var(--mw-sm); }
+  #mw-widget .mw-cnd    { font-size:1rem; color:var(--mw-t2); text-transform:capitalize;
+                           margin-bottom:var(--mw-sm); }
+  #mw-widget .mw-cnd-afd     { font-size:.8125rem; color:var(--mw-t2); margin-top:var(--mw-xs); text-transform:none; }
+  #mw-widget .mw-cnd-afd:empty { display:none; }
+  #mw-widget .mw-cnd-afd-link { color:var(--mw-acc); text-decoration:underline; }
+  #mw-widget .mw-cnd-afd-link:hover { color:var(--mw-acc2); }
+  #mw-widget .mw-srss   { font-size:.8125rem; color:var(--mw-t3); display:flex;
+                           gap:var(--mw-md); flex-wrap:wrap; }
+
+  /* detail 2-col grid */
+  #mw-widget .mw-dg     { display:grid; grid-template-columns:repeat(2,1fr); gap:var(--mw-sm); }
+  #mw-widget .mw-di     { display:flex; flex-direction:column; padding:var(--mw-sm);
+                           background:var(--mw-bg); border-radius:8px; min-height:44px; }
+  #mw-widget .mw-dl     { font-size:.6875rem; color:var(--mw-t3); text-transform:uppercase;
+                           letter-spacing:.5px; margin-bottom:2px; }
+  #mw-widget .mw-dv     { font-size:.9375rem; font-weight:600; color:var(--mw-t1); }
+
+  /* UV color tiers */
+  #mw-widget .uv-lo { color:#22c55e; }
+  #mw-widget .uv-mo { color:#fbbf24; }
+  #mw-widget .uv-hi { color:#f97316; }
+  #mw-widget .uv-vh { color:#ef4444; }
+  #mw-widget .uv-ex { color:#a855f7; }
+
+  /* forecast */
+  #mw-widget .mw-fc     { background:var(--mw-bg2); border-radius:var(--mw-r); padding:var(--mw-lg);
+                           box-shadow:var(--mw-sh); margin-bottom:var(--mw-lg); }
+  #mw-widget a.mw-fc-link { display:block; color:inherit; text-decoration:none; cursor:pointer;
+                             -webkit-tap-highlight-color:transparent; }
+  #mw-widget a.mw-fc-link:hover { color:inherit; }
+  #mw-widget a.mw-fc-link:focus { outline:2px solid var(--mw-acc); outline-offset:2px; }
+  #mw-widget .mw-fc-tt  { font-size:1.125rem; font-weight:600; margin-bottom:var(--mw-md);
+                           color:var(--mw-t1); display:flex; align-items:baseline; gap:var(--mw-sm); flex-wrap:wrap; }
+  #mw-widget .mw-fc-sub { font-size:.75rem; color:var(--mw-t3); font-weight:400; }
+  #mw-widget .mw-fc-scr { overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:var(--mw-xs); }
+  #mw-widget .mw-fc-g   { display:grid; grid-template-columns:repeat(7,1fr); gap:var(--mw-sm);
+                           min-width:400px; }
+  #mw-widget .mw-fci    { background:var(--mw-bg); border-radius:8px; padding:var(--mw-sm) 6px;
+                           text-align:center; transition:transform .2s ease; min-height:44px; }
+  #mw-widget .mw-fci:hover { transform:scale(1.05); }
+  #mw-widget .mw-fcd    { font-size:.8125rem; font-weight:600; color:var(--mw-t2); margin-bottom:var(--mw-xs); }
+  #mw-widget .mw-fce    { font-size:1.5rem; margin:var(--mw-xs) 0; line-height:1; }
+  #mw-widget .mw-fchi   { font-size:1rem; font-weight:700; color:var(--mw-acc); }
+  #mw-widget .mw-fclo   { font-size:.8125rem; color:var(--mw-t3); }
+  #mw-widget .mw-fcp    { font-size:.75rem; color:#60a5fa; margin-top:4px; }
+  #mw-widget .mw-pb     { height:3px; border-radius:99px; background:var(--mw-bg3); margin-top:3px; overflow:hidden; }
+  #mw-widget .mw-pf     { height:100%; border-radius:99px; background:#60a5fa; transition:width .5s ease; }
+
+  /* error */
+  #mw-widget .mw-er     { background:var(--mw-bg2); border:2px solid var(--mw-err);
+                           border-radius:var(--mw-r); padding:var(--mw-lg); text-align:center; }
+  #mw-widget .mw-er h3  { color:var(--mw-err); margin-bottom:var(--mw-sm); font-size:1.0625rem; }
+  #mw-widget .mw-er p   { color:var(--mw-t2); font-size:.9375rem; }
+
+  /* buttons — iOS min touch 44px */
+  #mw-widget .mw-btn    { display:inline-flex; align-items:center; gap:6px;
+                           margin-top:var(--mw-md); padding:0 var(--mw-lg); height:44px;
+                           background:var(--mw-acc); color:#fff; border:none; border-radius:8px;
+                           font-size:1rem; font-weight:600; cursor:pointer;
+                           transition:background .2s ease, transform .2s ease;
+                           -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+  #mw-widget .mw-btn:hover  { background:var(--mw-acc2); transform:scale(1.04); }
+  #mw-widget .mw-btn:active { transform:scale(.97); }
+
+  /* skeleton shimmer */
+  #mw-widget .mw-sk     { background:linear-gradient(90deg,var(--mw-bg3) 25%,var(--mw-bg2) 50%,var(--mw-bg3) 75%);
+                           background-size:200% 100%; animation:mwShim 1.5s ease-in-out infinite;
+                           border-radius:8px; height:20px; margin-bottom:var(--mw-xs); }
+
+  /* footer — audit trail (single place; links to source data) */
+  #mw-widget .mw-ft        { text-align:center; padding:var(--mw-sm) var(--mw-md);
+                              color:var(--mw-t3); font-size:.625rem; border-top:1px solid var(--mw-bg3);
+                              margin-top:var(--mw-sm); line-height:1.4; }
+  #mw-widget .mw-ft a      { color:var(--mw-acc); text-decoration:underline; }
+  #mw-widget .mw-ft a:hover { color:var(--mw-acc2); }
+
+  /* mobile overrides */
+  @media (max-width:559px) {
+    #mw-widget               { padding:var(--mw-sm); }
+    #mw-widget .mw-card      { padding:var(--mw-md); }
+    #mw-widget .mw-fc        { padding:var(--mw-md); }
+    #mw-widget .mw-nws       { padding:var(--mw-md); }
+    #mw-widget .mw-spc       { padding:var(--mw-sm) var(--mw-md); }
+    #mw-widget .mw-upd       { margin-left:0; width:100%; }
+    #mw-widget .mw-tmp       { font-size:3.25rem; }
+  }
+
+  @keyframes mwFade   { from{opacity:0}              to{opacity:1} }
+  @keyframes mwSlideU { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes mwSlideD { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+  @keyframes mwPulse  { 0%,100%{opacity:1} 50%{opacity:.4} }
+  @keyframes mwShim   { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+</style>
+
+<div id="mw-widget">
+  <div class="mw-w">
+
+    <header class="mw-hd">
+      <h1>Mebane Weather Dashboard</h1>
+      <p>Real-time weather conditions for Mebane, North Carolina</p>
+    </header>
+
+    <div class="mw-sb">
+      <div class="mw-dot" id="mwDot"></div>
+      <span class="mw-stxt" id="mwStxt">Connecting…</span>
+      <span class="mw-upd"  id="mwUpd"></span>
+    </div>
+
+    <div class="mw-stale" id="mwStale"></div>
+
+    <div class="mw-nws mw-hide" id="mwNws">
+      <div class="mw-nws-hd">
+        <span class="mw-nws-ic" id="mwNwsIcon">⚠️</span>
+        <h3 class="mw-nws-tt"   id="mwNwsTitle">Weather Alert</h3>
+      </div>
+      <div class="mw-nws-bd" id="mwNwsBody"></div>
+    </div>
+
+    <div class="mw-nws-ok mw-hide" id="mwNwsOk"></div>
+
+    <!-- SPC Convective Outlook — always shown once fetched; critical for severe weather -->
+    <div class="mw-spc mw-hide" id="mwSpc"></div>
+
+    <div id="mwContent"></div>
+
+    <footer class="mw-ft" id="mwFooter" role="contentinfo">
+      Temp &amp; 7-day (widget data: Open-Meteo API): <a href="https://forecast.weather.gov/MapClick.php?lat=36.0957&amp;lon=-79.2670" target="_blank" rel="noopener noreferrer">NWS forecast</a> · Alerts: <a href="https://forecast.weather.gov/MapClick.php?lat=36.0957&amp;lon=-79.2670" target="_blank" rel="noopener noreferrer">NWS</a> · Convective: <a href="https://www.spc.noaa.gov/products/outlook/day1otlk.html" target="_blank" rel="noopener noreferrer">SPC</a>. Cards link to NWS/SPC.
+    </footer>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  var LAT = 36.0957, LON = -79.2670;
+  var NWS_FORECAST_URL = 'https://forecast.weather.gov/MapClick.php?lat=36.0957&lon=-79.2670';
+  var NWS_ALERTS_URL = NWS_FORECAST_URL;
+  var SPC_OUTLOOK_URL = 'https://www.spc.noaa.gov/products/outlook/day1otlk.html';
+  var OPEN_METEO_DOCS_URL = 'https://open-meteo.com/en/docs';
+  var REFRESH = 240000, TIMEOUT = 10000; /* 4 min weather: balances freshness with API limits (e.g. ~15/hour) */
+  var MIN_WEATHER_INTERVAL_MS = 90000;   /* don't start weather fetch if one started in last 1.5 min (have cache) */
+  var MIN_ALERTS_INTERVAL_MS = 90000;    /* don't start NWS/SPC if started in last 1.5 min; reduces duplicate lookups */
+  var retries = 0, MAX_RETRIES = 3;
+  var CACHE_KEY = 'mw_wx_v2', CACHE_TTL = 7200000;
+  var SPC_CACHE_KEY = 'mw_spc_v1', SPC_CACHE_TTL = 1800000; /* 30 min */
+  var SPC_MAX_RETRIES = 3;
+  var NWS_CACHE_KEY = 'mw_nws_v1', NWS_CACHE_TTL = 600000; /* 10 min */
+  var NWS_MAX_RETRIES = 3;
+  var NWS_OFFICE = 'RAH'; /* NWS office for AFD (Raleigh); change if using widget elsewhere */
+  var NWS_AFD_URL = 'https://forecast.weather.gov/product.php?site=' + NWS_OFFICE + '&issuedby=' + NWS_OFFICE + '&product=AFD&format=CI&version=1';
+  var AFD_CACHE_KEY = 'mw_afd_v1', AFD_CACHE_TTL = 1800000; /* 30 min */
+  var AFD_MAX_RETRIES = 2, AFD_BACKOFF_BASE_MS = 1500, AFD_BACKOFF_MAX_MS = 6000; /* retry with exponential backoff */
+  var AFD_UI_TIMEOUT_MS = 4000; /* don't block paint; enhance with AFD when ready */
+  var ALERTS_REFRESH_MS = 180000; /* 3 min NWS/SPC; stays under typical API tolerance (~20/hour each) */
+  var weatherInFlight = false;
+  var lastWeatherFetchStartTime = 0, lastAlertsFetchStartTime = 0;
+  var BACKOFF_BASE_MS = 2000, BACKOFF_MAX_MS = 20000;   /* weather: exponential backoff cap */
+  var NWS_BACKOFF_BASE_MS = 1200, NWS_BACKOFF_MAX_MS = 12000;
+  var SPC_BACKOFF_BASE_MS = 1500, SPC_BACKOFF_MAX_MS = 12000;
+  var TIMEOUT_RETRY_BOOST_MS = 3000, TIMEOUT_MAX_MS = 25000; /* per-attempt timeout growth */
+
+  function backoffDelay(attempt, baseMs, maxMs) {
+    var d = Math.min(baseMs * Math.pow(2, attempt), maxMs);
+    var jitter = 0.8 + Math.random() * 0.4;
+    return Math.round(d * jitter);
+  }
+  function retryTimeout(attempt) {
+    return Math.min(TIMEOUT + attempt * TIMEOUT_RETRY_BOOST_MS, TIMEOUT_MAX_MS);
+  }
+
+  function saveCache(data) {
+    try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ t: Date.now(), d: data })); } catch (e) {}
+  }
+  function loadCache() {
+    try {
+      var raw = sessionStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      if (Date.now() - obj.t < CACHE_TTL) return { data: obj.d, age: Date.now() - obj.t };
+    } catch (e) {}
+    return null;
+  }
+
+  function saveSpcCache(risk, label) {
+    try {
+      sessionStorage.setItem(SPC_CACHE_KEY, JSON.stringify({
+        t: Date.now(),
+        risk: risk,
+        label: label || (risk === false ? 'NO RISK' : (risk || 'UNKNOWN'))
+      }));
+    } catch (e) {}
+  }
+  function loadSpcCache() {
+    try {
+      var raw = sessionStorage.getItem(SPC_CACHE_KEY);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      if (Date.now() - obj.t < SPC_CACHE_TTL) return obj;
+    } catch (e) {}
+    return null;
+  }
+
+  function saveNwsCache(features) {
+    try {
+      sessionStorage.setItem(NWS_CACHE_KEY, JSON.stringify({ t: Date.now(), features: features || [] }));
+    } catch (e) {}
+  }
+  function loadNwsCache() {
+    try {
+      var raw = sessionStorage.getItem(NWS_CACHE_KEY);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      if (Date.now() - obj.t < NWS_CACHE_TTL) return obj;
+    } catch (e) {}
+    return null;
+  }
+  function loadAfdCache() {
+    try {
+      var raw = sessionStorage.getItem(AFD_CACHE_KEY);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      if (Date.now() - obj.t < AFD_CACHE_TTL) return obj.d;
+    } catch (e) {}
+    return null;
+  }
+  function saveAfdCache(text) {
+    try { sessionStorage.setItem(AFD_CACHE_KEY, JSON.stringify({ t: Date.now(), d: text })); } catch (e) {}
+  }
+
+  function setStatus(state, msg) {
+    var dot = document.getElementById('mwDot');
+    var upd = document.getElementById('mwUpd');
+    dot.className = 'mw-dot' + (state !== 'success' ? ' ' + state : '');
+    document.getElementById('mwStxt').textContent = msg;
+    if (state === 'success' && upd)
+      upd.textContent = 'Updated ' + new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    else if (upd && msg !== 'Cached data')
+      upd.textContent = '';
+  }
+  function showStale(ageMs) {
+    var m = Math.round(ageMs / 60000);
+    var el = document.getElementById('mwStale');
+    el.innerHTML = 'Showing cached data (' + (m < 60 ? m + ' min' : Math.round(m / 60) + ' hr') +
+      ' old) — live fetch failed. Verify current conditions at the source links below.';
+    el.classList.add('mw-on');
+    var upd = document.getElementById('mwUpd');
+    if (upd) upd.textContent = (m < 60 ? m + ' min ago' : Math.round(m / 60) + ' hr ago');
+  }
+  function hideStale() { document.getElementById('mwStale').classList.remove('mw-on'); }
+
+  function showError(msg) {
+    document.getElementById('mwContent').innerHTML =
+      '<div class="mw-er"><h3>Unable to Load Weather Data</h3><p>' + msg +
+      '</p><button class="mw-btn" id="mwRetry">Retry</button></div>';
+    document.getElementById('mwRetry').addEventListener('click', function () { retries = 0; fetchWeather(); });
+    setStatus('error', 'Connection failed');
+  }
+
+  function showLoading() {
+    document.getElementById('mwContent').innerHTML =
+      '<div class="mw-grid">' +
+        '<div class="mw-card"><div class="mw-sk" style="height:44px;width:55%"></div>' +
+          '<div class="mw-sk" style="height:72px;width:100%;margin-top:14px"></div>' +
+          '<div class="mw-sk" style="height:18px;width:60%;margin-top:10px"></div></div>' +
+        '<div class="mw-card"><div class="mw-sk" style="height:44px;width:55%"></div>' +
+          '<div class="mw-sk" style="height:130px;width:100%;margin-top:14px"></div></div>' +
+      '</div>';
+  }
+
+  function fetchT(url, timeoutMs) {
+    var t = timeoutMs != null ? timeoutMs : TIMEOUT;
+    var ctrl = new AbortController();
+    var tid = setTimeout(function () { ctrl.abort(); }, t);
+    return fetch(url, { signal: ctrl.signal })
+      .then(function (r) { clearTimeout(tid); return r; },
+            function (e) { clearTimeout(tid); throw e; });
+  }
+
+  function wxDesc(c) {
+    var d = { 0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',
+      45:'Foggy',48:'Rime fog',51:'Light drizzle',53:'Drizzle',55:'Dense drizzle',
+      61:'Slight rain',63:'Moderate rain',65:'Heavy rain',
+      71:'Slight snow',73:'Moderate snow',75:'Heavy snow',
+      80:'Rain showers',81:'Heavy showers',82:'Violent showers',
+      95:'Thunderstorm',96:'Thunderstorm w/ hail',99:'Severe thunderstorm' };
+    return d[c] || 'Unknown';
+  }
+  function wxIcon(c) {
+    if (c===0) return '\u2600\uFE0F'; if (c<=3) return '\u26C5\uFE0F'; if (c<=48) return '\uD83C\uDF2B\uFE0F';
+    if (c<=55) return '\uD83C\uDF26\uFE0F'; if (c<=65) return '\uD83C\uDF27\uFE0F'; if (c<=75) return '\u2744\uFE0F';
+    if (c<=82) return '\uD83C\uDF27\uFE0F'; if (c>=95) return '\u26C8\uFE0F'; return '\u2601\uFE0F';
+  }
+  function windDir(deg) {
+    return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW']
+      [Math.round(deg / 22.5) % 16];
+  }
+
+  /** One-sentence AFD summary (max 15 words) for Current Conditions. Returns null if none. */
+  function summarizeAFD(text) {
+    if (!text || typeof text !== 'string') return null;
+    var norm = text.replace(/\r\n|\r|\n/g, ' ');
+    var idx = norm.toUpperCase().indexOf('WATCHES/WARNINGS/ADVISORIES');
+    var trunc = idx !== -1 ? norm.slice(0, idx) : norm;
+    var clean = trunc.replace(/<[^>]*>/g, ' ')
+      .replace(/https?:\/\/\S+/gi, ' ')
+      .replace(/\b(?:www\.)?weather\.gov\b/gi, ' ')
+      .replace(/\s{2,}/g, ' ').trim();
+    var low = clean.toLowerCase();
+    var sentences = clean.split(/(?<=[.!?])\s+/).map(function(s){ return s.replace(/\s+/g, ' ').trim(); })
+      .filter(function(s){ return s.length >= 20 && s.length < 220; });
+    var hazard = ['tornado','damaging wind','gusts','large hail','severe thunderstorm','severe storms','flash flood','heavy rain','snow','freezing rain','ice','wind chill','heat advisory','dense fog'];
+    var severity = ['warning','watch','advisory','moderate','enhanced','slight','elevated','severe'];
+    var timeframe = ['today','tonight','this afternoon','this evening','overnight','morning','afternoon','evening'];
+    function score(s) {
+      var t = s.toLowerCase(), sc = 0;
+      hazard.forEach(function(k){ if (t.indexOf(k) !== -1) sc += 3; });
+      severity.forEach(function(k){ if (t.indexOf(k) !== -1) sc += 2; });
+      timeframe.forEach(function(k){ if (t.indexOf(k) !== -1) sc += 1; });
+      if (/no significant|quiet pattern|benign/.test(t)) sc -= 3;
+      return sc;
+    }
+    var best = null, bestSc = 2;
+    for (var i = 0; i < sentences.length; i++) {
+      var sc = score(sentences[i]);
+      if (sc > bestSc) { bestSc = sc; best = sentences[i]; }
+    }
+    if (!best) return null;
+    var parts = best.split(/\s+/).slice(0, 15);
+    var noEnd = { and:1, or:1, to:1, the:1, a:1, an:1, of:1, for:1, with:1, in:1, on:1, at:1, by:1, from:1, as:1, into:1, but:1, so:1, yet:1, if:1, when:1, that:1, which:1, southern:1, northern:1, eastern:1, western:1 };
+    while (parts.length > 1 && noEnd[parts[parts.length - 1].toLowerCase()]) parts.pop();
+    var words = parts.join(' ').trim();
+    if (!words) return null;
+    return words.slice(-1) === '.' ? words : words + '.';
+  }
+
+  function escapeHtml(s) {
+    if (typeof s !== 'string') return '';
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function getAFDProductTextOneAttempt() {
+    var indexUrl = 'https://api.weather.gov/products/types/AFD/locations/' + NWS_OFFICE + '?limit=1';
+    return fetchT(indexUrl, 8000).then(function(r){ return r.ok ? r.json() : Promise.reject(new Error('AFD index ' + r.status)); })
+      .then(function(idx) {
+        var features = idx && idx.features;
+        if (!features || features.length === 0) return Promise.reject(new Error('No AFD'));
+        var productUrl = features[0].id || features[0]['@id'] || (features[0].properties && (features[0].properties.id || features[0].properties['@id']));
+        if (!productUrl) return Promise.reject(new Error('No AFD URL'));
+        return fetchT(productUrl, 8000).then(function(r){ return r.ok ? r.json() : Promise.reject(new Error('AFD ' + r.status)); });
+      })
+      .then(function(prod) {
+        var txt = (prod && prod.productText) || (prod && prod.properties && prod.properties.productText) || '';
+        return txt;
+      })
+      .catch(function() {
+        return fetchT('https://forecast.weather.gov/product.php?site=' + NWS_OFFICE + '&issuedby=' + NWS_OFFICE + '&product=AFD&format=TXT', 10000)
+          .then(function(r){ return r.ok ? r.text() : Promise.reject(new Error('AFD fallback')); })
+          .then(function(html){ var m = html.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i); return (m && m[1]) ? m[1].trim() : ''; })
+          .catch(function(){ return ''; });
+      });
+  }
+
+  function getAFDProductText() {
+    function attempt(n) {
+      return getAFDProductTextOneAttempt().catch(function(e) {
+        if (n + 1 >= AFD_MAX_RETRIES) return Promise.reject(e);
+        var delay = backoffDelay(n, AFD_BACKOFF_BASE_MS, AFD_BACKOFF_MAX_MS);
+        return new Promise(function(res) { setTimeout(res, delay); }).then(function() { return attempt(n + 1); });
+      });
+    }
+    return attempt(0);
+  }
+
+  /** Resolves to one short AFD sentence or null. Uses cache; never blocks main paint. Offline uses cache only. */
+  function getAFDSummary() {
+    var cached = loadAfdCache();
+    if (cached) {
+      try { return Promise.resolve(summarizeAFD(cached) || null); } catch (e) { return Promise.resolve(null); }
+    }
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      var raw = loadAfdCache();
+      if (raw) { try { return Promise.resolve(summarizeAFD(raw) || null); } catch (e) {} }
+      return Promise.resolve(null);
+    }
+    var timeout = new Promise(function(_, rej){ setTimeout(function(){ rej(new Error('AFD timeout')); }, AFD_UI_TIMEOUT_MS); });
+    return Promise.race([ getAFDProductText(), timeout ])
+      .then(function(t){
+        if (typeof t !== 'string' || !t) return null;
+        try { saveAfdCache(t); return summarizeAFD(t) || null; } catch (e) { return null; }
+      })
+      .catch(function(){ return null; });
+  }
+
+  /** Updates only the Current Conditions blurb when AFD arrives (non-blocking enhance). */
+  function updateConditionBlurb(currentData, afd) {
+    if (!currentData) return;
+    var wrap = document.getElementById('mwContent');
+    if (!wrap) return;
+    var cnd = wrap.querySelector('.mw-cnd');
+    if (cnd) cnd.textContent = conditionMeteoLine(currentData);
+    var afdEl = wrap.querySelector('.mw-cnd-afd');
+    if (afdEl) afdEl.innerHTML = afd ? '<a href="' + NWS_AFD_URL + '" target="_blank" rel="noopener noreferrer" class="mw-cnd-afd-link">From the NWS:</a> ' + escapeHtml(afd) : '';
+  }
+
+  function uvClass(v) {
+    return v<=2?'uv-lo': v<=5?'uv-mo': v<=7?'uv-hi': v<=10?'uv-vh':'uv-ex';
+  }
+  function uvLabel(v) {
+    return v<=2?'Low': v<=5?'Moderate': v<=7?'High': v<=10?'Very High':'Extreme';
+  }
+
+  function fmtTime(iso) {
+    return new Date(iso).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
+  }
+
+  var SPC_ORDER = { TSTM:1, MRGL:2, SLGT:3, ENH:4, MDT:5, HIGH:6 };
+  var SPC_META  = {
+    TSTM: { txt:'General Thunder', bg:'rgba(100,200,100,.12)', border:'#66c966', fg:'#66c966', desc:'General thunderstorm activity possible' },
+    MRGL: { txt:'Marginal Risk',   bg:'rgba(102,163,102,.15)', border:'#66a366', fg:'#7dd87d', desc:'Isolated severe storms possible'      },
+    SLGT: { txt:'Slight Risk',     bg:'rgba(246,246,0,.10)',  border:'#d4d400', fg:'#f6f600', desc:'Scattered severe storms possible'      },
+    ENH:  { txt:'Enhanced Risk',   bg:'rgba(232,160,0,.12)',  border:'#e8a000', fg:'#ffbc40', desc:'Numerous severe storms likely'         },
+    MDT:  { txt:'Moderate Risk',   bg:'rgba(232,0,0,.15)',    border:'#e80000', fg:'#ff6060', desc:'Widespread severe storms likely'       },
+    HIGH: { txt:'High Risk',       bg:'rgba(255,0,255,.15)',  border:'#ff00ff', fg:'#ff80ff', desc:'Severe weather outbreak expected'      }
+  };
+
+  function pip(pt, ring) {
+    var x=pt[0], y=pt[1], inside=false;
+    for (var i=0, j=ring.length-1; i<ring.length; j=i++) {
+      var xi=ring[i][0], yi=ring[i][1], xj=ring[j][0], yj=ring[j][1];
+      if (((yi>y)!==(yj>y)) && (x < (xj-xi)*(y-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  }
+  function inGeom(pt, geom) {
+    if (!geom) return false;
+    if (geom.type==='Polygon') return pip(pt, geom.coordinates[0]);
+    if (geom.type==='MultiPolygon') return geom.coordinates.some(function(p){ return pip(pt,p[0]); });
+    return false;
+  }
+
+  /** Meteo-only line (temp + condition, feels like + wind). */
+  function conditionMeteoLine(c) {
+    var s1 = 'Currently ' + Math.round(c.temperature_2m) + '°F and ' + wxDesc(c.weather_code).toLowerCase() + '.';
+    var s2 = 'Feels like ' + Math.round(c.apparent_temperature) + '°F. Winds ' + Math.round(c.wind_speed_10m) + ' mph ' + windDir(c.wind_direction_10m) + '.';
+    return s1 + ' ' + s2;
+  }
+
+  function conditionBlurb(c, afdSummary) {
+    return conditionMeteoLine(c) + (afdSummary ? ' ' + afdSummary : '');
+  }
+
+  function displayWeather(data, afdSummary) {
+    var c = data.current, d = data.daily;
+    var uv  = (d.uv_index_max  && d.uv_index_max[0]  != null) ? d.uv_index_max[0]  : null;
+    var gst = (c.wind_gusts_10m != null) ? Math.round(c.wind_gusts_10m) : null;
+
+    var uvHtml = uv !== null
+      ? '<span class="' + uvClass(uv) + '">' + Math.round(uv) + ' – ' + uvLabel(uv) + '</span>'
+      : '<span style="color:var(--mw-t3)">N/A</span>';
+
+    var srssHtml = (d.sunrise && d.sunrise[0])
+      ? '<div class="mw-srss"><span>\uD83C\uDF05 ' + fmtTime(d.sunrise[0]) + '</span>' +
+        '<span>\uD83C\uDF07 ' + fmtTime(d.sunset[0])  + '</span></div>' : '';
+
+    var fc = d.time.slice(0,7).map(function(date, i) {
+      var day  = new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short' });
+      var prob = d.precipitation_probability_max ? (d.precipitation_probability_max[i] || 0) : 0;
+      return '<div class="mw-fci">' +
+        '<div class="mw-fcd">' + (i===0 ? 'Today' : day) + '</div>' +
+        '<div class="mw-fce">' + wxIcon(d.weather_code[i]) + '</div>' +
+        '<div class="mw-fchi">' + Math.round(d.temperature_2m_max[i]) + '°</div>' +
+        '<div class="mw-fclo">' + Math.round(d.temperature_2m_min[i]) + '°</div>' +
+        '<div class="mw-fcp">' + prob + '%</div>' +
+        '<div class="mw-pb"><div class="mw-pf" style="width:' + Math.min(prob,100) + '%"></div></div>' +
+        '</div>';
+    }).join('');
+
+    var meteoLine = conditionMeteoLine(c);
+    var afdBlock = (afdSummary ? '<div class="mw-cnd-afd"><a href="' + NWS_AFD_URL + '" target="_blank" rel="noopener noreferrer" class="mw-cnd-afd-link">From the NWS:</a> ' + escapeHtml(afdSummary) + '</div>' : '<div class="mw-cnd-afd"></div>');
+
+    document.getElementById('mwContent').innerHTML =
+      '<div class="mw-grid">' +
+        '<div class="mw-card">' +
+          '<a class="mw-card-link" href="' + NWS_FORECAST_URL + '" target="_blank" rel="noopener noreferrer" title="View temperature and conditions at NWS (Mebane, NC)">' +
+            '<div class="mw-chd"><span class="mw-ctt">Current Conditions</span>' +
+              '<span class="mw-wxi">' + wxIcon(c.weather_code) + '</span></div>' +
+            '<div class="mw-tmp">' + Math.round(c.temperature_2m) + '°F</div>' +
+            '<div class="mw-cnd">' + escapeHtml(meteoLine) + '</div>' +
+            srssHtml +
+          '</a>' +
+          afdBlock +
+        '</div>' +
+        '<a class="mw-card mw-card-link" href="' + NWS_FORECAST_URL + '" target="_blank" rel="noopener noreferrer" title="View details at NWS (Mebane, NC)">' +
+          '<div class="mw-chd"><span class="mw-ctt">Details</span>' +
+            '<span class="mw-wxi">\uD83D\uDCCA</span></div>' +
+          '<div class="mw-dg">' +
+            '<div class="mw-di"><span class="mw-dl">Feels Like</span>' +
+              '<span class="mw-dv">' + Math.round(c.apparent_temperature) + '°F</span></div>' +
+            '<div class="mw-di"><span class="mw-dl">Humidity</span>' +
+              '<span class="mw-dv">' + c.relative_humidity_2m + '%</span></div>' +
+            '<div class="mw-di"><span class="mw-dl">Wind</span>' +
+              '<span class="mw-dv">' + Math.round(c.wind_speed_10m) + ' mph ' + windDir(c.wind_direction_10m) + '</span></div>' +
+            '<div class="mw-di"><span class="mw-dl">Gusts</span>' +
+              '<span class="mw-dv">' + (gst !== null ? gst + ' mph' : 'N/A') + '</span></div>' +
+            '<div class="mw-di"><span class="mw-dl">Pressure</span>' +
+              '<span class="mw-dv">' + (c.pressure_msl * 0.02953).toFixed(2) + ' inHg</span></div>' +
+            '<div class="mw-di"><span class="mw-dl">UV Index</span>' +
+              '<span class="mw-dv">' + uvHtml + '</span></div>' +
+          '</div>' +
+        '</a>' +
+      '</div>' +
+      '<a class="mw-fc-link" href="' + NWS_FORECAST_URL + '" target="_blank" rel="noopener noreferrer" title="View 7-day forecast at NWS (Mebane, NC)">' +
+        '<div class="mw-fc">' +
+          '<div class="mw-fc-tt">7-Day Forecast' +
+            '<span class="mw-fc-sub">\uD83D\uDCA7 = rain probability</span></div>' +
+          '<div class="mw-fc-scr"><div class="mw-fc-g">' + fc + '</div></div>' +
+        '</div>' +
+      '</a>';
+  }
+
+  function displayNws(features, fetchFailed, opts) {
+    opts = opts || {};
+    var alertEl = document.getElementById('mwNws');
+    var okEl    = document.getElementById('mwNwsOk');
+    var cacheNote = opts.fromCache && opts.cacheAgeMs != null
+      ? ' (last known ' + Math.round(opts.cacheAgeMs / 60000) + ' min ago — refresh failed)'
+      : '';
+    var nwsVerify = '<a href="' + NWS_ALERTS_URL + '" target="_blank" rel="noopener noreferrer" class="mw-src-link">Verify at weather.gov</a>';
+    if (fetchFailed && !opts.fromCache) {
+      alertEl.classList.add('mw-hide');
+      okEl.innerHTML = 'NWS alert status unavailable. ' + nwsVerify;
+      okEl.style.color = 'var(--mw-t3)';
+      okEl.classList.remove('mw-hide');
+      return;
+    }
+    if (features && features.length > 0) {
+      var a   = features[0].properties;
+      var sev = (a.severity || '').toLowerCase();
+      document.getElementById('mwNwsIcon').textContent  = sev==='extreme' ? '\uD83D\uDEA8' : sev==='severe' ? '\u26A0\uFE0F' : '\u26A1\uFE0F';
+      document.getElementById('mwNwsTitle').textContent = a.event || 'Weather Alert';
+      document.getElementById('mwNwsBody').innerHTML    =
+        '<strong>' + (a.event || '') + '</strong><br>' + (a.headline || a.description || '') +
+        '<p class="mw-src">' + nwsVerify + '</p>';
+      alertEl.classList.remove('mw-hide');
+      okEl.classList.add('mw-hide');
+    } else {
+      alertEl.classList.add('mw-hide');
+      okEl.innerHTML = 'No active NWS weather alerts for Mebane, NC' + cacheNote + '. ' + nwsVerify;
+      okEl.style.color = opts.fromCache ? 'var(--mw-t2)' : '';
+      okEl.classList.remove('mw-hide');
+    }
+  }
+
+  function displaySpc(risk, opts) {
+    opts = opts || {};
+    var fromCache = opts.fromCache;
+    var cacheAgeMs = opts.cacheAgeMs;
+    var el = document.getElementById('mwSpc');
+    el.className = 'mw-spc';
+    var spcVerify = '<a href="' + SPC_OUTLOOK_URL + '" target="_blank" rel="noopener noreferrer" class="mw-src-link">Verify at spc.noaa.gov</a>';
+    var cachedLine = fromCache && cacheAgeMs != null
+      ? '<p class="mw-spc-cached">Last known outlook (' + Math.round(cacheAgeMs / 60000) + ' min ago) — live update failed. <a href="' + SPC_OUTLOOK_URL + '" target="_blank" rel="noopener">Check SPC directly</a></p>'
+      : '';
+
+    if (risk === null && !opts.cachedRisk) {
+      el.style.cssText = 'background:var(--mw-bg2);border:1px solid var(--mw-bg3)';
+      el.innerHTML =
+        '<span class="mw-spc-bdg" style="background:var(--mw-bg3);color:var(--mw-t3)">SPC</span>' +
+        '<div class="mw-spc-inf"><h3 style="color:var(--mw-t3)">SPC Outlook Unavailable</h3>' +
+        '<p><a href="' + SPC_OUTLOOK_URL + '" target="_blank" rel="noopener" style="color:var(--mw-acc)">Check SPC directly</a></p>' +
+        '<p class="mw-src">' + spcVerify + '</p>' + cachedLine + '</div>';
+    } else if (risk === false || (opts.cachedRisk === false && risk === null)) {
+      var r = risk === false ? false : opts.cachedRisk;
+      el.style.cssText = 'background:rgba(16,185,129,.06);border:1px solid var(--mw-ok)';
+      el.innerHTML =
+        '<span class="mw-spc-bdg" style="background:rgba(16,185,129,.15);color:var(--mw-ok)">NO RISK</span>' +
+        '<div class="mw-spc-inf"><h3 style="color:var(--mw-ok)">No SPC Severe Risk Today</h3>' +
+        '<p>Mebane is outside all SPC convective outlooks. <a href="' + SPC_OUTLOOK_URL + '" target="_blank" rel="noopener" style="color:var(--mw-ok)">View Day 1 Outlook</a></p>' +
+        '<p class="mw-src">' + spcVerify + '</p>' + cachedLine + '</div>';
+    } else {
+      var r = (risk !== null && risk !== false) ? risk : opts.cachedRisk;
+      var m = SPC_META[r] || { txt: r || 'Risk', bg:'rgba(100,100,200,.1)', border:'#aaa', fg:'#ccc', desc:'Convective risk in effect' };
+      el.style.cssText = 'background:' + m.bg + ';border:2px solid ' + m.border;
+      el.innerHTML =
+        '<span class="mw-spc-bdg" style="background:' + m.bg + ';color:' + m.fg + ';border:2px solid ' + m.border + '">' + (r || 'RISK') + '</span>' +
+        '<div class="mw-spc-inf">' +
+          '<h3 style="color:' + m.fg + '">' + m.txt + '</h3>' +
+          '<p>' + m.desc + '. <a href="' + SPC_OUTLOOK_URL + '" target="_blank" rel="noopener" style="color:' + m.fg + '">View Day 1 Outlook</a></p>' +
+          '<p class="mw-src">' + spcVerify + '</p>' + cachedLine + '</div>';
+    }
+    el.classList.remove('mw-hide');
+  }
+
+  function refreshAlertsIfNeeded() {
+    if ((Date.now() - lastAlertsFetchStartTime) < MIN_ALERTS_INTERVAL_MS) return;
+    lastAlertsFetchStartTime = Date.now();
+    fetchAlerts();
+    fetchSpc();
+  }
+
+  function fetchAlerts() {
+    var url = 'https://api.weather.gov/alerts/active?point=' + LAT + ',' + LON;
+    function tryFetch(attempt) {
+      attempt = attempt || 0;
+      var timeout = retryTimeout(attempt);
+      return fetchT(url, timeout)
+        .then(function (r) { if (r.ok) return r.json(); throw new Error('NWS HTTP ' + r.status); })
+        .then(function (d) {
+          saveNwsCache(d.features);
+          displayNws(d.features, false);
+        })
+        .catch(function (e) {
+          console.warn('NWS alerts (attempt ' + (attempt + 1) + '):', e.message);
+          if (attempt + 1 < NWS_MAX_RETRIES) {
+            var delay = backoffDelay(attempt, NWS_BACKOFF_BASE_MS, NWS_BACKOFF_MAX_MS);
+            setTimeout(function () { tryFetch(attempt + 1); }, delay);
+          } else {
+            var cached = loadNwsCache();
+            if (cached) {
+              displayNws(cached.features, false, { fromCache: true, cacheAgeMs: Date.now() - cached.t });
+            } else {
+              displayNws(null, true);
+            }
+          }
+        });
+    }
+    tryFetch(0);
+  }
+
+  function fetchSpc() {
+    var pt = [LON, LAT];
+    var url = 'https://www.spc.noaa.gov/products/outlook/day1otlk_cat.nolyr.geojson';
+
+    function tryFetch(attempt) {
+      attempt = attempt || 0;
+      var timeout = retryTimeout(attempt);
+      return fetchT(url, timeout)
+        .then(function (r) { if (!r.ok) throw new Error('SPC HTTP ' + r.status); return r.json(); })
+        .then(function (gj) {
+          var best = false, bestN = 0;
+          (gj.features || []).forEach(function (f) {
+            var lbl = f.properties && f.properties.LABEL;
+            if (lbl && SPC_ORDER[lbl] && inGeom(pt, f.geometry)) {
+              if (SPC_ORDER[lbl] > bestN) { bestN = SPC_ORDER[lbl]; best = lbl; }
+            }
+          });
+          saveSpcCache(best, best ? SPC_META[best] && SPC_META[best].txt : 'NO RISK');
+          displaySpc(best);
+        });
+    }
+
+    function doRetry(attempt) {
+      attempt = attempt || 0;
+      tryFetch(attempt).catch(function (e) {
+        console.warn('SPC outlook (attempt ' + (attempt + 1) + '):', e.message);
+        if (attempt + 1 < SPC_MAX_RETRIES) {
+          var delay = backoffDelay(attempt, SPC_BACKOFF_BASE_MS, SPC_BACKOFF_MAX_MS);
+          setTimeout(function () { doRetry(attempt + 1); }, delay);
+        } else {
+          var cached = loadSpcCache();
+          if (cached) {
+            displaySpc(cached.risk, { fromCache: true, cacheAgeMs: Date.now() - cached.t, cachedRisk: cached.risk });
+          } else {
+            displaySpc(null);
+          }
+        }
+      });
+    }
+    doRetry(0);
+  }
+
+  function fetchWeather(background) {
+    if (weatherInFlight) return;
+    if (!background && typeof navigator !== 'undefined' && !navigator.onLine) {
+      var c = loadCache();
+      if (c) {
+        displayWeather(c.data);
+        showStale(c.age);
+        setStatus('error', 'Cached data');
+        refreshAlertsIfNeeded();
+      } else {
+        setStatus('error', 'Offline');
+        showError('You appear to be offline. Connect and try again.');
+      }
+      return;
+    }
+    if (loadCache() && (Date.now() - lastWeatherFetchStartTime) < MIN_WEATHER_INTERVAL_MS) return;
+    lastWeatherFetchStartTime = Date.now();
+    weatherInFlight = true;
+    if (!background) {
+      setStatus('loading', 'Loading weather data…');
+      showLoading();
+    }
+    var url =
+      'https://api.open-meteo.com/v1/forecast' +
+      '?latitude=' + LAT + '&longitude=' + LON +
+      '&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,' +
+               'weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,pressure_msl' +
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_sum,' +
+             'precipitation_probability_max,uv_index_max,sunrise,sunset' +
+      '&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch' +
+      '&timezone=America%2FNew_York&forecast_days=7';
+
+    var timeout = retryTimeout(retries);
+    fetchT(url, timeout)
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status + ': ' + r.statusText);
+        return r.json();
+      })
+      .then(function (data) {
+        retries = 0;
+        saveCache(data);
+        hideStale();
+        displayWeather(data, null);
+        setStatus('success', 'Live');
+        refreshAlertsIfNeeded();
+        weatherInFlight = false;
+        getAFDSummary().then(function (afd) { updateConditionBlurb(data.current, afd); });
+      })
+      .catch(function (e) {
+        retries++;
+        if (retries < MAX_RETRIES) {
+          if (!background) setStatus('loading', 'Retrying… (' + retries + '/' + MAX_RETRIES + ')');
+          weatherInFlight = false;
+          var delay = backoffDelay(retries - 1, BACKOFF_BASE_MS, BACKOFF_MAX_MS);
+          setTimeout(function () { fetchWeather(background); }, delay);
+        } else {
+          var cached = loadCache();
+          if (cached) {
+            displayWeather(cached.data, null);
+            showStale(cached.age);
+            setStatus('error', 'Cached data');
+            refreshAlertsIfNeeded();
+            getAFDSummary().then(function (afd) { updateConditionBlurb(cached.data.current, afd); });
+          } else if (!background) {
+            showError(e.name === 'AbortError'
+              ? 'Request timed out. Check your connection.'
+              : 'Failed to load: ' + e.message);
+          }
+          retries = 0;
+          weatherInFlight = false;
+        }
+      });
+  }
+
+  var cached = loadCache();
+  if (cached && cached.data) {
+    displayWeather(cached.data, null);
+    showStale(cached.age);
+    setStatus('error', 'Cached data');
+    refreshAlertsIfNeeded();
+    getAFDSummary().then(function (afd) { updateConditionBlurb(cached.data.current, afd); });
+    fetchWeather(true);
+  } else {
+    fetchWeather(false);
+  }
+  setInterval(function () { fetchWeather(false); }, REFRESH);
+  setInterval(refreshAlertsIfNeeded, ALERTS_REFRESH_MS);
+  document.addEventListener('visibilitychange', function () {
+    if (!document.hidden) fetchWeather(false);
+  });
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', function () { retries = 0; fetchWeather(false); });
+  }
+
+}());
+</script>
+
+  </div>
+</div>
+
+<style>
+/* Container styling matching Rain Accumulation Map */
+.custom-forecast7-widget-container {
+  width: 100% !important;
+  max-width: 750px !important;
+  margin: 0 auto !important;
+  display: block !important;
+  position: relative !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  background: #fff !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
+}
+
+.forecast7-header {
+  padding: 16px 20px 12px !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  text-align: center !important;
+}
+
+.forecast7-header h3 {
+  margin: 0 0 4px 0 !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+}
+
+.forecast7-subtitle {
+  margin: 0 !important;
+  font-size: 13px !important;
+  opacity: 0.9 !important;
+  font-weight: 400 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif !important;
+}
+
+.forecast7-widget-wrapper {
+  width: 100% !important;
+  min-height: 240px !important;
+  display: block !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+  background: transparent !important;
+}
+
+@media (max-width: 768px) {
+  .custom-forecast7-widget-container { max-width: 98vw !important; margin: 0 auto !important; }
+  .forecast7-header { padding: 14px 16px 10px !important; }
+  .forecast7-header h3 { font-size: 16px !important; }
+  .forecast7-subtitle { font-size: 12px !important; }
+}
+
+@media (max-width: 480px) {
+  .custom-forecast7-widget-container { max-width: 100vw !important; margin: 0 auto !important; border-radius: 0 !important; }
+  .forecast7-header { padding: 12px 14px 8px !important; }
+  .forecast7-header h3 { font-size: 15px !important; }
+  .forecast7-subtitle { font-size: 11px !important; }
+}
+</style>
