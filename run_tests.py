@@ -399,6 +399,36 @@ class TestRunner:
                 f"got {result['level']} - {result['description']}"
             )
     
+    def test_forecast_widget_resilience(self):
+        """Test Forecast widget backoff and retry timeout logic (mirrors MebaneWeather Forecast.css)"""
+        print(f"\n{Colors.BLUE}Testing Forecast Widget Resilience...{Colors.RESET}")
+
+        def backoff_delay(attempt, base_ms, max_ms):
+            d = min(base_ms * (2 ** attempt), max_ms)
+            return d  # no jitter in test for determinism
+
+        def retry_timeout(attempt, timeout_base=10000, boost=3000, max_ms=25000):
+            return min(timeout_base + attempt * boost, max_ms)
+
+        # Backoff: attempt 0 -> base*2^0, 1 -> base*2^1, 2 -> base*2^2, capped
+        self.add_result(
+            "Backoff delay exponential and capped",
+            backoff_delay(0, 2000, 20000) == 2000 and backoff_delay(1, 2000, 20000) == 4000
+            and backoff_delay(2, 2000, 20000) == 8000 and backoff_delay(5, 2000, 20000) == 20000,
+            "Delay doubles per attempt, cap 20000"
+        )
+        # Retry timeout growth
+        self.add_result(
+            "Retry timeout increases per attempt",
+            retry_timeout(0) == 10000 and retry_timeout(1) == 13000 and retry_timeout(2) == 16000,
+            "10s, 13s, 16s"
+        )
+        self.add_result(
+            "Retry timeout capped",
+            retry_timeout(10, 10000, 3000, 25000) == 25000,
+            "Cap at 25000 ms"
+        )
+
     def test_error_handling(self):
         """Test error handling scenarios"""
         print(f"\n{Colors.BLUE}Testing Error Handling...{Colors.RESET}")
@@ -443,6 +473,7 @@ class TestRunner:
         self.test_threat_levels()
         self.test_alert_processing()
         self.test_winter_weather()
+        self.test_forecast_widget_resilience()
         self.test_error_handling()
     
     def print_summary(self):

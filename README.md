@@ -9,27 +9,40 @@
 
 ## 🎯 Project Overview
 
-**MebaneWeather.com** features a sophisticated, real-time severe weather monitoring dashboard specifically designed for Mebane, North Carolina (Alamance County). This dashboard integrates official NOAA Storm Prediction Center (SPC) threat assessments with National Weather Service (NWS) alerts and forecast discussions to provide residents with accurate, up-to-date severe weather information.
+**MebaneWeather.com** provides real-time weather and severe-weather monitoring for Mebane, NC (Alamance County). The repo includes two embeddable components:
+
+| Component | File | Description |
+|-----------|------|-------------|
+| **Severe Weather Dashboard** | `Severe-Weather-Dashboard.html` | SPC threat levels, NWS alerts, AFD summarization, winter weather detection |
+| **Forecast Widget** | `MebaneWeather Forecast.css` | Current conditions (Open-Meteo + NWS AFD blend), 7-day forecast, NWS alerts, SPC Day 1; resilient, cache + retries, "From the NWS:" link to AFD |
+
+Both are self-contained HTML for Weebly Embed Code (or any platform that accepts embedded HTML).
 
 ### 🚀 Key Features
 
 | Feature | Description | Status |
 |---------|-------------|--------|
 | ⚡ **SPC Threat Integration** | Real-time Storm Prediction Center risk levels | ✅ Active |
-| 🎯 **Location-Specific** | Precision targeting for Mebane, NC (36.096°N, -79.267°W) | ✅ Active |
+| 🎯 **Location-Specific** | Mebane, NC (36.096°N, -79.267°W); configurable for other locations | ✅ Active |
 | 📱 **Mobile Responsive** | Optimized for all device sizes | ✅ Active |
-| 🔄 **Auto-Refresh** | Updates every 15 minutes with 3-minute alert polling | ✅ Active |
-| 🖱️ **Interactive Panels** | Clickable sections linking to official sources | ✅ Active |
-| 📝 **Intelligent AFD Summarization** | Extracts key severe weather highlights from forecast discussions | ✅ Active |
-| ❄️ **Winter Weather Detection** | Detects winter weather alerts from NWS alerts API (advisories only from alerts, warnings from alerts or forecast discussion) | ✅ Active |
-| 🌐 **Weebly Optimized** | Self-contained HTML for easy Weebly integration | ✅ Active |
+| 🔄 **Auto-Refresh** | Severe dashboard: 15 min + 3 min alert polling. Forecast: 5 min + 3 min alerts/SPC | ✅ Active |
+| 🖱️ **Interactive Panels** | Clickable sections linking to NWS/SPC sources | ✅ Active |
+| 📝 **AFD Summarization** | Severe: bullet highlights. Forecast: one-sentence NWS AFD in Current Conditions with "From the NWS:" link | ✅ Active |
+| ❄️ **Winter Weather Detection** | Severe dashboard: NWS alerts + AFD text | ✅ Active |
+| 🌐 **Weebly Optimized** | Self-contained HTML for Embed Code | ✅ Active |
+| 📶 **Resilience (Forecast)** | Exponential backoff, jitter, cache fallback, offline handling, per-attempt timeout growth | ✅ Active |
+| 📋 **Audit Trail (Forecast)** | Footer data sources; Live vs Cached + age in status bar; verify-at-source links | ✅ Active |
 
 ### 📅 Recent Updates
 
-**December 2024** - Fixed winter weather advisory detection logic:
-- **Issue**: Dashboard was showing "Monitor for Winter Conditions" based on forecast discussion text analysis even when no active winter weather advisories existed
-- **Fix**: Modified detection logic so that advisories only come from actual NWS alerts API. Text detection from forecast discussions now only sets warning status, not advisory status
-- **Result**: "Monitor for Winter Conditions" now only appears when there are active winter weather advisories from official NWS alerts
+**February 2025** – Forecast widget (`MebaneWeather Forecast.css`):
+- Open-Meteo + NWS alerts + SPC Day 1 outlook; cards link to NWS/SPC for verification
+- **Current Conditions:** Meteo line (temp, condition, feels like, wind) plus optional one-sentence NWS AFD summary on a new line; "From the NWS:" is a clickable link to the Area Forecast Discussion; discussion text in smaller font; sentence never ends in "and", "to", "or", or lone adjectives for readability
+- Resilience: exponential backoff with jitter for weather, NWS, SPC, and AFD; sessionStorage cache (weather 2h, NWS 10m, SPC 30m, AFD 30m); retries with per-attempt timeout growth; offline detection + `online` refresh; in-flight guard; paint-first (Meteo then AFD enhances when ready)
+- Status bar: “Live” only when live; “Cached data” + “X min ago” when showing cache; no stale “Updated” when cached
+- Single footer audit trail; optional assessment: `RESILIENCE_AND_ACCURACY_ASSESSMENT.md`
+
+**December 2024** – Severe dashboard: winter weather advisory logic fixed (advisories only from NWS alerts API).
 
 ## 📑 Table of Contents
 
@@ -41,10 +54,12 @@
   - [🔧 Technical Architecture](#-technical-architecture)
     - [API Integrations](#api-integrations)
     - [Update Cycle](#update-cycle)
+  - [📸 Live Dashboard](#-live-dashboard)
   - [🚀 Installation \& Configuration](#-installation--configuration)
     - [Quick Install (Weebly)](#quick-install-weebly)
     - [Customization](#customization)
       - [Changing Location](#changing-location)
+      - [Forecast widget: use for your location](#forecast-widget-use-for-your-location)
   - [🔍 Troubleshooting](#-troubleshooting)
     - [Common Issues](#common-issues)
   - [🧪 Testing](#-testing)
@@ -73,30 +88,39 @@ The dashboard uses a four-tier threat classification system with priority-based 
 
 ## 🔧 Technical Architecture
 
-### API Integrations
+### Severe Weather Dashboard
 
-1. **SPC GIS MapServer** - Storm threat polygons via point-in-polygon spatial analysis (Mebane coordinates)
-2. **NWS Alerts API** - Zone-specific alerts (NCZ023) with statewide fallback, filtered for warnings/watches/advisories (includes winter weather detection)
-3. **NWS Forecast Discussion** - AFD from NWS Raleigh (RAH) with intelligent text processing and summarization (includes winter weather keyword detection)
+**API Integrations:** SPC GIS MapServer (point-in-polygon); NWS Alerts API (zone NCZ023 + statewide fallback); NWS Forecast Discussion (RAH, AFD summarization).
 
-### Update Cycle
+**Update cycle:** Full refresh 15 min (`updateInterval` 900000); alert polling 3 min (180000); visibility refresh on tab focus.
 
-**Dual-interval strategy:**
-- **Full Refresh**: Every 15 minutes - SPC risk, alerts, forecast discussion, threat level calculation
-- **Fast Alert Polling**: Every 3 minutes - Immediate warning detection triggers threat update
-- **Visibility Refresh**: Updates when browser tab regains focus after inactivity
+**Data flow:** Initialize → SPC Risk Check → Alert Processing → Threat Calculation → AFD Processing → UI Update.
 
-**Data Flow**: Initialize → SPC Risk Check → Alert Processing (zone → statewide fallback) → Threat Calculation → AFD Processing → UI Update
+### Forecast Widget
+
+**Data sources:** Open-Meteo API (current + 7-day); NWS alerts by point (`LAT`,`LON`); SPC Day 1 outlook (GeoJSON, point-in-polygon); NWS AFD (Raleigh/RAH) for Current Conditions sentence.
+
+**Current Conditions card:** Meteo line (temp, condition, feels like, wind); line break; optional "From the NWS:" (link to AFD) + one-sentence AFD summary (smaller font). Summary is trimmed so it never ends in "and", "to", "or", or lone adjectives. AFD is best-effort (cache 30 min, retries with exponential backoff); UI paints immediately, then enhances when AFD is ready.
+
+**Update cycle:** Main weather 5 min (`REFRESH` 300000); NWS/SPC 3 min (`ALERTS_REFRESH_MS` 180000); visibility and `online` event trigger refresh.
+
+**Resilience:** sessionStorage cache (weather 2 h, NWS 10 min, SPC 30 min, AFD 30 min); retries with exponential backoff + jitter for weather, NWS, SPC, and AFD; per-attempt timeout growth (10s → 25s cap); offline skip + refresh on `online`; in-flight guard.
+
+## 📸 Live Dashboard
+
+Screenshot of the live dashboard at [MebaneWeather.com](https://www.stewalexander.com/weather.html):
+
+![MebaneWeather.com dashboard](docs/dashboard-screenshot.png)
 
 ## 🚀 Installation & Configuration
 
 ### Quick Install (Weebly)
 
-1. Log into Weebly Editor → Drag "Embed Code" element to page
-2. Copy entire code from `Severe-Weather-Dashboard.html`
-3. Paste into Custom HTML box → Click "Update" → Publish
+**Severe Weather Dashboard:** Copy all of `Severe-Weather-Dashboard.html` into an Embed Code element → Publish.
 
-**Other Platforms**: WordPress (HTML widget), Squarespace (Code block), Wix (HTML iframe), Static HTML (direct include), GitHub Pages (reference in page)
+**Forecast Widget:** Copy all of `MebaneWeather Forecast.css` into an Embed Code element → Publish. (File is HTML + CSS + JS; no `.css` build step.)
+
+**Other platforms:** Use an HTML/embed block (WordPress, Squarespace, Wix, static HTML, GitHub Pages).
 
 ### Customization
 
@@ -126,22 +150,30 @@ const LOCATION_CONFIG = {
 - **NWS Office**: Find your office at [weather.gov/organization](https://www.weather.gov/organization.php) (e.g., `OUN` for Norman, OK; `SFO` for San Francisco, CA)
 - **Location Name**: Any display name you prefer
 
-**Example for Oklahoma City, OK:**
-```javascript
-const LOCATION_CONFIG = {
-  coords: { lat: 35.4676, lng: -97.5164 },
-  nwsZone: 'OKZ020',
-  stateCode: 'OK',
-  nwsOffice: 'OUN',
-  locationName: 'Oklahoma City, OK'
-};
-```
+**Example for Oklahoma City, OK:** Use `coords`, `nwsZone`, `stateCode`, `nwsOffice`, `locationName` as in the example in the file.
+
+#### Forecast widget: use for your location
+
+1. Open `MebaneWeather Forecast.css` and find the script constants (near the top of the `<script>` block).
+2. Set coordinates and NWS/SPC URLs for your location:
+
+| Variable | Meaning | Example (Mebane) |
+|----------|---------|------------------|
+| `LAT` | Latitude | `36.0957` |
+| `LON` | Longitude | `-79.2670` |
+| `NWS_FORECAST_URL` | NWS point forecast (temp, 7-day, alerts) | `https://forecast.weather.gov/MapClick.php?lat=36.0957&lon=-79.2670` |
+| `SPC_OUTLOOK_URL` | SPC Day 1 convective outlook | `https://www.spc.noaa.gov/products/outlook/day1otlk.html` (same for all US) |
+
+3. Build your NWS URL: go to [forecast.weather.gov/MapClick.php](https://forecast.weather.gov/MapClick.php), click your location, copy the URL (it will contain `lat=` and `lon=`).
+4. Replace the footer links: in the static HTML footer, search for `lat=36.0957` and `lon=-79.2670` and replace with your coordinates in both NWS href URLs.
+5. Save and paste the full file into your Embed Code element.
+
+Alerts and SPC are fetched by point (`LAT`,`LON`); no zone or office IDs needed for the Forecast widget.
 
 **Other Customizations:**
 
-- **Update Intervals**: Modify `updateInterval` (default: 900000ms = 15min) and alert polling (default: 180000ms = 3min)
-- **Visual Styling**: Edit inline CSS - Backgrounds (`#1a1a1a`, `#2d2d2d`, `#373737`), Accent colors (primary `#4fc3f7`, warning `#f44336`, etc.)
-- **Advanced**: Modify alert filtering in `updateLocalAlertsAndGetStatus()` or AFD scoring in `updateForecastDiscussion()`
+- **Severe dashboard**: `updateInterval` = 900000 (15 min), alert polling = 180000 (3 min). Visual styling: inline CSS in the file (e.g. `#1a1a1a`, `#4fc3f7`). Advanced: `updateLocalAlertsAndGetStatus()`, `updateForecastDiscussion()`.
+- **Forecast widget**: In the script, `REFRESH` = 300000 (5 min main weather), `ALERTS_REFRESH_MS` = 180000 (3 min NWS/SPC). Timeouts: `TIMEOUT` = 10000, `TIMEOUT_MAX_MS` = 25000. Cache TTLs: `CACHE_TTL` = 7200000 (2 h), `NWS_CACHE_TTL` = 600000 (10 min), `SPC_CACHE_TTL` = 1800000 (30 min), `AFD_CACHE_TTL` = 1800000 (30 min). AFD: `NWS_OFFICE` = 'RAH' (change for other locations); `NWS_AFD_URL` is derived; AFD retries use exponential backoff (`AFD_BACKOFF_BASE_MS`, `AFD_BACKOFF_MAX_MS`).
 
 ## 🔍 Troubleshooting
 
@@ -149,33 +181,21 @@ const LOCATION_CONFIG = {
 
 | Issue | Solution |
 |-------|----------|
-| "SPC: Data temporarily unavailable" | Wait 15min auto-retry, check console - defaults to SAFE if unavailable. Dashboard continues functioning. |
-| "Loading threat assessment..." persists | Check console (F12) for JS errors, verify code embedding, check browser compatibility |
-| "Alert system temporarily unavailable" | Alert API failed - dashboard automatically falls back from zone to statewide alerts. Check network connection. |
-| Not responsive on mobile | Code includes `!important` overrides - check responsive breakpoints if issues persist |
-| Alerts not updating quickly | Alert polling is 3min - adjust `180000ms` interval if needed (mind API rate limits) |
-| "No significant weather" in AFD | Check console for fetch errors - uses API then HTML fallback. Scoring algorithm requires specific keywords. |
+| "SPC: Data temporarily unavailable" (Severe) | Wait 15 min; dashboard defaults to SAFE. Check console. |
+| "Loading threat assessment..." persists (Severe) | Check console (F12), embedding, browser. |
+| "Alert system temporarily unavailable" (Severe) | Zone → statewide fallback; check network. |
+| Forecast shows "Cached data" (Forecast) | Live fetch failed; data from sessionStorage. NWS/SPC still refresh every 3 min. Retry or check network. |
+| Not responsive on mobile | Check responsive breakpoints; both components use mobile overrides. |
+| Alerts not updating quickly | Severe: 3 min polling (180000). Forecast: 3 min (ALERTS_REFRESH_MS). |
+| "No significant weather" in AFD (Severe) | API then HTML fallback; scoring needs specific keywords. Check console. |
 
 ### Error Handling & Resilience
 
-The dashboard includes robust error handling for all external APIs:
+**Severe Weather Dashboard:** Timeouts 8–10 s; alerts zone → statewide fallback; AFD API → HTML fallback; SPC defaults to SAFE if unavailable; each source independent; response validation.
 
-**Timeout Protection**: All API calls have configurable timeouts (8-10 seconds) to prevent hanging requests
+**Forecast Widget:** Timeouts 10 s first attempt, up to 25 s on retries (`retryTimeout`); weather/NWS/SPC each have 3 retries, AFD 2 retries, all with exponential backoff + jitter; cache fallback (weather 2 h, NWS 10 min, SPC 30 min, AFD 30 min); offline detection skips fetch and refreshes on `online`; in-flight guard; AFD never blocks paint (4 s UI timeout, then enhance when ready).
 
-**Fallback Strategies**:
-- **Alerts**: Zone-specific → Statewide fallback if zone query fails
-- **Forecast Discussion**: NWS API → HTML scrape fallback if API unavailable
-- **SPC Data**: Graceful degradation - defaults to SAFE if unavailable
-
-**Response Validation**: All API responses are validated before processing to prevent crashes from malformed data
-
-**Independent Error Handling**: Each data source (SPC, alerts, AFD) has independent error handling - one failure doesn't block others
-
-**Network Error Detection**: Specific handling for network failures vs API errors vs timeout errors
-
-**Debug Mode**: Open Developer Tools (F12) → Console tab shows detailed error messages, API responses, and processing status
-
-**Verify Functionality**: Check console for fetch requests to `mapservices.weather.noaa.gov`, `api.weather.gov`, `forecast.weather.gov`. Compare threat level with [SPC outlook](https://www.spc.noaa.gov/products/outlook/).
+**Debug:** F12 → Console. Verify: fetch to `api.open-meteo.com`, `api.weather.gov`, `spc.noaa.gov`; threat level vs [SPC outlook](https://www.spc.noaa.gov/products/outlook/).
 
 ## 🧪 Testing
 
@@ -184,11 +204,11 @@ The dashboard includes robust error handling for all external APIs:
 ./run-tests.sh  # or: python3 run_tests.py
 ```
 
-**Test Coverage (34 tests)**: SPC Risk Mapping (7), Threat Level Calculation (7), Alert Processing (3), Winter Weather Detection (11), Error Handling (4)
+**Test Coverage**: Severe Weather Dashboard — SPC mapping, threat levels, alert processing, winter weather detection, error handling. Forecast widget — backoff and retry timeout logic (resilience).
 
-**Test Files**: `run_tests.py` (Python, primary), `run-tests.js` (Node.js, optional), `run-tests.sh` (shell wrapper), `test-dashboard.html` (browser test suite)
+**Test Files**: `run_tests.py` (Python), `run-tests.sh` (shell wrapper), `test-dashboard.html` (browser UI for Severe dashboard).
 
-**Approach**: Elegant, conservative, mock-based tests focusing on critical business logic. Fast execution (<1s) with colored terminal output. For visual verification, open `test-dashboard.html` in browser.
+**Approach**: Logic and resilience tests; no live API calls. Run `python3 run_tests.py` for full suite; open `test-dashboard.html` for in-browser Severe dashboard checks.
 
 ## 🌐 Browser Compatibility
 
@@ -213,7 +233,7 @@ Comprehensive inline documentation in docstring style: File headers, JSDoc-style
 
 **License**: MIT License - see [LICENSE](LICENSE) file for details
 
-**Project Stats**: Created June 2025 • Last Updated December 2024 • Location: Mebane, NC (Alamance County, Zone NCZ023) • NWS Office: Raleigh, NC (RAH) • Maintainer: [@StewAlexander-com](https://github.com/StewAlexander-com)
+**Project Stats**: Created June 2025 • Last Updated February 2025 • Location: Mebane, NC (Alamance County, Zone NCZ023) • NWS Office: Raleigh, NC (RAH) • Maintainer: [@StewAlexander-com](https://github.com/StewAlexander-com)
 
 **Acknowledgments**: NOAA/National Weather Service, Storm Prediction Center, Weebly Platform
 
