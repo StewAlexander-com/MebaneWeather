@@ -56,6 +56,9 @@
 /* Fullscreen = map container only (like iframe fullscreen: browser gives it full viewport, no black band) */
 #map-container:fullscreen, #map-container:-webkit-full-screen, #map-container:-moz-full-screen, #map-container:-ms-fullscreen { width: 100%; height: 100%; background: #fff; }
 #map-container.mw-map-fullscreen-fallback { position: fixed; inset: 0; z-index: 99999; width: 100%; height: 100%; background: #fff; }
+@supports (padding: env(safe-area-inset-bottom)) {
+  #map-container.mw-map-fullscreen-fallback { padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); box-sizing: border-box; }
+}
 @media (max-width: 480px) {
     .mw-radar-wrap { padding: 0 6px; }
     .radar-buttons { gap: 8px; }
@@ -471,14 +474,15 @@ window.addEventListener('resize', function() {
     if (map) setTimeout(function() { map.invalidateSize(); }, 200);
 });
 
-// Fullscreen toggle: fullscreen the map container only (like lightning iframe – browser gives it full viewport, no black band)
+// Fullscreen toggle: desktop = Fullscreen API on map container; iPhone/iOS = CSS fallback only (API not supported for divs)
 (function() {
     try {
         var mapContainer = document.getElementById('map-container');
         var btn = document.getElementById('radar-fullscreen-btn');
         if (!mapContainer || !btn) return;
-        var api = mapContainer.requestFullscreen || mapContainer.webkitRequestFullscreen || mapContainer.mozRequestFullScreen || mapContainer.msRequestFullscreen;
-        if (!api) return;
+        var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        var api = !isIOS && (mapContainer.requestFullscreen || mapContainer.webkitRequestFullscreen || mapContainer.mozRequestFullScreen || mapContainer.msRequestFullscreen);
+        if (!api && !isIOS) return;
         btn.classList.add('mw-fs-available');
         function doRadarRedraw() {
             try {
@@ -542,6 +546,13 @@ window.addEventListener('resize', function() {
         }
         function enterFullscreen() {
             try {
+                if (isIOS) {
+                    mapContainer.classList.add('mw-map-fullscreen-fallback');
+                    btn.textContent = '✕ Exit full screen';
+                    btn.setAttribute('aria-label', 'Exit full screen');
+                    setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 50);
+                    return;
+                }
                 var r = mapContainer.requestFullscreen || mapContainer.webkitRequestFullscreen || mapContainer.mozRequestFullScreen || mapContainer.msRequestFullscreen;
                 if (r) {
                     r.call(mapContainer).then(function() {
