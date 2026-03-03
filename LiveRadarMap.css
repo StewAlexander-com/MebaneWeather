@@ -66,9 +66,9 @@
 }
 </style>
 
-<!-- Leaflet CSS and JS -->
+<!-- Leaflet CSS and JS (defer JS so page render is not blocked if CDN is slow) -->
 <link href="https://unpkg.com/leaflet/dist/leaflet.css" rel="stylesheet"/>
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js" defer></script>
 
 <script>
 // MebaneWeather Live Radar - HA/resilient (cache, retries + backoff, timeout, offline, in-flight guard)
@@ -123,7 +123,8 @@ function loadRadarCache() {
         var raw = sessionStorage.getItem(CACHE_KEY);
         if (!raw) return null;
         var obj = JSON.parse(raw);
-        if (Date.now() - obj.t < CACHE_TTL) return { data: obj.d, age: Date.now() - obj.t };
+        var age = Date.now() - obj.t;
+        return { data: obj.d, age: age, stale: age >= CACHE_TTL };
     } catch (e) {}
     return null;
 }
@@ -156,6 +157,11 @@ function showRadarError(msg) {
 function initializeWeatherRadar() {
     var container = document.getElementById('map-container');
     if (!container) return;
+    // If Leaflet JS has not finished loading yet (deferred script or slow CDN), retry shortly without blocking page load.
+    if (typeof L === 'undefined' || !L || typeof L.map !== 'function') {
+        setTimeout(initializeWeatherRadar, 400);
+        return;
+    }
     map = L.map('map-container').setView([36.095918, -79.266536], 9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
