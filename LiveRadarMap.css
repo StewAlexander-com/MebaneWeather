@@ -66,6 +66,8 @@
     .mw-radar-wrap { padding: 0 6px; }
     .radar-buttons { gap: 8px; }
     .radar-buttons button { min-width: 80px; padding: 10px 12px; }
+    /* Lift fullscreen toggle slightly on very small screens so it doesn't overlap Leaflet attribution */
+    #radar-fullscreen-btn { bottom: 42px; }
 }
 </style>
 
