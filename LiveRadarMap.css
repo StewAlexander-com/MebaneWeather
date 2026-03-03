@@ -109,6 +109,18 @@ var isPlaying = false;
 var animationDelayMs = 800;
 var preloadScheduled = false;
 var lastPastFrameIndex = -1;  /* index in mapFrames of most recent observation (closest to current time) */
+var radarRedrawTimer = null;  /* debounced redraw after zoom/pan to avoid race conditions */
+
+function getCurrentFrameIndex() {
+    if (!mapFrames || !mapFrames.length) return -1;
+    if (typeof animationPosition === 'number' && animationPosition >= 0 && animationPosition < mapFrames.length) {
+        return animationPosition;
+    }
+    if (typeof lastPastFrameIndex === 'number' && lastPastFrameIndex >= 0 && lastPastFrameIndex < mapFrames.length) {
+        return lastPastFrameIndex;
+    }
+    return mapFrames.length - 1;
+}
 
 function fetchT(url, timeoutMs) {
     var t = timeoutMs != null ? timeoutMs : TIMEOUT;
@@ -202,8 +214,12 @@ function initializeWeatherRadar() {
         setTimeout(initializeWeatherRadar, 400);
         return;
     }
-    map = L.map('map-container').setView([36.095918, -79.266536], 9);
+    // Clamp zoom so we only use levels where radar tiles are available.
+    // RainViewer and the CONUS NWS WMS layer both support a reasonable range around 4–12.
+    map = L.map('map-container', { minZoom: 4, maxZoom: 12 }).setView([36.095918, -79.266536], 9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        minZoom: 4,
+        maxZoom: 12,
         attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> (primary), <a href="https://www.weather.gov/" target="_blank" rel="noopener">NOAA/NWS</a> (fallback)'
     }).addTo(map);
     L.marker([36.095918, -79.266536])
@@ -218,35 +234,45 @@ function initializeWeatherRadar() {
                 format: 'image/png',
                 transparent: true,
                 opacity: 0.7,
+                minZoom: 4,
+                maxZoom: 12,
                 attribution: 'Radar data: NOAA/NWS'
             });
         }
     } catch (e) {}
     map.on('zoomend moveend', function() {
-        var mc = document.getElementById('map-container');
-        var inFullscreen = mc && ((document.fullscreenElement || document.webkitFullscreenElement) === mc || mc.classList.contains('mw-map-fullscreen-fallback'));
-        map.invalidateSize();
-        if (mapFrames && mapFrames.length > 0 && apiData && apiData.host) {
-            var pos = (animationPosition >= 0 && animationPosition < mapFrames.length) ? animationPosition : (lastPastFrameIndex >= 0 ? lastPastFrameIndex : mapFrames.length - 1);
-            if (showFrame(pos)) {
-                var path = mapFrames[animationPosition] && mapFrames[animationPosition].path;
-                var layer = path && radarLayers[path];
-                if (layer && map.hasLayer(layer)) {
-                    map.removeLayer(layer);
-                    map.addLayer(layer);
-                    if (typeof layer.redraw === 'function') layer.redraw();
-                }
-            }
+        // Debounce radar redraw so we repaint once after the map settles at the new zoom/position.
+        if (radarRedrawTimer) {
+            try { clearTimeout(radarRedrawTimer); } catch (e) {}
+            radarRedrawTimer = null;
         }
-        if (inFullscreen && map && typeof map.once === 'function' && typeof window !== 'undefined' && window.mwRadarRefreshFullscreen) map.once('moveend', function() { window.mwRadarRefreshFullscreen(); });
+        radarRedrawTimer = setTimeout(function() {
+            try {
+                if (!map) return;
+                var mc = document.getElementById('map-container');
+                var inFullscreen = mc && ((document.fullscreenElement || document.webkitFullscreenElement) === mc || mc.classList.contains('mw-map-fullscreen-fallback'));
+                map.invalidateSize();
+                if (mapFrames && mapFrames.length > 0 && apiData && apiData.host) {
+                    var pos = getCurrentFrameIndex();
+                    if (pos >= 0) {
+                        // Just ask showFrame to put the correct frame on top; let Leaflet manage tiles.
+                        showFrame(pos);
+                    }
+                }
+                // In fullscreen, rely on the existing fullscreen refresh helper to handle any extra sizing quirks.
+                if (inFullscreen && typeof window !== 'undefined' && window.mwRadarRefreshFullscreen) {
+                    window.mwRadarRefreshFullscreen();
+                }
+            } catch (e) {}
+        }, 220);
     });
     // After layout stabilizes (responsive container), ensure map size is correct and show latest radar frame
     setTimeout(function() {
         if (map) {
             map.invalidateSize();
             if (mapFrames && mapFrames.length > 0 && apiData && apiData.host) {
-                var pos = (animationPosition >= 0 && animationPosition < mapFrames.length) ? animationPosition : (lastPastFrameIndex >= 0 ? lastPastFrameIndex : mapFrames.length - 1);
-                showFrame(pos);
+                var pos = getCurrentFrameIndex();
+                if (pos >= 0) showFrame(pos);
             }
         }
     }, 400);
@@ -575,8 +601,8 @@ window.addEventListener('resize', function() {
             try {
                 if (typeof map === 'undefined' || !map) return;
                 if (typeof mapFrames === 'undefined' || !mapFrames || mapFrames.length === 0 || typeof showFrame !== 'function') return;
-                var pos = (typeof animationPosition !== 'undefined' && animationPosition >= 0 && animationPosition < mapFrames.length) ? animationPosition : (typeof lastPastFrameIndex !== 'undefined' && lastPastFrameIndex >= 0 ? lastPastFrameIndex : mapFrames.length - 1);
-                showFrame(pos);
+                var pos = getCurrentFrameIndex();
+                if (pos >= 0) showFrame(pos);
                 var path = mapFrames[animationPosition] && mapFrames[animationPosition].path;
                 var layer = path && typeof radarLayers !== 'undefined' && radarLayers[path];
                 if (layer && map.hasLayer(layer)) {

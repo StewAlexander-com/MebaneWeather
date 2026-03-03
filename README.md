@@ -45,6 +45,7 @@ Both are self-contained HTML for Weebly Embed Code (or any platform that accepts
 - **Radar failover:** When the RainViewer API is very slow or unavailable and no cached frames exist, the radar widget automatically falls back to a CONUS NWS/NOAA WMS radar overlay (official U.S. government source) and switches back to RainViewer when it recovers. This makes the Live Radar widget more robust while keeping the user experience clean and seamless.
 - **Watchdog:** When the tab is visible, every 7 min a background fetch runs and the map updates **only if** the API has a newer latest frame than the one displayed (no flash when nothing new). When the tab is hidden, the watchdog is cleared.
 - **Animation:** Play/Pause, Previous/Next, speed slider (200–1500 ms/frame, right = faster); frame preload (first 12, sequential); add-before-remove in `showFrame` to avoid blink.
+- **Internal robustness:** Simplified zoom/fullscreen redraw logic and centralized frame selection helper for more predictable behavior without changing features.
 
 **February 2025** – Forecast widget (`MebaneWeather Forecast.css`):
 - Open-Meteo + NWS alerts + SPC Day 1 outlook; cards link to NWS/SPC for verification
