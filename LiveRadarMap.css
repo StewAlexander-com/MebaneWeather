@@ -202,7 +202,7 @@ function initializeWeatherRadar() {
     }
     map = L.map('map-container').setView([36.095918, -79.266536], 9);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Radar: <a href="https://www.rainviewer.com/" target="_blank" rel="noopener">RainViewer</a> (primary), <a href="https://www.weather.gov/" target="_blank" rel="noopener">NOAA/NWS</a> (fallback)'
     }).addTo(map);
     L.marker([36.095918, -79.266536])
         .addTo(map)
