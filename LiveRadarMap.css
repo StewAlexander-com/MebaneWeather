@@ -5,6 +5,9 @@
     <div id="radar-header">
         <h3>MebaneWeather Live Radar - Local Area</h3>
         <p>RainViewer precipitation radar · past and nowcast frames · updated every 10 minutes</p>
+        <div id="radar-mode-note" style="font-size:7pt;color:#999;margin-top:2px;">
+            Using RainViewer radar (primary)
+        </div>
     </div>
     <div id="control-panel">
         <div class="radar-buttons">
@@ -88,6 +91,11 @@ var MIN_RADAR_INTERVAL_MS = 90000;                       /* don't start fetch if
 var radarInFlight = false, lastRadarFetchStartTime = 0, radarRetries = 0;
 var watchdogTimer = null;                                /* 7 min timer when tab visible; cleared when hidden */
 var radarFromCache = false, radarCacheAgeMs = null;
+// NWS/NOAA WMS fallback (CONUS base reflectivity via NCEP GeoServer)
+var NWS_WMS_URL = 'https://opengeo.ncep.noaa.gov/geoserver/conus/conus_bref_qcd/ows';
+var NWS_WMS_LAYER = 'conus_bref_qcd';
+var nwsWmsLayer = null;
+var radarFetchWatchdogTimer = null;
 
 var map;
 var apiData = {};
@@ -153,6 +161,36 @@ function showRadarError(msg) {
     if (row) row.style.display = 'block';
 }
 
+// NWS WMS fallback helpers (optional, HA/resilient: never throws, only used when RainViewer is slow/unavailable)
+function enableNwsFallback() {
+    try {
+        if (!map) return;
+        if (!nwsWmsLayer && L && L.tileLayer && typeof L.tileLayer.wms === 'function') {
+            nwsWmsLayer = L.tileLayer.wms(NWS_WMS_URL, {
+                layers: NWS_WMS_LAYER,
+                format: 'image/png',
+                transparent: true,
+                opacity: 0.7,
+                attribution: 'Radar data: NOAA/NWS'
+            });
+        }
+        if (nwsWmsLayer && !map.hasLayer(nwsWmsLayer)) {
+            nwsWmsLayer.addTo(map);
+        }
+        var note = document.getElementById('radar-mode-note');
+        if (note) note.textContent = 'using NWS radar as primary rainviewer feed unavailble';
+    } catch (e) {}
+}
+function disableNwsFallback() {
+    try {
+        if (map && nwsWmsLayer && map.hasLayer(nwsWmsLayer)) {
+            map.removeLayer(nwsWmsLayer);
+        }
+        var note = document.getElementById('radar-mode-note');
+        if (note) note.textContent = 'Using RainViewer radar (primary)';
+    } catch (e) {}
+}
+
 // Initialize the weather radar (responsive container; Leaflet will use current size)
 function initializeWeatherRadar() {
     var container = document.getElementById('map-container');
@@ -170,6 +208,18 @@ function initializeWeatherRadar() {
         .addTo(map)
         .bindPopup('Mebane, NC')
         .openPopup();
+    // Prepare NWS WMS fallback layer (not added to map until needed)
+    try {
+        if (L.tileLayer && typeof L.tileLayer.wms === 'function') {
+            nwsWmsLayer = L.tileLayer.wms(NWS_WMS_URL, {
+                layers: NWS_WMS_LAYER,
+                format: 'image/png',
+                transparent: true,
+                opacity: 0.7,
+                attribution: 'Radar data: NOAA/NWS'
+            });
+        }
+    } catch (e) {}
     map.on('zoomend moveend', function() {
         var mc = document.getElementById('map-container');
         var inFullscreen = mc && ((document.fullscreenElement || document.webkitFullscreenElement) === mc || mc.classList.contains('mw-map-fullscreen-fallback'));
@@ -237,9 +287,21 @@ function loadRadarData(background, onlyUpdateIfNewer) {
     if (!onlyUpdateIfNewer && loadRadarCache() && (Date.now() - lastRadarFetchStartTime) < MIN_RADAR_INTERVAL_MS) return;
     lastRadarFetchStartTime = Date.now();
     radarInFlight = true;
+    if (radarFetchWatchdogTimer) {
+        try { clearTimeout(radarFetchWatchdogTimer); } catch (e) {}
+        radarFetchWatchdogTimer = null;
+    }
     if (!background) {
         document.getElementById('timestamp-display').textContent = 'Loading radar…';
         hideRadarError();
+        // If RainViewer is very slow and no frames are showing after 8 seconds, enable NOAA/NWS WMS fallback overlay.
+        radarFetchWatchdogTimer = setTimeout(function() {
+            try {
+                if ((!mapFrames || mapFrames.length === 0) && (!apiData || !apiData.host)) {
+                    enableNwsFallback();
+                }
+            } catch (e) {}
+        }, 8000);
     }
 
     function tryFetch(attempt) {
@@ -250,6 +312,10 @@ function loadRadarData(background, onlyUpdateIfNewer) {
             .then(function(data) {
                 radarRetries = 0;
                 radarInFlight = false;
+                if (radarFetchWatchdogTimer) {
+                    try { clearTimeout(radarFetchWatchdogTimer); } catch (e) {}
+                    radarFetchWatchdogTimer = null;
+                }
                 var doUpdate = true;
                 if (onlyUpdateIfNewer) {
                     var newLatest = getLatestFrameTimeFromData(data);
@@ -263,6 +329,8 @@ function loadRadarData(background, onlyUpdateIfNewer) {
                     radarCacheAgeMs = null;
                     processRadarFrames();
                 }
+                // On successful RainViewer update, prefer RainViewer overlay and hide any active NWS fallback.
+                if (mapFrames && mapFrames.length > 0) disableNwsFallback();
                 document.getElementById('loading-indicator').style.display = 'none';
                 hideRadarError();
             })
@@ -275,6 +343,10 @@ function loadRadarData(background, onlyUpdateIfNewer) {
                 } else {
                     radarRetries = 0;
                     radarInFlight = false;
+                    if (radarFetchWatchdogTimer) {
+                        try { clearTimeout(radarFetchWatchdogTimer); } catch (e) {}
+                        radarFetchWatchdogTimer = null;
+                    }
                     var cached = loadRadarCache();
                     if (cached && cached.data) {
                         apiData = cached.data;
@@ -283,10 +355,12 @@ function loadRadarData(background, onlyUpdateIfNewer) {
                         processRadarFrames();
                         document.getElementById('loading-indicator').style.display = 'none';
                         hideRadarError();
+                        if (mapFrames && mapFrames.length > 0) disableNwsFallback();
                     } else {
                         document.getElementById('loading-indicator').style.display = 'none';
                         document.getElementById('timestamp-display').textContent = '';
-                        showRadarError('Unable to load radar. Check connection.');
+                        // As a last resort with no cache and RainViewer unavailable, quietly enable NWS fallback as primary.
+                        enableNwsFallback();
                     }
                 }
             });
