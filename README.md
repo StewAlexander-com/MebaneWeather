@@ -122,7 +122,7 @@ The dashboard uses a four-tier threat classification system with priority-based 
 
 **Data source:** RainViewer public API (`api.rainviewer.com/public/weather-maps.json`) — past and nowcast precipitation frames.
 
-- **Core behavior:** Displays the latest observation on load. Play/Pause, Previous/Next, and speed slider animate through RainViewer (past + nowcast) or, when NWS is active (zoom 8+, fallback, or tile-error), through NWS frames (last 2 h at 10‑min steps; cached frame times for responsive play). On zoom or pan, the radar layer is synced so tiles load for the new view; preload warms the first 12 RainViewer frame layers without removing the displayed frame.
+- **Core behavior:** Displays the latest observation on load. Play/Pause, Previous/Next, and speed slider animate through RainViewer (past + nowcast) or, when NWS is active (zoom 8+, fallback, or tile-error), through NWS frames (last 2 hours at 10‑minute steps). On zoom or pan, tiles reload for the new view, and a preload warms initial RainViewer frames without affecting the displayed frame.
 - **Fullscreen & zoom:** In fullscreen, a Play/Pause button appears above "Exit full screen" (stacked, left-aligned) so animation works without leaving fullscreen; layout avoids overlap and keeps Leaflet attribution visible. At zoom 8+ the map uses NWS only to avoid "Zoom level not supported"; RainViewer tile errors trigger automatic failover to NWS.
 
 **Update cycle:** Full refresh every 10 min (`REFRESH`). When the tab is **visible**, a 7‑min **watchdog** runs a background fetch and updates the map only if the API has a newer latest frame; when the tab is hidden, the watchdog is cleared. Min 90 s between fetches when cache exists.
@@ -268,4 +268,4 @@ Comprehensive inline documentation in docstring style: File headers, JSDoc-style
 
 ---
 
-*Built with ❤️ for the Mebane, NC community — and easily adapted to your location.*
+_Built with ❤️ for the Mebane, NC community — and easily adapted to your location._
