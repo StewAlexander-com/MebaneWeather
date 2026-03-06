@@ -28,6 +28,7 @@
             <div>Initializing Weather Radar...</div>
         </div>
         <button type="button" id="radar-fullscreen-btn" aria-label="Full screen">⛶ Full screen</button>
+        <button type="button" id="radar-fs-play-btn" class="mw-fs-play-btn" aria-label="Play animation">▶ Play</button>
     </div>
 </div>
 </div>
@@ -39,35 +40,69 @@
 #radar-header p { margin: 0; font-size: clamp(0.75rem, 2.5vw, 0.8125rem); opacity: 0.9; }
 #control-panel { background: #f8f9fa; padding: clamp(8px, 2vw, 12px); text-align: center; border-bottom: 1px solid #ddd; }
 .radar-buttons { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: clamp(8px, 2vw, 12px); margin-bottom: 8px; }
-.radar-buttons button { min-height: 44px; min-width: 88px; padding: 10px 16px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: clamp(0.8125rem, 2.5vw, 0.875rem); white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+.radar-buttons button { min-height: 44px; min-width: 88px; padding: 10px 16px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: clamp(0.8125rem, 2.5vw, 0.875rem); white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform 0.12s ease, filter 0.12s ease; }
 .radar-buttons button:focus { outline: 2px solid #0056b3; outline-offset: 2px; }
+.radar-buttons button:active { transform: scale(0.98); filter: brightness(0.97); }
 #playButton { background: #28a745; min-width: 72px; }
 #playButton:hover, .radar-buttons button:hover { filter: brightness(1.05); }
 .radar-speed-row { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; margin-bottom: 6px; font-size: clamp(0.75rem, 2vw, 0.8125rem); color: #555; }
 .radar-speed-row label { margin: 0; }
 .radar-speed-row input[type="range"] { width: 120px; min-width: 100px; max-width: 180px; accent-color: #007bff; }
-#radar-speed-value { font-weight: 600; min-width: 2.5em; }
+#radar-speed-value { font-weight: 600; min-width: 2.5em; transition: opacity 0.15s ease; }
 #timestamp-display { font-size: clamp(0.75rem, 2vw, 0.8125rem); color: #666; font-weight: 600; text-align: center; word-break: break-word; padding: 0 4px; }
 #radar-error { margin-top: 6px; font-size: clamp(0.6875rem, 2vw, 0.75rem); color: #c00; }
-#radar-retry-btn { min-height: 44px; padding: 8px 16px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8125rem; margin-left: 6px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-#map-container { position: relative; width: 100%; min-height: 220px; height: clamp(220px, 45vmin, 320px); }
+#radar-retry-btn { min-height: 44px; padding: 8px 16px; background: #007bff; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.8125rem; margin-left: 6px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform 0.12s ease, filter 0.12s ease; }
+#radar-retry-btn:active { transform: scale(0.98); filter: brightness(0.97); }
+#map-container { position: relative; width: 100%; min-height: 220px; height: clamp(220px, 45vmin, 320px); border-radius: 0 0 8px 8px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.06); }
 #loading-indicator { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 10; font-size: clamp(0.875rem, 2.5vw, 1rem); color: #666; }
-#radar-fullscreen-btn { display: none; position: absolute; bottom: 8px; left: 8px; z-index: 600; min-height: 36px; min-width: 44px; padding: 6px 10px; font-size: clamp(0.6875rem, 2vw, 0.75rem); background: rgba(255,255,255,0.95); border: 1px solid #ccc; border-radius: 4px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+#loading-indicator > div { animation: mw-load-pulse 1.6s ease-in-out infinite; }
+@keyframes mw-load-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+#radar-fullscreen-btn { display: none; position: absolute; bottom: 8px; left: 8px; z-index: 2000; min-height: 36px; min-width: 44px; padding: 6px 10px; font-size: clamp(0.6875rem, 2vw, 0.75rem); background: rgba(255,255,255,0.95); border: 1px solid #ccc; border-radius: 4px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform 0.12s ease, background 0.15s ease; }
 #radar-fullscreen-btn.mw-fs-available { display: block; }
 #radar-fullscreen-btn:hover { background: #fff; }
+#radar-fullscreen-btn:active { transform: scale(0.96); }
 #radar-fullscreen-btn:focus { outline: 2px solid #007bff; outline-offset: 2px; }
+.mw-fs-play-btn { display: none; position: absolute; left: 58px; bottom: 8px; z-index: 2000; min-height: 36px; min-width: 44px; padding: 6px 10px; font-size: clamp(0.6875rem, 2vw, 0.75rem); background: rgba(255,255,255,0.95); border: 1px solid #ccc; border-radius: 4px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform 0.12s ease, background 0.15s ease; }
+.mw-fs-play-btn.mw-fs-play-visible { display: block; }
+.mw-fs-play-btn:hover { background: #fff; }
+.mw-fs-play-btn:active { transform: scale(0.96); }
+.mw-fs-play-btn:focus { outline: 2px solid #007bff; outline-offset: 2px; }
+#radar-mode-note { transition: color 0.2s ease; }
+#radar-mode-note.mw-nws-mode { color: #5a7a9e; }
 /* Fullscreen = map container only (like iframe fullscreen: browser gives it full viewport, no black band) */
 #map-container:fullscreen, #map-container:-webkit-full-screen, #map-container:-moz-full-screen, #map-container:-ms-fullscreen { width: 100%; height: 100%; background: #fff; }
 #map-container.mw-map-fullscreen-fallback { position: fixed; inset: 0; z-index: 99999; width: 100%; height: 100%; background: #fff; }
+/* Fullscreen: stack Play above Exit (both left-aligned) so they never overlap; clear of address bar; never touch Leaflet (bottom-right) */
+#map-container:fullscreen #radar-fullscreen-btn,
+#map-container:-webkit-full-screen #radar-fullscreen-btn,
+#map-container:-moz-full-screen #radar-fullscreen-btn,
+#map-container:-ms-fullscreen #radar-fullscreen-btn,
+#map-container.mw-map-fullscreen-fallback #radar-fullscreen-btn { left: 8px; bottom: 52px; }
+#map-container:fullscreen .mw-fs-play-btn.mw-fs-play-visible,
+#map-container:-webkit-full-screen .mw-fs-play-btn.mw-fs-play-visible,
+#map-container:-moz-full-screen .mw-fs-play-btn.mw-fs-play-visible,
+#map-container:-ms-fullscreen .mw-fs-play-btn.mw-fs-play-visible,
+#map-container.mw-map-fullscreen-fallback .mw-fs-play-btn.mw-fs-play-visible { left: 8px; bottom: 108px; }
 @supports (padding: env(safe-area-inset-bottom)) {
   #map-container.mw-map-fullscreen-fallback { padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); box-sizing: border-box; }
+  #map-container:fullscreen #radar-fullscreen-btn,
+  #map-container:-webkit-full-screen #radar-fullscreen-btn,
+  #map-container.mw-map-fullscreen-fallback #radar-fullscreen-btn { bottom: max(52px, calc(8px + env(safe-area-inset-bottom))); }
+  #map-container:fullscreen .mw-fs-play-btn.mw-fs-play-visible,
+  #map-container:-webkit-full-screen .mw-fs-play-btn.mw-fs-play-visible,
+  #map-container.mw-map-fullscreen-fallback .mw-fs-play-btn.mw-fs-play-visible { left: max(8px, env(safe-area-inset-left)); bottom: max(108px, calc(108px + env(safe-area-inset-bottom))); }
 }
 @media (max-width: 480px) {
     .mw-radar-wrap { padding: 0 6px; }
     .radar-buttons { gap: 8px; }
     .radar-buttons button { min-width: 80px; padding: 10px 12px; }
-    /* Lift fullscreen toggle slightly on very small screens so it doesn't overlap Leaflet attribution */
-    #radar-fullscreen-btn { bottom: 42px; }
+    /* Same stack on mobile; lift both so they don't overlap Leaflet attribution */
+    #map-container:fullscreen #radar-fullscreen-btn,
+    #map-container:-webkit-full-screen #radar-fullscreen-btn,
+    #map-container.mw-map-fullscreen-fallback #radar-fullscreen-btn { bottom: 42px; }
+    #map-container:fullscreen .mw-fs-play-btn.mw-fs-play-visible,
+    #map-container:-webkit-full-screen .mw-fs-play-btn.mw-fs-play-visible,
+    #map-container.mw-map-fullscreen-fallback .mw-fs-play-btn.mw-fs-play-visible { left: 8px; bottom: 98px; }
 }
 </style>
 
@@ -96,13 +131,16 @@ var radarFromCache = false, radarCacheAgeMs = null;
 // NWS/NOAA WMS fallback (CONUS base reflectivity via NCEP GeoServer)
 var NWS_WMS_URL = 'https://opengeo.ncep.noaa.gov/geoserver/conus/conus_bref_qcd/ows';
 var NWS_WMS_LAYER = 'conus_bref_qcd';
+var NWS_FAILOVER_DELAY_MS = 2600;  /* aggressive: show NWS radar fast when RainViewer is slow */
+var RAINVIEWER_MAX_ZOOM = 9;       /* RainViewer unreliable above this; use NWS at zoom 10+ (county/regional) */
 var nwsWmsLayer = null;
 var radarFetchWatchdogTimer = null;
+var nwsShowingReason = null;       /* null | 'fallback' | 'high_zoom' */
 
 var map;
 var apiData = {};
 var mapFrames = [];
-var radarLayers = [];
+var radarLayers = {};  /* path string -> L.TileLayer; single source of truth for visibility is syncRadarToMap() */
 var animationPosition = 0;
 var animationTimer = false;
 var isPlaying = false;
@@ -110,6 +148,8 @@ var animationDelayMs = 800;
 var preloadScheduled = false;
 var lastPastFrameIndex = -1;  /* index in mapFrames of most recent observation (closest to current time) */
 var radarRedrawTimer = null;  /* debounced redraw after zoom/pan to avoid race conditions */
+var CROSSFADE_MS = 180;       /* blend between frames during play for smooth animation */
+var crossfadeInProgress = false;
 
 function getCurrentFrameIndex() {
     if (!mapFrames || !mapFrames.length) return -1;
@@ -175,8 +215,8 @@ function showRadarError(msg) {
     if (row) row.style.display = 'block';
 }
 
-// NWS WMS fallback helpers (optional, HA/resilient: never throws, only used when RainViewer is slow/unavailable)
-function enableNwsFallback() {
+// NWS WMS fallback helpers (optional, HA/resilient: never throws)
+function ensureNwsLayerOnMap() {
     try {
         if (!map) return;
         if (!nwsWmsLayer && L && L.tileLayer && typeof L.tileLayer.wms === 'function') {
@@ -184,24 +224,89 @@ function enableNwsFallback() {
                 layers: NWS_WMS_LAYER,
                 format: 'image/png',
                 transparent: true,
-                opacity: 0.7,
+                opacity: 0,
+                minZoom: 4,
+                maxZoom: 12,
                 attribution: 'Radar data: NOAA/NWS'
             });
         }
         if (nwsWmsLayer && !map.hasLayer(nwsWmsLayer)) {
+            if (typeof nwsWmsLayer.setOpacity === 'function') nwsWmsLayer.setOpacity(0);
             nwsWmsLayer.addTo(map);
+            setTimeout(function() {
+                try { if (nwsWmsLayer && map.hasLayer(nwsWmsLayer) && typeof nwsWmsLayer.setOpacity === 'function') nwsWmsLayer.setOpacity(0.7); } catch (e) {}
+            }, 80);
         }
+    } catch (e) {}
+}
+function enableNwsFallback() {
+    try {
+        nwsShowingReason = 'fallback';
+        syncRadarToMap();
         var note = document.getElementById('radar-mode-note');
-        if (note) note.textContent = 'using NWS radar as primary rainviewer feed unavailble';
+        if (note) { note.textContent = 'using NWS radar as primary; RainViewer feed unavailable'; note.classList.add('mw-nws-mode'); }
     } catch (e) {}
 }
 function disableNwsFallback() {
     try {
-        if (map && nwsWmsLayer && map.hasLayer(nwsWmsLayer)) {
-            map.removeLayer(nwsWmsLayer);
-        }
+        nwsShowingReason = null;
         var note = document.getElementById('radar-mode-note');
-        if (note) note.textContent = 'Using RainViewer radar (primary)';
+        if (note) { note.textContent = 'Using RainViewer radar (primary)'; note.classList.remove('mw-nws-mode'); }
+        syncRadarToMap();
+    } catch (e) {}
+}
+// Single source of truth: apply current zoom/play/fallback state to the map so the correct radar is visible.
+// Call after any change that affects what should be shown (zoom, frame, fullscreen, NWS fallback). opts.forceTileReset for fullscreen repaint.
+function syncRadarToMap(opts) {
+    opts = opts || {};
+    try {
+        if (!map) return;
+        var zoom = map.getZoom();
+        var highZoom = zoom > RAINVIEWER_MAX_ZOOM;
+        var useNws = nwsShowingReason === 'fallback' || highZoom;
+        var path, layer, frame, pos;
+        if (useNws) {
+            if (nwsShowingReason !== 'fallback') nwsShowingReason = 'high_zoom';
+            ensureNwsLayerOnMap();
+            for (path in radarLayers) {
+                if (radarLayers.hasOwnProperty(path) && (layer = radarLayers[path]) && map.hasLayer(layer)) map.removeLayer(layer);
+            }
+            var note = document.getElementById('radar-mode-note');
+            if (note && nwsShowingReason === 'high_zoom') { note.textContent = 'NWS radar (county/regional zoom)'; note.classList.add('mw-nws-mode'); }
+        } else {
+            if (nwsShowingReason === 'high_zoom' && nwsWmsLayer && map.hasLayer(nwsWmsLayer)) map.removeLayer(nwsWmsLayer);
+            nwsShowingReason = nwsShowingReason === 'high_zoom' ? null : nwsShowingReason;
+            pos = getCurrentFrameIndex();
+            if (pos >= 0 && mapFrames && mapFrames[pos] && apiData && typeof apiData.host === 'string') {
+                frame = mapFrames[pos];
+                if (!radarLayers[frame.path]) {
+                    radarLayers[frame.path] = L.tileLayer(
+                        apiData.host + frame.path + '/256/{z}/{x}/{y}/5/1_1.png',
+                        { tileSize: 256, opacity: 0.75, zIndex: frame.time }
+                    );
+                }
+                map.addLayer(radarLayers[frame.path]);
+                for (path in radarLayers) {
+                    if (path !== frame.path && map.hasLayer(radarLayers[path])) map.removeLayer(radarLayers[path]);
+                }
+                if (opts.forceTileReset && (layer = radarLayers[frame.path])) {
+                    map.removeLayer(layer);
+                    if (typeof layer._reset === 'function') layer._reset();
+                    map.addLayer(layer);
+                    if (typeof layer.redraw === 'function') layer.redraw();
+                    if (typeof layer._update === 'function') setTimeout(function() { try { if (map && map.hasLayer(layer)) layer._update(); } catch (e) {} }, 60);
+                }
+            }
+            var noteEl = document.getElementById('radar-mode-note');
+            if (noteEl && nwsShowingReason !== 'fallback') { noteEl.textContent = 'Using RainViewer radar (primary)'; noteEl.classList.remove('mw-nws-mode'); }
+        }
+    } catch (e) {}
+}
+// At zoom 10+ RainViewer often has no tiles; use NWS. At zoom <= 9 use RainViewer when available.
+function applyZoomBasedRadarSource() {
+    try {
+        if (!map) return;
+        syncRadarToMap();
     } catch (e) {}
 }
 
@@ -241,7 +346,6 @@ function initializeWeatherRadar() {
         }
     } catch (e) {}
     map.on('zoomend moveend', function() {
-        // Debounce radar redraw so we repaint once after the map settles at the new zoom/position.
         if (radarRedrawTimer) {
             try { clearTimeout(radarRedrawTimer); } catch (e) {}
             radarRedrawTimer = null;
@@ -252,28 +356,15 @@ function initializeWeatherRadar() {
                 var mc = document.getElementById('map-container');
                 var inFullscreen = mc && ((document.fullscreenElement || document.webkitFullscreenElement) === mc || mc.classList.contains('mw-map-fullscreen-fallback'));
                 map.invalidateSize();
-                if (mapFrames && mapFrames.length > 0 && apiData && apiData.host) {
-                    var pos = getCurrentFrameIndex();
-                    if (pos >= 0) {
-                        // Just ask showFrame to put the correct frame on top; let Leaflet manage tiles.
-                        showFrame(pos);
-                    }
-                }
-                // In fullscreen, rely on the existing fullscreen refresh helper to handle any extra sizing quirks.
-                if (inFullscreen && typeof window !== 'undefined' && window.mwRadarRefreshFullscreen) {
-                    window.mwRadarRefreshFullscreen();
-                }
+                syncRadarToMap();
+                if (inFullscreen && typeof window !== 'undefined' && window.mwRadarRefreshFullscreen) window.mwRadarRefreshFullscreen();
             } catch (e) {}
         }, 220);
     });
-    // After layout stabilizes (responsive container), ensure map size is correct and show latest radar frame
     setTimeout(function() {
         if (map) {
             map.invalidateSize();
-            if (mapFrames && mapFrames.length > 0 && apiData && apiData.host) {
-                var pos = getCurrentFrameIndex();
-                if (pos >= 0) showFrame(pos);
-            }
+            syncRadarToMap();
         }
     }, 400);
 
@@ -322,14 +413,14 @@ function loadRadarData(background, onlyUpdateIfNewer) {
     if (!background) {
         document.getElementById('timestamp-display').textContent = 'Loading radar…';
         hideRadarError();
-        // If RainViewer is very slow and no frames are showing after 8 seconds, enable NOAA/NWS WMS fallback overlay.
+        // If RainViewer is slow, enable NWS fallback quickly so user sees radar with minimal "zoom not supported" gap.
         radarFetchWatchdogTimer = setTimeout(function() {
             try {
                 if ((!mapFrames || mapFrames.length === 0) && (!apiData || !apiData.host)) {
                     enableNwsFallback();
                 }
             } catch (e) {}
-        }, 8000);
+        }, NWS_FAILOVER_DELAY_MS);
     }
 
     function tryFetch(attempt) {
@@ -426,7 +517,7 @@ function processRadarFrames() {
     if (mapFrames.length === 0 && isPlaying) stopAnimation();
 }
 
-// Preload frame layers in background (HA: one frame at a time, try/catch, no block). Run after initial load.
+// Preload frame layers in background (create only; syncRadarToMap controls what is on the map).
 function preloadRadarFrames() {
     if (!map || !mapFrames.length || !apiData.host) return;
     var maxPreload = Math.min(mapFrames.length, 12);
@@ -441,15 +532,8 @@ function preloadRadarFrames() {
                     { tileSize: 256, opacity: 0.75, zIndex: frame.time }
                 );
             }
-            map.addLayer(radarLayers[frame.path]);
-            setTimeout(function() {
-                try {
-                    var currentPath = mapFrames.length && animationPosition >= 0 && mapFrames[animationPosition] ? mapFrames[animationPosition].path : null;
-                    if (frame.path !== currentPath && map && map.hasLayer(radarLayers[frame.path])) map.removeLayer(radarLayers[frame.path]);
-                } catch (e) {}
-                idx++;
-                if (idx < maxPreload) setTimeout(doOne, 120);
-            }, 80);
+            idx++;
+            if (idx < maxPreload) setTimeout(doOne, 120);
         } catch (e) {
             idx++;
             if (idx < maxPreload) setTimeout(doOne, 120);
@@ -458,32 +542,89 @@ function preloadRadarFrames() {
     doOne();
 }
 
-// Display specific radar frame (add new layer first, then remove others to avoid blink). Returns false on error.
-// Only updates animationPosition on success so we never "show" a failed frame; last good frame stays visible.
+// Display specific radar frame: update position/timestamp then sync radar to map. Returns false on error.
 function showFrame(position) {
     if (!map || !mapFrames || mapFrames.length === 0) return false;
-    if (!apiData || typeof apiData.host !== 'string') return false;
     while (position >= mapFrames.length) position -= mapFrames.length;
     while (position < 0) position += mapFrames.length;
     var frame = mapFrames[position];
     if (!frame || typeof frame.path !== 'string') return false;
     try {
-        if (!radarLayers[frame.path]) {
-            radarLayers[frame.path] = L.tileLayer(
-                apiData.host + frame.path + '/256/{z}/{x}/{y}/5/1_1.png',
-                { tileSize: 256, opacity: 0.75, zIndex: frame.time }
-            );
-        }
-        map.addLayer(radarLayers[frame.path]);
-        for (var path in radarLayers) {
-            if (path !== frame.path && map.hasLayer(radarLayers[path])) map.removeLayer(radarLayers[path]);
-        }
-        updateTimestamp(frame.time, radarFromCache, radarCacheAgeMs);
         animationPosition = position;
+        updateTimestamp(frame.time, radarFromCache, radarCacheAgeMs);
+        syncRadarToMap();
         return true;
     } catch (e) {
         console.warn('Radar showFrame error:', e && e.message ? e.message : e);
         return false;
+    }
+}
+
+// During play only: crossfade from current frame to next for smooth "water washed ice" transition. Fallback to instant showFrame on error.
+function crossfadeToNextFrame(doneCallback) {
+    var currentPos, nextPos, currentFrame, nextFrame, currentLayer, nextLayer, stepMs, steps, t;
+    try {
+        if (!map || !mapFrames || mapFrames.length === 0 || !apiData || typeof apiData.host !== 'string') {
+            if (typeof doneCallback === 'function') doneCallback();
+            return;
+        }
+        nextPos = animationPosition + 1;
+        if (nextPos >= mapFrames.length) nextPos = 0;
+        currentPos = animationPosition;
+        currentFrame = mapFrames[currentPos];
+        nextFrame = mapFrames[nextPos];
+        if (!currentFrame || !nextFrame || !currentFrame.path || !nextFrame.path) {
+            if (showFrame(nextPos)) {}
+            if (typeof doneCallback === 'function') doneCallback();
+            return;
+        }
+        if (currentFrame.path === nextFrame.path) {
+            animationPosition = nextPos;
+            updateTimestamp(nextFrame.time, radarFromCache, radarCacheAgeMs);
+            if (typeof doneCallback === 'function') doneCallback();
+            return;
+        }
+        if (!radarLayers[nextFrame.path]) {
+            radarLayers[nextFrame.path] = L.tileLayer(
+                apiData.host + nextFrame.path + '/256/{z}/{x}/{y}/5/1_1.png',
+                { tileSize: 256, opacity: 0, zIndex: nextFrame.time }
+            );
+        }
+        nextLayer = radarLayers[nextFrame.path];
+        currentLayer = radarLayers[currentFrame.path];
+        if (!currentLayer || !map.hasLayer(currentLayer) || !nextLayer) {
+            if (showFrame(nextPos)) {}
+            if (typeof doneCallback === 'function') doneCallback();
+            return;
+        }
+        nextLayer.setOpacity(0);
+        map.addLayer(nextLayer);
+        stepMs = Math.max(20, Math.floor(CROSSFADE_MS / 5));
+        steps = Math.max(2, Math.ceil(CROSSFADE_MS / stepMs));
+        t = 0;
+        (function step() {
+            t += 1;
+            try {
+                if (t <= steps && nextLayer && map.hasLayer(nextLayer)) {
+                    nextLayer.setOpacity(Math.min(1, (t / steps) * 0.75));
+                    if (t < steps) setTimeout(step, stepMs);
+                    else {
+                        if (currentLayer && map.hasLayer(currentLayer)) map.removeLayer(currentLayer);
+                        animationPosition = nextPos;
+                        updateTimestamp(nextFrame.time, radarFromCache, radarCacheAgeMs);
+                        if (typeof doneCallback === 'function') doneCallback();
+                    }
+                } else {
+                    if (typeof doneCallback === 'function') doneCallback();
+                }
+            } catch (e) {
+                if (showFrame(nextPos)) {}
+                if (typeof doneCallback === 'function') doneCallback();
+            }
+        })();
+    } catch (e) {
+        try { var n = animationPosition + 1; if (mapFrames && n >= mapFrames.length) n = 0; showFrame(n); } catch (e2) {}
+        if (typeof doneCallback === 'function') doneCallback();
     }
 }
 
@@ -513,6 +654,20 @@ function togglePlay() {
     }
 }
 
+function animationTick() {
+    try {
+        if (!mapFrames || mapFrames.length === 0) { stopAnimation(); return; }
+        if (map && map.getZoom() > RAINVIEWER_MAX_ZOOM) return;
+        if (crossfadeInProgress) return;
+        crossfadeInProgress = true;
+        crossfadeToNextFrame(function() { crossfadeInProgress = false; });
+    } catch (e) {
+        console.warn('Radar animation tick error:', e && e.message ? e.message : e);
+        crossfadeInProgress = false;
+        stopAnimation();
+    }
+}
+
 function startAnimation() {
     if (!map || !mapFrames || mapFrames.length === 0) return;
     if (animationTimer) {
@@ -520,31 +675,32 @@ function startAnimation() {
         animationTimer = null;
     }
     isPlaying = true;
+    crossfadeInProgress = false;
     var btn = document.getElementById('playButton');
     if (btn) btn.innerHTML = '⏸ Pause';
+    updateFullscreenPlayButton();
     var delay = Math.max(200, Math.min(2000, animationDelayMs));
-    animationTimer = setInterval(function() {
-        try {
-            if (!mapFrames || mapFrames.length === 0) { stopAnimation(); return; }
-            var ok = showFrame(animationPosition + 1);
-            if (!ok) {
-                // Skip this frame; keep showing last good frame; next tick will try following frame
-            }
-        } catch (e) {
-            console.warn('Radar animation tick error:', e && e.message ? e.message : e);
-            stopAnimation();
-        }
-    }, delay);
+    animationTimer = setInterval(animationTick, delay);
 }
 
 function stopAnimation() {
     isPlaying = false;
+    crossfadeInProgress = false;
     if (animationTimer != null) {
         try { clearInterval(animationTimer); } catch (e) {}
         animationTimer = null;
     }
     var btn = document.getElementById('playButton');
     if (btn) btn.innerHTML = '▶ Play';
+    updateFullscreenPlayButton();
+}
+function updateFullscreenPlayButton() {
+    try {
+        var el = document.getElementById('radar-fs-play-btn');
+        if (!el) return;
+        el.textContent = isPlaying ? '⏸ Pause' : '▶ Play';
+        el.setAttribute('aria-label', isPlaying ? 'Pause animation' : 'Play animation');
+    } catch (e) {}
 }
 
 function previousFrame() {
@@ -573,7 +729,7 @@ window.addEventListener('load', function() {
             speedVal.textContent = animationDelayMs;
             if (isPlaying) {
                 if (animationTimer) clearInterval(animationTimer);
-                animationTimer = setInterval(function() { showFrame(animationPosition + 1); }, animationDelayMs);
+                animationTimer = setInterval(animationTick, animationDelayMs);
             }
         }
         speedEl.addEventListener('input', updateSpeed);
@@ -597,21 +753,27 @@ window.addEventListener('resize', function() {
         var api = !isIOS && (mapContainer.requestFullscreen || mapContainer.webkitRequestFullscreen || mapContainer.mozRequestFullScreen || mapContainer.msRequestFullscreen);
         if (!api && !isIOS) return;
         btn.classList.add('mw-fs-available');
+        var fsPlayBtn = document.getElementById('radar-fs-play-btn');
+        function setFullscreenPlayVisible(visible) {
+            try {
+                if (!fsPlayBtn) return;
+                if (visible) {
+                    fsPlayBtn.classList.add('mw-fs-play-visible');
+                    fsPlayBtn.style.display = 'block';
+                    if (typeof updateFullscreenPlayButton === 'function') updateFullscreenPlayButton();
+                } else {
+                    fsPlayBtn.classList.remove('mw-fs-play-visible');
+                    fsPlayBtn.style.display = '';
+                }
+            } catch (e) {}
+        }
+        if (fsPlayBtn) fsPlayBtn.addEventListener('click', function() { try { if (typeof togglePlay === 'function') togglePlay(); } catch (e) {} });
         function doRadarRedraw(forceTileReset) {
             try {
                 if (typeof map === 'undefined' || !map) return;
-                if (typeof mapFrames === 'undefined' || !mapFrames || mapFrames.length === 0 || typeof showFrame !== 'function') return;
-                var pos = getCurrentFrameIndex();
-                if (pos >= 0) showFrame(pos);
-                var path = mapFrames[animationPosition] && mapFrames[animationPosition].path;
-                var layer = path && typeof radarLayers !== 'undefined' && radarLayers[path];
-                if (layer && map.hasLayer(layer)) {
-                    map.removeLayer(layer);
-                    if (forceTileReset && typeof layer._reset === 'function') layer._reset();
-                    map.addLayer(layer);
-                    if (typeof layer.redraw === 'function') layer.redraw();
-                    if (forceTileReset && typeof layer._update === 'function') setTimeout(function() { try { if (map && map.hasLayer(layer)) layer._update(); } catch (e) {} }, 60);
-                }
+                if (typeof syncRadarToMap !== 'function') return;
+                map.invalidateSize();
+                syncRadarToMap({ forceTileReset: !!forceTileReset });
             } catch (e) {}
         }
         var refreshTimeouts = [];
@@ -673,6 +835,7 @@ window.addEventListener('resize', function() {
                 if (mapContainer && mapContainer.classList) mapContainer.classList.remove('mw-map-fullscreen-fallback');
                 btn.textContent = '⛶ Full screen';
                 btn.setAttribute('aria-label', 'Full screen');
+                setFullscreenPlayVisible(false);
                 if (typeof map !== 'undefined' && map) setTimeout(function() { try { map.invalidateSize(); } catch (e) {} }, 150);
             } catch (e) {}
         }
@@ -682,6 +845,8 @@ window.addEventListener('resize', function() {
                     mapContainer.classList.add('mw-map-fullscreen-fallback');
                     btn.textContent = '✕ Exit full screen';
                     btn.setAttribute('aria-label', 'Exit full screen');
+                    setFullscreenPlayVisible(true);
+                    setTimeout(function() { setFullscreenPlayVisible(true); }, 150);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
                     return;
@@ -692,6 +857,8 @@ window.addEventListener('resize', function() {
                         try {
                             btn.textContent = '✕ Exit full screen';
                             btn.setAttribute('aria-label', 'Exit full screen');
+                            setFullscreenPlayVisible(true);
+                            setTimeout(function() { setFullscreenPlayVisible(true); }, 150);
                             setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
                             setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
                         } catch (e) {}
@@ -700,6 +867,8 @@ window.addEventListener('resize', function() {
                             mapContainer.classList.add('mw-map-fullscreen-fallback');
                             btn.textContent = '✕ Exit full screen';
                             btn.setAttribute('aria-label', 'Exit full screen');
+                            setFullscreenPlayVisible(true);
+                            setTimeout(function() { setFullscreenPlayVisible(true); }, 150);
                             setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
                             setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
                         } catch (e) {}
@@ -708,6 +877,8 @@ window.addEventListener('resize', function() {
                     mapContainer.classList.add('mw-map-fullscreen-fallback');
                     btn.textContent = '✕ Exit full screen';
                     btn.setAttribute('aria-label', 'Exit full screen');
+                    setFullscreenPlayVisible(true);
+                    setTimeout(function() { setFullscreenPlayVisible(true); }, 150);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
                 }
@@ -719,10 +890,13 @@ window.addEventListener('resize', function() {
                     if (mapContainer && mapContainer.classList) mapContainer.classList.remove('mw-map-fullscreen-fallback');
                     btn.textContent = '⛶ Full screen';
                     btn.setAttribute('aria-label', 'Full screen');
+                    setFullscreenPlayVisible(false);
                     if (typeof map !== 'undefined' && map) setTimeout(function() { try { map.invalidateSize(); } catch (e) {} }, 150);
                 } else if ((document.fullscreenElement || document.webkitFullscreenElement) === mapContainer) {
                     btn.textContent = '✕ Exit full screen';
                     btn.setAttribute('aria-label', 'Exit full screen');
+                    setFullscreenPlayVisible(true);
+                    setTimeout(function() { setFullscreenPlayVisible(true); }, 150);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
                 }

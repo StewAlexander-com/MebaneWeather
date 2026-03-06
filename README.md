@@ -46,6 +46,7 @@ Both are self-contained HTML for Weebly Embed Code (or any platform that accepts
 - **Watchdog:** When the tab is visible, every 7 min a background fetch runs and the map updates **only if** the API has a newer latest frame than the one displayed (no flash when nothing new). When the tab is hidden, the watchdog is cleared.
 - **Animation:** Play/Pause, Previous/Next, speed slider (200–1500 ms/frame, right = faster); frame preload (first 12, sequential); add-before-remove in `showFrame` to avoid blink.
 - **Internal robustness:** Simplified zoom/fullscreen redraw logic and centralized frame selection helper for more predictable behavior without changing features.
+- **Fullscreen play button (working fix):** In fullscreen (desktop and mobile), a **Play/Pause** button appears so users can run the radar animation without leaving fullscreen. The button is shown via JS (`display: block`) when entering fullscreen so it is never hidden by CSS specificity. **Layout:** Play is stacked **above** "Exit full screen" (both left-aligned at 8px) so they never overlap regardless of text length or zoom; buttons are lifted (bottom 52px desktop, 42px mobile) to clear the browser address bar; all controls stay in the bottom-left so Leaflet attribution in the bottom-right is never impeded. Safe-area insets are respected on notched devices. Single resilient layout for desktop and mobile.
 
 **February 2025** – Forecast widget (`MebaneWeather Forecast.css`):
 - Open-Meteo + NWS alerts + SPC Day 1 outlook; cards link to NWS/SPC for verification
@@ -122,7 +123,7 @@ The dashboard uses a four-tier threat classification system with priority-based 
 
 **Data source:** RainViewer public API (`api.rainviewer.com/public/weather-maps.json`) — past and nowcast precipitation frames.
 
-**Behavior:** Displays the **latest observation** (last past frame) on load. Play/Pause animates through past + nowcast; Previous/Next step one frame; speed slider controls ms per frame. On zoom or pan, the current radar layer is removed and re-added so tiles load for the new view — radar appears in the expanded area (e.g. central US) without pressing Play. Preload warms the first 12 frame layers without removing the displayed frame.
+**Behavior:** Displays the **latest observation** (last past frame) on load. Play/Pause animates through past + nowcast; Previous/Next step one frame; speed slider controls ms per frame. In **fullscreen**, a Play/Pause button appears (stacked above Exit full screen, left-aligned) so animation can be run without leaving fullscreen; layout avoids overlap and keeps Leaflet attribution visible. On zoom or pan, the current radar layer is synced so tiles load for the new view — radar appears in the expanded area without pressing Play. Preload warms the first 12 frame layers without removing the displayed frame.
 
 **Update cycle:** Full refresh every 10 min (`REFRESH`). When the tab is **visible**, a 7‑min **watchdog** runs a background fetch and updates the map only if the API has a newer latest frame; when the tab is hidden, the watchdog is cleared. Min 90 s between fetches when cache exists.
 
