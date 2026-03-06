@@ -1,6 +1,8 @@
 # 🌩️ MebaneWeather.com - Enhanced Severe Weather Dashboard
 
-> 🏠 **Live at:** [MebaneWeather.com](https://www.stewalexander.com/weather.html) - Your trusted source for Mebane, NC weather monitoring!
+MebaneWeather.com is a self-contained severe weather dashboard and forecast widget designed for easy embedding (Weebly, WordPress, static HTML) with real-time SPC, NWS, and radar integration for Mebane, NC. You can also adapt it to any U.S. location with a few configuration changes.
+
+> 🏠 **Live at:** [MebaneWeather.com](https://www.stewalexander.com/weather.html) — Your trusted source for Mebane, NC weather monitoring!
 
 [![Weebly Compatible](https://img.shields.io/badge/Weebly-Compatible-00A86B?style=flat-square&logo=weebly)](https://www.weebly.com/)
 [![NOAA Integration](https://img.shields.io/badge/NOAA-Integrated-0078D4?style=flat-square)](https://www.noaa.gov/)
@@ -9,15 +11,19 @@
 
 ## 🎯 Project Overview
 
-**MebaneWeather.com** provides real-time weather and severe-weather monitoring for Mebane, NC (Alamance County). The repo includes two embeddable components:
+**MebaneWeather.com** provides real-time weather and severe-weather monitoring for Mebane, NC (Alamance County). The repo includes three embeddable components:
 
 | Component | File | Description |
 |-----------|------|-------------|
-| **Severe Weather Dashboard** | `Severe-Weather-Dashboard.html` | SPC threat levels, NWS alerts, AFD summarization, winter weather detection |
-| **Forecast Widget** | `MebaneWeather Forecast.css` | Current conditions (Open-Meteo + NWS AFD blend), 7-day forecast, NWS alerts, SPC Day 1; resilient, cache + retries, "From the NWS:" link to AFD |
-| **Live Radar Map** | `LiveRadarMap.css` | RainViewer precipitation radar (past + nowcast), Play/Pause animation, speed slider; fullscreen on desktop and smartphones (iOS CSS fallback); HA/resilient; 7‑min watchdog when tab visible |
+| **Severe Weather Dashboard** | `Severe-Weather-Dashboard.html` | SPC threat levels, NWS alerts, summarized NWS AFD, winter weather detection |
+| **Forecast Widget** | `MebaneWeather Forecast.css` | Current conditions (Open‑Meteo + NWS AFD), 7‑day forecast, NWS alerts, SPC Day 1; resilient with caching and retries; "From the NWS:" link to full AFD |
+| **Live Radar Map** | `LiveRadarMap.css` | RainViewer precipitation radar (past + nowcast) with Play/Pause and speed control; fullscreen on desktop and smartphones (CSS fallback on iOS); resilient with caching and a 7‑minute watchdog when the tab is visible |
 
-Both are self-contained HTML for Weebly Embed Code (or any platform that accepts embedded HTML).
+All three are self-contained HTML for Weebly Embed Code (or any platform that accepts embedded HTML).
+
+**Preview:** Screenshot of the live dashboard at [MebaneWeather.com](https://www.stewalexander.com/weather.html):
+
+![MebaneWeather.com dashboard](docs/dashboard-screenshot.png)
 
 ### 🚀 Key Features
 
@@ -26,36 +32,30 @@ Both are self-contained HTML for Weebly Embed Code (or any platform that accepts
 | ⚡ **SPC Threat Integration** | Real-time Storm Prediction Center risk levels | ✅ Active |
 | 🎯 **Location-Specific** | Mebane, NC (36.096°N, -79.267°W); configurable for other locations | ✅ Active |
 | 📱 **Mobile Responsive** | Optimized for all device sizes | ✅ Active |
-| 🔄 **Auto-Refresh** | Severe dashboard: 15 min + 3 min alert polling. Forecast: 4 min weather, 3 min alerts/SPC; skips fetch if one started recently (reduces API load) | ✅ Active |
+| 🔄 **Auto-Refresh** | Severe dashboard: 15‑minute refresh plus 3‑minute alert polling. Forecast: 4‑minute weather refresh, 3‑minute alerts/SPC; skips redundant fetches to reduce API load. | ✅ Active |
 | 🖱️ **Interactive Panels** | Clickable sections linking to NWS/SPC sources | ✅ Active |
 | 📝 **AFD Summarization** | Severe: bullet highlights. Forecast: one-sentence NWS AFD in Current Conditions with "From the NWS:" link | ✅ Active |
 | ❄️ **Winter Weather Detection** | Severe dashboard: NWS alerts + AFD text | ✅ Active |
 | 🌐 **Weebly Optimized** | Self-contained HTML for Embed Code | ✅ Active |
-| 📶 **Resilience (Forecast)** | Exponential backoff, jitter, cache fallback, offline handling, per-attempt timeout growth | ✅ Active |
-| 📋 **Audit Trail (Forecast)** | Footer data sources; Live vs Cached + age in status bar; verify-at-source links | ✅ Active |
-| 🗺️ **Live Radar (RainViewer)** | Past + nowcast frames, latest on load; zoom/pan reloads tiles; fullscreen on desktop and smartphones (iPhone/iPad use CSS fallback); 7‑min watchdog when tab visible | ✅ Active |
+| 📶 **Resilience (Forecast)** | Exponential backoff with jitter, cache fallback, and offline handling. Per‑attempt timeouts grow over retries for more robust behavior. | ✅ Active |
+| 📋 **Audit Trail (Forecast)** | Footer shows data sources; status bar distinguishes Live vs Cached (with age); includes links to verify at the original source. | ✅ Active |
+| 🗺️ **Live Radar (RainViewer)** | Past + nowcast frames, latest on load; zoom/pan reloads tiles; fullscreen on desktop and smartphones (CSS fallback on iOS); 7‑minute watchdog when tab visible. | ✅ Active |
 
 ### 📅 Recent Updates
 
 **March 2025** – Live Radar Map (`LiveRadarMap.css`):
-- RainViewer API; single responsive embed (desktop + mobile). Shows **latest radar frame** (closest to current time = last past frame) on load and after data refresh.
-- **Fullscreen:** Desktop uses the Fullscreen API; smartphones (iPhone/iPad) get a fullscreen option via CSS fallback (no API support for divs on iOS), with safe-area insets for notched devices.
-- **Zoom/pan:** On `zoomend`/`moveend`, the current radar layer is removed and re-added so Leaflet requests tiles for the new view; radar appears in the expanded area (e.g. Wichita, KS) **without pressing Play**.
-- **HA/resilience:** sessionStorage cache (10 min TTL), timeout fetch, 3 retries with exponential backoff + jitter, in-flight guard, min-interval (90 s) when cache exists, offline → cache or message, Live vs Cached + age, Retry button, `online` refresh. Play path: guards (map/frames), timer hygiene, try/catch in `showFrame` and animation tick; only valid frames (with `path`); preload never removes the currently displayed frame.
-- **Radar failover:** When the RainViewer API is very slow or unavailable and no cached frames exist, the radar widget automatically falls back to a CONUS NWS/NOAA WMS radar overlay (official U.S. government source) and switches back to RainViewer when it recovers. This makes the Live Radar widget more robust while keeping the user experience clean and seamless.
-- **Watchdog:** When the tab is visible, every 7 min a background fetch runs and the map updates **only if** the API has a newer latest frame than the one displayed (no flash when nothing new). When the tab is hidden, the watchdog is cleared.
-- **Animation:** Play/Pause, Previous/Next, speed slider (200–1500 ms/frame, right = faster); frame preload (first 12, sequential); add-before-remove in `showFrame` to avoid blink.
-- **Internal robustness:** Simplified zoom/fullscreen redraw logic and centralized frame selection helper for more predictable behavior without changing features.
-- **Fullscreen play button (working fix):** In fullscreen (desktop and mobile), a **Play/Pause** button appears so users can run the radar animation without leaving fullscreen. The button is shown via JS (`display: block`) when entering fullscreen so it is never hidden by CSS specificity. **Layout:** Play is stacked **above** "Exit full screen" (both left-aligned at 8px) so they never overlap regardless of text length or zoom; buttons are lifted (bottom 52px desktop, 42px mobile) to clear the browser address bar; all controls stay in the bottom-left so Leaflet attribution in the bottom-right is never impeded. Safe-area insets are respected on notched devices. Single resilient layout for desktop and mobile.
-- **"Zoom level not supported" fix:** At zoom 8+ the map always uses NWS radar (RainViewer often returns unsupported at those levels). RainViewer tile layers are watched for errors; after 2 errors within 2 s the map fails over to NWS and shows "NWS radar (RainViewer tiles unavailable)". Zoom/pan clears that state so RainViewer is tried again. HA/FO, KISS, fault tolerant.
-- **NWS play and cache:** When NWS is showing (fullscreen or not), **Play** animates through NWS radar frames (last 2 h at 10‑min steps via WMS TIME). NWS frame times are cached for 10 min so playback is responsive; browser caching makes repeat frames fast. Single sync path and guards keep behavior predictable and resilient.
+- **Radar behavior:** Uses the RainViewer API for past and nowcast frames and always shows the latest observation on load and after refresh. Zoom or pan reloads tiles so the radar fills the new view without extra clicks.
+- **Fullscreen:** Desktop uses the Fullscreen API; iPhone/iPad use a CSS-based fullscreen layout with safe-area insets. In fullscreen, a Play/Pause button appears above "Exit full screen" so animation works without leaving fullscreen.
+- **Failover:** When RainViewer is slow or unavailable and no cached frames exist, the map automatically falls back to a CONUS NWS/NOAA radar overlay and returns to RainViewer when it recovers. At zoom 8+ the map uses NWS radar to avoid "Zoom level not supported"; tile errors also trigger NWS fallback. Zooming or panning tries RainViewer again.
+- **Watchdog & animation:** A 7‑minute watchdog refreshes frames while the tab is visible, only updating when newer data exists. Play/Pause, Previous/Next, and a speed slider control animation for both RainViewer and NWS frames (NWS: last 2 hours at 10‑minute steps, with cached frame times for responsive play).
+- Detailed failure modes, backoff, and cache behavior are documented in [RESILIENCE_AND_ACCURACY_ASSESSMENT.md](RESILIENCE_AND_ACCURACY_ASSESSMENT.md) (when present).
 
 **February 2025** – Forecast widget (`MebaneWeather Forecast.css`):
-- Open-Meteo + NWS alerts + SPC Day 1 outlook; cards link to NWS/SPC for verification
-- **Current Conditions:** Meteo line (temp, condition, feels like, wind) plus optional one-sentence NWS AFD summary on a new line; "From the NWS:" is a clickable link to the Area Forecast Discussion; discussion text in smaller font; sentence never ends in "and", "to", "or", or lone adjectives for readability
-- Resilience: exponential backoff with jitter for weather, NWS, SPC, and AFD; sessionStorage cache (weather 2h, NWS 10m, SPC 30m, AFD 30m); retries with per-attempt timeout growth; offline detection + `online` refresh; in-flight guard; paint-first (Meteo then AFD enhances when ready)
+- Open‑Meteo + NWS alerts + SPC Day 1 outlook; cards link to NWS/SPC for verification.
+- Current Conditions: Meteo line (temp, condition, feels like, wind) plus optional one-sentence NWS AFD summary; "From the NWS:" links to the full Area Forecast Discussion. Summary is trimmed for readability (no trailing "and", "to", "or", or lone adjectives).
+- Caching and retries: exponential backoff with jitter for weather, NWS, SPC, and AFD; sessionStorage cache (weather 2 h, NWS 10 min, SPC 30 min, AFD 30 min); offline detection and refresh on reconnect. UI paints immediately, then enhances when AFD is ready.
 - Status bar: “Live” only when live; “Cached data” + “X min ago” when showing cache; no stale “Updated” when cached
-- Single footer audit trail; optional assessment: `RESILIENCE_AND_ACCURACY_ASSESSMENT.md`
+- Single footer audit trail.
 
 **December 2024** – Severe dashboard: winter weather advisory logic fixed (advisories only from NWS alerts API).
 
@@ -67,9 +67,6 @@ Both are self-contained HTML for Weebly Embed Code (or any platform that accepts
   - [📑 Table of Contents](#-table-of-contents)
   - [🛡️ Smart Threat Assessment](#️-smart-threat-assessment)
   - [🔧 Technical Architecture](#-technical-architecture)
-    - [API Integrations](#api-integrations)
-    - [Update Cycle](#update-cycle)
-  - [📸 Live Dashboard](#-live-dashboard)
   - [🚀 Installation \& Configuration](#-installation--configuration)
     - [Quick Install (Weebly)](#quick-install-weebly)
     - [Customization](#customization)
@@ -95,9 +92,9 @@ The dashboard uses a four-tier threat classification system with priority-based 
 | **MONITOR** | ❄️/□ | 🟡 Yellow | Monitor conditions for development | Winter weather advisories, SPC Marginal/Slight risk |
 | **SAFE** | ✅ | 🟢 Green | No severe weather expected | No warnings, no SPC risk |
 
-**Priority**: Warnings override all other indicators, followed by winter weather advisories (MONITOR), then elevated SPC risks (CAUTION), then lower risks (MONITOR).
+**Priority order:** Warnings first, then winter weather advisories (MONITOR), then higher SPC risks (CAUTION), then lower SPC risks (MONITOR).
 
-**Winter Weather**: Detects winter weather alerts and conditions. "Winter Precipitation Imminent and/or Occurring" displays for active warnings. "Monitor for Winter Conditions" only displays when there are active winter weather advisories from the NWS alerts API (not from forecast discussion text analysis).
+**Winter weather:** Detects NWS winter alerts and conditions. "Winter Precipitation Imminent and/or Occurring" shows for active warnings; "Monitor for Winter Conditions" only appears when there is an active winter weather advisory from the NWS alerts API.
 
 **SPC Risk Categories**: TSTM, MRGL, SLGT, ENH, MDT, HIGH - Maps official Storm Prediction Center outlook levels with intelligent forecast discussion summarization.
 
@@ -130,12 +127,6 @@ The dashboard uses a four-tier threat classification system with priority-based 
 **Update cycle:** Full refresh every 10 min (`REFRESH`). When the tab is **visible**, a 7‑min **watchdog** runs a background fetch and updates the map only if the API has a newer latest frame; when the tab is hidden, the watchdog is cleared. Min 90 s between fetches when cache exists.
 
 **Resilience:** sessionStorage cache (10 min TTL); fetch with AbortController timeout (10 s, up to 25 s on retries); 3 retries with exponential backoff + jitter; in-flight guard; offline → use cache or show message; Live vs “Cached (X min ago)” in timestamp; Retry button; `online` listener. NWS: frame-time cache (10 min) for play; WMS TIME animation with setParams/redraw; try/catch in NWS tick. RainViewer tile-error watch (2 errors in 2 s) → NWS failover; zoom/pan clears tile_error for retry. Play/animation: guards (map, frames or NWS frames), single timer, try/catch in `showFrame` and tick; only frames with valid `path`; preload skips removing the currently displayed layer.
-
-## 📸 Live Dashboard
-
-Screenshot of the live dashboard at [MebaneWeather.com](https://www.stewalexander.com/weather.html):
-
-![MebaneWeather.com dashboard](docs/dashboard-screenshot.png)
 
 ## 🚀 Installation & Configuration
 
@@ -192,7 +183,7 @@ const LOCATION_CONFIG = {
 | `SPC_OUTLOOK_URL` | SPC Day 1 convective outlook | `https://www.spc.noaa.gov/products/outlook/day1otlk.html` (same for all US) |
 | `NWS_OFFICE` | NWS office for AFD (Current Conditions sentence and "From the NWS:" link) | `'RAH'` (Raleigh); find yours at [weather.gov/organization](https://www.weather.gov/organization.php) |
 
-3. Build your NWS URL: go to [forecast.weather.gov/MapClick.php](https://forecast.weather.gov/MapClick.php), click your location, copy the URL (it will contain `lat=` and `lon=`).
+3. Build your NWS URL: visit [forecast.weather.gov/MapClick.php](https://forecast.weather.gov/MapClick.php), click your location, then copy the URL containing `lat=` and `lon=`.
 4. Replace the footer links: in the static HTML footer, search for `lat=36.0957` and `lon=-79.2670` and replace with your coordinates in both NWS href URLs.
 5. Save and paste the full file into your Embed Code element.
 
@@ -240,8 +231,9 @@ Alerts and SPC are fetched by point (`LAT`,`LON`). Set `NWS_OFFICE` so the AFD s
 
 ## 🌐 Browser Compatibility
 
-**Supported**: Chrome, Firefox, Safari (iOS 12+), Edge - Full desktop & mobile support  
-**Not Supported**: IE 11 (requires ES6+, Fetch API, CSS Grid, AbortController)
+**Supported:** Chrome, Firefox, Safari (iOS 12+), Edge — full desktop and mobile support.
+
+**Not supported:** IE 11 (requires ES6+, Fetch API, CSS Grid, AbortController).
 
 ## 📝 Code Documentation
 
@@ -269,10 +261,10 @@ Comprehensive inline documentation in docstring style: File headers, JSDoc-style
 
 ## 🚨 Emergency Weather Information
 
-**⚠️ IMPORTANT**: This dashboard is for informational purposes only. For official warnings and emergency information, consult: [National Weather Service](https://weather.gov), Emergency Alert System (local radio/TV), Wireless Emergency Alerts, Local Emergency Management, [Storm Prediction Center](https://www.spc.noaa.gov)
+**⚠️ IMPORTANT:** This dashboard is for informational purposes only. For official warnings and emergency information, consult: [National Weather Service](https://weather.gov), Emergency Alert System (local radio/TV), Wireless Emergency Alerts, Local Emergency Management, [Storm Prediction Center](https://www.spc.noaa.gov).
 
-**In case of severe weather**: Follow local authority instructions, seek immediate shelter if warnings issued, monitor multiple sources, have an emergency plan ready.
+**In case of severe weather:** Follow local authority instructions, seek immediate shelter if warnings are issued, monitor multiple sources, and have an emergency plan ready.
 
 ---
 
-*Built with ❤️ for the Mebane, NC community*
+*Built with ❤️ for the Mebane, NC community — and easily adapted to your location.*
