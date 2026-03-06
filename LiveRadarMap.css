@@ -132,10 +132,19 @@ var radarFromCache = false, radarCacheAgeMs = null;
 var NWS_WMS_URL = 'https://opengeo.ncep.noaa.gov/geoserver/conus/conus_bref_qcd/ows';
 var NWS_WMS_LAYER = 'conus_bref_qcd';
 var NWS_FAILOVER_DELAY_MS = 2600;  /* aggressive: show NWS radar fast when RainViewer is slow */
-var RAINVIEWER_MAX_ZOOM = 9;       /* RainViewer unreliable above this; use NWS at zoom 10+ (county/regional) */
+var NWS_FRAME_COUNT = 12;          /* number of NWS animation frames (last 2h at 10-min steps) */
+var NWS_FRAME_INTERVAL_MS = 600000; /* 10 min between frames */
+var nwsFrameTimes = [];            /* ISO time strings for WMS TIME param; cache for responsive play */
+var nwsFrameTimesBuiltAt = 0;      /* when cache was built */
+var nwsCurrentFrameIndex = 0;      /* 0..NWS_FRAME_COUNT-1 when playing NWS */
+var RAINVIEWER_MAX_ZOOM = 7;       /* RainViewer often "Zoom Level Not Supported" above this; use NWS at zoom 8+ */
+var RAINVIEWER_TILE_ERROR_THRESHOLD = 2;   /* switch to NWS after this many tile errors in window */
+var RAINVIEWER_TILE_ERROR_WINDOW_MS = 2000;
+var rainviewerTileErrorCount = 0;
+var rainviewerTileErrorWindowStart = 0;
 var nwsWmsLayer = null;
 var radarFetchWatchdogTimer = null;
-var nwsShowingReason = null;       /* null | 'fallback' | 'high_zoom' */
+var nwsShowingReason = null;       /* null | 'fallback' | 'high_zoom' | 'tile_error' */
 
 var map;
 var apiData = {};
@@ -215,12 +224,31 @@ function showRadarError(msg) {
     if (row) row.style.display = 'block';
 }
 
-// NWS WMS fallback helpers (optional, HA/resilient: never throws)
+// Build/cache NWS frame times for animation (last 2h at 10-min steps). Rebuild if cache older than 10 min. HA: no throw.
+function buildNwsFrameTimes() {
+    try {
+        var now = Date.now();
+        if (nwsFrameTimes.length > 0 && (now - nwsFrameTimesBuiltAt) < NWS_FRAME_INTERVAL_MS) return nwsFrameTimes;
+        var out = [];
+        var t = Math.floor(now / NWS_FRAME_INTERVAL_MS) * NWS_FRAME_INTERVAL_MS;
+        for (var i = 0; i < NWS_FRAME_COUNT; i++) {
+            var d = new Date(t - i * NWS_FRAME_INTERVAL_MS);
+            out.push(d.toISOString().replace(/\.\d{3}Z$/, 'Z'));
+        }
+        nwsFrameTimes = out;
+        nwsFrameTimesBuiltAt = now;
+        nwsCurrentFrameIndex = 0;
+        return nwsFrameTimes;
+    } catch (e) { return nwsFrameTimes.length ? nwsFrameTimes : []; }
+}
+// NWS WMS fallback helpers (optional, HA/resilient: never throws). Layer created with TIME for animation + cache.
 function ensureNwsLayerOnMap() {
     try {
         if (!map) return;
+        buildNwsFrameTimes();
+        var initialTime = nwsFrameTimes.length > 0 ? nwsFrameTimes[0] : null;
         if (!nwsWmsLayer && L && L.tileLayer && typeof L.tileLayer.wms === 'function') {
-            nwsWmsLayer = L.tileLayer.wms(NWS_WMS_URL, {
+            var wmsOpts = {
                 layers: NWS_WMS_LAYER,
                 format: 'image/png',
                 transparent: true,
@@ -228,7 +256,9 @@ function ensureNwsLayerOnMap() {
                 minZoom: 4,
                 maxZoom: 12,
                 attribution: 'Radar data: NOAA/NWS'
-            });
+            };
+            if (initialTime) wmsOpts.time = initialTime;
+            nwsWmsLayer = L.tileLayer.wms(NWS_WMS_URL, wmsOpts);
         }
         if (nwsWmsLayer && !map.hasLayer(nwsWmsLayer)) {
             if (typeof nwsWmsLayer.setOpacity === 'function') nwsWmsLayer.setOpacity(0);
@@ -255,6 +285,32 @@ function disableNwsFallback() {
         syncRadarToMap();
     } catch (e) {}
 }
+// Create a RainViewer tile layer and attach tileerror watcher: after threshold errors in window, fail over to NWS (HA/FO).
+function createRainviewerTileLayer(path, frameTime, opacity) {
+    if (!apiData || typeof apiData.host !== 'string' || !path) return null;
+    try {
+        var url = apiData.host + path + '/256/{z}/{x}/{y}/5/1_1.png';
+        var layer = L.tileLayer(url, { tileSize: 256, opacity: opacity != null ? opacity : 0.75, zIndex: frameTime });
+        layer.on('tileerror', function() {
+            try {
+                if (nwsShowingReason === 'fallback' || nwsShowingReason === 'tile_error') return;
+                var now = Date.now();
+                if (now - rainviewerTileErrorWindowStart > RAINVIEWER_TILE_ERROR_WINDOW_MS) {
+                    rainviewerTileErrorCount = 0;
+                    rainviewerTileErrorWindowStart = now;
+                }
+                rainviewerTileErrorCount++;
+                if (rainviewerTileErrorCount >= RAINVIEWER_TILE_ERROR_THRESHOLD) {
+                    nwsShowingReason = 'tile_error';
+                    var note = document.getElementById('radar-mode-note');
+                    if (note) { note.textContent = 'NWS radar (RainViewer tiles unavailable)'; note.classList.add('mw-nws-mode'); }
+                    syncRadarToMap();
+                }
+            } catch (e) {}
+        });
+        return layer;
+    } catch (e) { return null; }
+}
 // Single source of truth: apply current zoom/play/fallback state to the map so the correct radar is visible.
 // Call after any change that affects what should be shown (zoom, frame, fullscreen, NWS fallback). opts.forceTileReset for fullscreen repaint.
 function syncRadarToMap(opts) {
@@ -263,29 +319,29 @@ function syncRadarToMap(opts) {
         if (!map) return;
         var zoom = map.getZoom();
         var highZoom = zoom > RAINVIEWER_MAX_ZOOM;
-        var useNws = nwsShowingReason === 'fallback' || highZoom;
+        var useNws = nwsShowingReason === 'fallback' || nwsShowingReason === 'tile_error' || highZoom;
         var path, layer, frame, pos;
         if (useNws) {
-            if (nwsShowingReason !== 'fallback') nwsShowingReason = 'high_zoom';
+            if (nwsShowingReason !== 'fallback' && nwsShowingReason !== 'tile_error') nwsShowingReason = 'high_zoom';
             ensureNwsLayerOnMap();
             for (path in radarLayers) {
                 if (radarLayers.hasOwnProperty(path) && (layer = radarLayers[path]) && map.hasLayer(layer)) map.removeLayer(layer);
             }
             var note = document.getElementById('radar-mode-note');
-            if (note && nwsShowingReason === 'high_zoom') { note.textContent = 'NWS radar (county/regional zoom)'; note.classList.add('mw-nws-mode'); }
+            if (note) {
+                if (nwsShowingReason === 'high_zoom') { note.textContent = 'NWS radar (county/regional zoom)'; note.classList.add('mw-nws-mode'); }
+                else if (nwsShowingReason === 'tile_error') { note.textContent = 'NWS radar (RainViewer tiles unavailable)'; note.classList.add('mw-nws-mode'); }
+            }
         } else {
-            if (nwsShowingReason === 'high_zoom' && nwsWmsLayer && map.hasLayer(nwsWmsLayer)) map.removeLayer(nwsWmsLayer);
-            nwsShowingReason = nwsShowingReason === 'high_zoom' ? null : nwsShowingReason;
+            if ((nwsShowingReason === 'high_zoom' || nwsShowingReason === 'tile_error') && nwsWmsLayer && map.hasLayer(nwsWmsLayer)) map.removeLayer(nwsWmsLayer);
+            nwsShowingReason = (nwsShowingReason === 'high_zoom' || nwsShowingReason === 'tile_error') ? null : nwsShowingReason;
             pos = getCurrentFrameIndex();
             if (pos >= 0 && mapFrames && mapFrames[pos] && apiData && typeof apiData.host === 'string') {
                 frame = mapFrames[pos];
                 if (!radarLayers[frame.path]) {
-                    radarLayers[frame.path] = L.tileLayer(
-                        apiData.host + frame.path + '/256/{z}/{x}/{y}/5/1_1.png',
-                        { tileSize: 256, opacity: 0.75, zIndex: frame.time }
-                    );
+                    radarLayers[frame.path] = createRainviewerTileLayer(frame.path, frame.time, 0.75);
                 }
-                map.addLayer(radarLayers[frame.path]);
+                if (radarLayers[frame.path]) map.addLayer(radarLayers[frame.path]);
                 for (path in radarLayers) {
                     if (path !== frame.path && map.hasLayer(radarLayers[path])) map.removeLayer(radarLayers[path]);
                 }
@@ -331,10 +387,11 @@ function initializeWeatherRadar() {
         .addTo(map)
         .bindPopup('Mebane, NC')
         .openPopup();
-    // Prepare NWS WMS fallback layer (not added to map until needed)
+    // Prepare NWS WMS fallback layer (not added to map until needed); include TIME for animation + cache
     try {
         if (L.tileLayer && typeof L.tileLayer.wms === 'function') {
-            nwsWmsLayer = L.tileLayer.wms(NWS_WMS_URL, {
+            buildNwsFrameTimes();
+            var wmsOpts = {
                 layers: NWS_WMS_LAYER,
                 format: 'image/png',
                 transparent: true,
@@ -342,7 +399,9 @@ function initializeWeatherRadar() {
                 minZoom: 4,
                 maxZoom: 12,
                 attribution: 'Radar data: NOAA/NWS'
-            });
+            };
+            if (nwsFrameTimes.length > 0) wmsOpts.time = nwsFrameTimes[0];
+            nwsWmsLayer = L.tileLayer.wms(NWS_WMS_URL, wmsOpts);
         }
     } catch (e) {}
     map.on('zoomend moveend', function() {
@@ -355,6 +414,7 @@ function initializeWeatherRadar() {
                 if (!map) return;
                 var mc = document.getElementById('map-container');
                 var inFullscreen = mc && ((document.fullscreenElement || document.webkitFullscreenElement) === mc || mc.classList.contains('mw-map-fullscreen-fallback'));
+                if (nwsShowingReason === 'tile_error') nwsShowingReason = null;
                 map.invalidateSize();
                 syncRadarToMap();
                 if (inFullscreen && typeof window !== 'undefined' && window.mwRadarRefreshFullscreen) window.mwRadarRefreshFullscreen();
@@ -527,10 +587,7 @@ function preloadRadarFrames() {
         try {
             var frame = mapFrames[idx];
             if (!radarLayers[frame.path]) {
-                radarLayers[frame.path] = L.tileLayer(
-                    apiData.host + frame.path + '/256/{z}/{x}/{y}/5/1_1.png',
-                    { tileSize: 256, opacity: 0.75, zIndex: frame.time }
-                );
+                radarLayers[frame.path] = createRainviewerTileLayer(frame.path, frame.time, 0.75);
             }
             idx++;
             if (idx < maxPreload) setTimeout(doOne, 120);
@@ -585,10 +642,7 @@ function crossfadeToNextFrame(doneCallback) {
             return;
         }
         if (!radarLayers[nextFrame.path]) {
-            radarLayers[nextFrame.path] = L.tileLayer(
-                apiData.host + nextFrame.path + '/256/{z}/{x}/{y}/5/1_1.png',
-                { tileSize: 256, opacity: 0, zIndex: nextFrame.time }
-            );
+            radarLayers[nextFrame.path] = createRainviewerTileLayer(nextFrame.path, nextFrame.time, 0);
         }
         nextLayer = radarLayers[nextFrame.path];
         currentLayer = radarLayers[currentFrame.path];
@@ -656,6 +710,21 @@ function togglePlay() {
 
 function animationTick() {
     try {
+        var useNws = nwsShowingReason === 'fallback' || nwsShowingReason === 'tile_error' || (map && map.getZoom() > RAINVIEWER_MAX_ZOOM);
+        if (useNws && nwsFrameTimes.length > 0 && nwsWmsLayer && map && map.hasLayer(nwsWmsLayer) && typeof nwsWmsLayer.setParams === 'function') {
+            nwsCurrentFrameIndex = (nwsCurrentFrameIndex + 1) % nwsFrameTimes.length;
+            var timeStr = nwsFrameTimes[nwsCurrentFrameIndex];
+            if (timeStr) {
+                try {
+                    nwsWmsLayer.setParams({ time: timeStr });
+                    if (typeof nwsWmsLayer._reset === 'function') nwsWmsLayer._reset();
+                    else if (typeof nwsWmsLayer.redraw === 'function') nwsWmsLayer.redraw();
+                } catch (e2) {}
+            }
+            var unixTime = timeStr ? Math.floor(new Date(timeStr).getTime() / 1000) : null;
+            updateTimestamp(unixTime, false, null);
+            return;
+        }
         if (!mapFrames || mapFrames.length === 0) { stopAnimation(); return; }
         if (map && map.getZoom() > RAINVIEWER_MAX_ZOOM) return;
         if (crossfadeInProgress) return;
@@ -669,13 +738,18 @@ function animationTick() {
 }
 
 function startAnimation() {
-    if (!map || !mapFrames || mapFrames.length === 0) return;
+    if (!map) return;
+    var useNws = nwsShowingReason === 'fallback' || nwsShowingReason === 'tile_error' || map.getZoom() > RAINVIEWER_MAX_ZOOM;
+    var hasNwsFrames = useNws && buildNwsFrameTimes().length > 0;
+    var hasRainviewerFrames = mapFrames && mapFrames.length > 0;
+    if (!hasNwsFrames && !hasRainviewerFrames) return;
     if (animationTimer) {
         clearInterval(animationTimer);
         animationTimer = null;
     }
     isPlaying = true;
     crossfadeInProgress = false;
+    if (useNws) nwsCurrentFrameIndex = 0;
     var btn = document.getElementById('playButton');
     if (btn) btn.innerHTML = '⏸ Pause';
     updateFullscreenPlayButton();
