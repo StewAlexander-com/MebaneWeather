@@ -14,6 +14,7 @@
             <button type="button" onclick="previousFrame()" aria-label="Previous frame">◀ Previous</button>
             <button type="button" id="playButton" onclick="togglePlay()" aria-label="Play or pause animation">▶ Play</button>
             <button type="button" onclick="nextFrame()" aria-label="Next frame">Next ▶</button>
+            <button type="button" onclick="goToLatestRadarFrame()" aria-label="Show latest radar frame">Latest</button>
         </div>
         <div class="radar-speed-row">
             <label for="radar-speed">Speed:</label>
@@ -843,6 +844,40 @@ function nextFrame() {
     try { showFrame(animationPosition + 1); } catch (e) { console.warn('nextFrame:', e && e.message ? e.message : e); }
 }
 
+function goToLatestRadarFrame() {
+    try {
+        if (typeof stopAnimation === 'function') stopAnimation();
+        if (typeof map === 'undefined' || !map) return;
+        var zoom = map.getZoom();
+        var highZoom = zoom > (typeof RAINVIEWER_MAX_ZOOM !== 'undefined' ? RAINVIEWER_MAX_ZOOM : 7);
+        var haveRainviewerFrames = (typeof mapFrames !== 'undefined' && mapFrames && mapFrames.length > 0) || (typeof apiData !== 'undefined' && apiData && apiData.radar && apiData.radar.past && apiData.radar.past.length > 0);
+        haveRainviewerFrames = haveRainviewerFrames && typeof apiData !== 'undefined' && apiData && typeof apiData.host === 'string';
+        var useNws = highZoom || ((typeof nwsShowingReason !== 'undefined' && (nwsShowingReason === 'fallback' || nwsShowingReason === 'tile_error')) && !haveRainviewerFrames);
+        if (useNws && typeof buildNwsFrameTimes === 'function') {
+            var times = buildNwsFrameTimes();
+            if (typeof ensureNwsLayerOnMap === 'function') ensureNwsLayerOnMap();
+            if (times && times.length > 0 && typeof nwsWmsLayer !== 'undefined' && nwsWmsLayer) {
+                nwsCurrentFrameIndex = times.length - 1;
+                var timeStr = times[times.length - 1];
+                try {
+                    if (typeof nwsWmsLayer.setParams === 'function') nwsWmsLayer.setParams({ time: timeStr });
+                    if (typeof nwsWmsLayer._reset === 'function') nwsWmsLayer._reset();
+                    else if (typeof nwsWmsLayer.redraw === 'function') nwsWmsLayer.redraw();
+                } catch (e2) {}
+                var unixTime = timeStr ? Math.floor(new Date(timeStr).getTime() / 1000) : null;
+                if (typeof updateTimestamp === 'function') updateTimestamp(unixTime, false, null);
+            }
+            if (typeof syncRadarToMap === 'function') syncRadarToMap();
+        } else {
+            var idx = typeof lastPastFrameIndex !== 'undefined' && lastPastFrameIndex >= 0 ? lastPastFrameIndex : (typeof mapFrames !== 'undefined' && mapFrames && mapFrames.length ? mapFrames.length - 1 : -1);
+            if (idx >= 0 && typeof showFrame === 'function') {
+                showFrame(idx);
+                if (typeof syncRadarToMap === 'function') syncRadarToMap({ forceTileReset: true });
+            }
+        }
+    } catch (e) {}
+}
+
 window.addEventListener('load', function() {
     setTimeout(initializeWeatherRadar, 800);
     var retryBtn = document.getElementById('radar-retry-btn');
@@ -886,33 +921,6 @@ window.addEventListener('resize', function() {
         var fsPlayBtn = document.getElementById('radar-fs-play-btn');
         var fsLatestBtn = document.getElementById('radar-fs-latest-btn');
         var fsTimestampEl = document.getElementById('radar-fs-timestamp');
-        function goToLatestRadarFrame() {
-            try {
-                if (typeof stopAnimation === 'function') stopAnimation();
-                var useNws = (typeof nwsShowingReason !== 'undefined' && (nwsShowingReason === 'fallback' || nwsShowingReason === 'tile_error')) || (typeof map !== 'undefined' && map && typeof map.getZoom === 'function' && map.getZoom() > (typeof RAINVIEWER_MAX_ZOOM !== 'undefined' ? RAINVIEWER_MAX_ZOOM : 7));
-                if (useNws && typeof buildNwsFrameTimes === 'function') {
-                    var times = buildNwsFrameTimes();
-                    if (times && times.length > 0 && typeof nwsCurrentFrameIndex !== 'undefined' && typeof nwsWmsLayer !== 'undefined' && nwsWmsLayer && typeof map !== 'undefined' && map && map.hasLayer && map.hasLayer(nwsWmsLayer)) {
-                        nwsCurrentFrameIndex = times.length - 1;
-                        var timeStr = times[times.length - 1];
-                        try {
-                            if (typeof nwsWmsLayer.setParams === 'function') nwsWmsLayer.setParams({ time: timeStr });
-                            if (typeof nwsWmsLayer._reset === 'function') nwsWmsLayer._reset();
-                            else if (typeof nwsWmsLayer.redraw === 'function') nwsWmsLayer.redraw();
-                        } catch (e2) {}
-                        var unixTime = timeStr ? Math.floor(new Date(timeStr).getTime() / 1000) : null;
-                        if (typeof updateTimestamp === 'function') updateTimestamp(unixTime, false, null);
-                    }
-                    if (typeof syncRadarToMap === 'function') syncRadarToMap();
-                } else {
-                    var idx = typeof lastPastFrameIndex !== 'undefined' && lastPastFrameIndex >= 0 ? lastPastFrameIndex : (typeof mapFrames !== 'undefined' && mapFrames && mapFrames.length ? mapFrames.length - 1 : -1);
-                    if (idx >= 0 && typeof showFrame === 'function') {
-                        showFrame(idx);
-                        if (typeof syncRadarToMap === 'function') syncRadarToMap({ forceTileReset: true });
-                    }
-                }
-            } catch (e) {}
-        }
         function setFullscreenPlayVisible(visible) {
             try {
                 if (!fsPlayBtn) return;
@@ -952,7 +960,7 @@ window.addEventListener('resize', function() {
             } catch (e) {}
         }
         if (fsPlayBtn) fsPlayBtn.addEventListener('click', function() { try { if (typeof togglePlay === 'function') togglePlay(); } catch (e) {} });
-        if (fsLatestBtn) fsLatestBtn.addEventListener('click', function() { try { goToLatestRadarFrame(); } catch (e) {} });
+        if (fsLatestBtn) fsLatestBtn.addEventListener('click', function() { try { if (typeof goToLatestRadarFrame === 'function') goToLatestRadarFrame(); } catch (e) {} });
         function doRadarRedraw(forceTileReset) {
             try {
                 if (typeof map === 'undefined' || !map) return;
