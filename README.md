@@ -43,12 +43,12 @@ All three are self-contained HTML for Weebly Embed Code (or any platform that ac
 
 ### Recent Updates
 
-**March 2025** – Live Radar Map (`LiveRadarMap.css`):
-- **Radar behavior:** Uses the RainViewer API for past and nowcast frames and always shows the latest observation on load and after refresh. Zoom or pan reloads tiles so the radar fills the new view without extra clicks.
-- **Fullscreen:** Desktop uses the Fullscreen API; iPhone/iPad use a CSS-based fullscreen layout with safe-area insets. In fullscreen, a Play/Pause button appears above "Exit full screen" so animation works without leaving fullscreen.
-- **Failover:** When RainViewer is slow or unavailable and no cached frames exist, the map automatically falls back to a CONUS NWS/NOAA radar overlay and returns to RainViewer when it recovers. At zoom 8+ the map uses NWS radar to avoid "Zoom level not supported"; tile errors also trigger NWS fallback. Zooming or panning tries RainViewer again.
-- **Watchdog & animation:** A 7‑minute watchdog refreshes frames while the tab is visible, only updating when newer data exists. Play/Pause, Previous/Next, and a speed slider control animation for both RainViewer and NWS frames (NWS: last 2 hours at 10‑minute steps, with cached frame times for responsive play).
-- Detailed failure modes, backoff, and cache behavior are documented in [RESILIENCE_AND_ACCURACY_ASSESSMENT.md](RESILIENCE_AND_ACCURACY_ASSESSMENT.md) (when present).
+**Live Radar Map** (user-facing changes):
+- **Fullscreen:** Timestamp in the **top-right** shows the exact time of the radar frame you’re viewing (desktop and mobile). Play/Pause and **Latest** buttons appear in fullscreen; **Latest** jumps back to the most current frame and keeps the map and time in sync.
+- **Zoom:** RainViewer radar shows when **zoomed out** (zoom 4–7). When you zoom in (8+), the map switches to NWS radar. Zoom out again to see RainViewer.
+- **Data:** RainViewer past + nowcast frames; NWS used as fallback if RainViewer is slow or at high zoom. 7‑minute refresh while the tab is visible.
+
+(Technical details: fullscreen API + CSS fallback on iOS, tile-error failover, watchdog, caching, and resilience are unchanged and documented in the file and [RESILIENCE_AND_ACCURACY_ASSESSMENT.md](RESILIENCE_AND_ACCURACY_ASSESSMENT.md) when present.)
 
 **February 2025** – Forecast widget (`MebaneWeather Forecast.css`):
 - Open‑Meteo + NWS alerts + SPC Day 1 outlook; cards link to NWS/SPC for verification.

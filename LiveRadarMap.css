@@ -27,8 +27,10 @@
         <div id="loading-indicator">
             <div>Initializing Weather Radar...</div>
         </div>
+        <div id="radar-fs-timestamp" class="mw-fs-timestamp" aria-live="polite" aria-label="Radar frame time"></div>
         <button type="button" id="radar-fullscreen-btn" aria-label="Full screen">⛶ Full screen</button>
         <button type="button" id="radar-fs-play-btn" class="mw-fs-play-btn" aria-label="Play animation">▶ Play</button>
+        <button type="button" id="radar-fs-latest-btn" class="mw-fs-latest-btn" aria-label="Show latest radar frame">Latest</button>
     </div>
 </div>
 </div>
@@ -67,6 +69,14 @@
 .mw-fs-play-btn:hover { background: #fff; }
 .mw-fs-play-btn:active { transform: scale(0.96); }
 .mw-fs-play-btn:focus { outline: 2px solid #007bff; outline-offset: 2px; }
+.mw-fs-latest-btn { display: none; position: absolute; left: 8px; bottom: 164px; z-index: 2000; min-height: 36px; min-width: 44px; padding: 6px 10px; font-size: clamp(0.6875rem, 2vw, 0.75rem); background: rgba(255,255,255,0.95); border: 1px solid #ccc; border-radius: 4px; cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.2); -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform 0.12s ease, background 0.15s ease; }
+.mw-fs-latest-btn.mw-fs-latest-visible { display: block; }
+.mw-fs-latest-btn:hover { background: #fff; }
+.mw-fs-latest-btn:active { transform: scale(0.96); }
+.mw-fs-latest-btn:focus { outline: 2px solid #007bff; outline-offset: 2px; }
+/* Fullscreen-only timestamp: shown via class (same pattern as .mw-fs-play-visible) so it appears when fullscreen is active */
+.mw-fs-timestamp { display: none; pointer-events: none; }
+.mw-fs-timestamp.mw-fs-timestamp-visible { display: block; position: absolute; top: 8px; right: 8px; z-index: 10000; max-width: min(320px, 85vw); padding: 6px 10px; font-size: clamp(0.6875rem, 2vw, 0.8125rem); font-weight: 600; color: #333; background: rgba(255,255,255,0.94); border: 1px solid rgba(0,0,0,0.1); border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,0.15); text-align: right; line-height: 1.25; word-break: break-word; }
 #radar-mode-note { transition: color 0.2s ease; }
 #radar-mode-note.mw-nws-mode { color: #5a7a9e; }
 /* Fullscreen = map container only (like iframe fullscreen: browser gives it full viewport, no black band) */
@@ -83,6 +93,11 @@
 #map-container:-moz-full-screen .mw-fs-play-btn.mw-fs-play-visible,
 #map-container:-ms-fullscreen .mw-fs-play-btn.mw-fs-play-visible,
 #map-container.mw-map-fullscreen-fallback .mw-fs-play-btn.mw-fs-play-visible { left: 8px; bottom: 108px; }
+#map-container:fullscreen .mw-fs-latest-btn.mw-fs-latest-visible,
+#map-container:-webkit-full-screen .mw-fs-latest-btn.mw-fs-latest-visible,
+#map-container:-moz-full-screen .mw-fs-latest-btn.mw-fs-latest-visible,
+#map-container:-ms-fullscreen .mw-fs-latest-btn.mw-fs-latest-visible,
+#map-container.mw-map-fullscreen-fallback .mw-fs-latest-btn.mw-fs-latest-visible { left: 8px; bottom: 164px; }
 @supports (padding: env(safe-area-inset-bottom)) {
   #map-container.mw-map-fullscreen-fallback { padding-bottom: env(safe-area-inset-bottom); padding-left: env(safe-area-inset-left); box-sizing: border-box; }
   #map-container:fullscreen #radar-fullscreen-btn,
@@ -91,6 +106,8 @@
   #map-container:fullscreen .mw-fs-play-btn.mw-fs-play-visible,
   #map-container:-webkit-full-screen .mw-fs-play-btn.mw-fs-play-visible,
   #map-container.mw-map-fullscreen-fallback .mw-fs-play-btn.mw-fs-play-visible { left: max(8px, env(safe-area-inset-left)); bottom: max(108px, calc(108px + env(safe-area-inset-bottom))); }
+  .mw-fs-latest-btn.mw-fs-latest-visible { left: max(8px, env(safe-area-inset-left)); bottom: max(164px, calc(164px + env(safe-area-inset-bottom))); }
+  .mw-fs-timestamp.mw-fs-timestamp-visible { top: max(8px, env(safe-area-inset-top)); right: max(8px, env(safe-area-inset-right)); }
 }
 @media (max-width: 480px) {
     .mw-radar-wrap { padding: 0 6px; }
@@ -103,6 +120,9 @@
     #map-container:fullscreen .mw-fs-play-btn.mw-fs-play-visible,
     #map-container:-webkit-full-screen .mw-fs-play-btn.mw-fs-play-visible,
     #map-container.mw-map-fullscreen-fallback .mw-fs-play-btn.mw-fs-play-visible { left: 8px; bottom: 98px; }
+    #map-container:fullscreen .mw-fs-latest-btn.mw-fs-latest-visible,
+    #map-container:-webkit-full-screen .mw-fs-latest-btn.mw-fs-latest-visible,
+    #map-container.mw-map-fullscreen-fallback .mw-fs-latest-btn.mw-fs-latest-visible { left: 8px; bottom: 154px; }
 }
 </style>
 
@@ -319,7 +339,10 @@ function syncRadarToMap(opts) {
         if (!map) return;
         var zoom = map.getZoom();
         var highZoom = zoom > RAINVIEWER_MAX_ZOOM;
-        var useNws = nwsShowingReason === 'fallback' || nwsShowingReason === 'tile_error' || highZoom;
+        /* When zoomed out (zoom <= RAINVIEWER_MAX_ZOOM), prefer RainViewer if we have frames so radar is visible; only use NWS when zoomed in or when RainViewer data is unavailable. */
+        var haveRainviewerFrames = (mapFrames && mapFrames.length > 0) || (apiData && apiData.radar && apiData.radar.past && apiData.radar.past.length > 0);
+        haveRainviewerFrames = haveRainviewerFrames && apiData && typeof apiData.host === 'string';
+        var useNws = highZoom || ((nwsShowingReason === 'fallback' || nwsShowingReason === 'tile_error') && !haveRainviewerFrames);
         var path, layer, frame, pos;
         if (useNws) {
             if (nwsShowingReason !== 'fallback' && nwsShowingReason !== 'tile_error') nwsShowingReason = 'high_zoom';
@@ -334,7 +357,8 @@ function syncRadarToMap(opts) {
             }
         } else {
             if ((nwsShowingReason === 'high_zoom' || nwsShowingReason === 'tile_error') && nwsWmsLayer && map.hasLayer(nwsWmsLayer)) map.removeLayer(nwsWmsLayer);
-            nwsShowingReason = (nwsShowingReason === 'high_zoom' || nwsShowingReason === 'tile_error') ? null : nwsShowingReason;
+            /* Clear high_zoom/tile_error/fallback when showing RainViewer so zoom-in will re-apply NWS at high zoom. */
+            nwsShowingReason = null;
             pos = getCurrentFrameIndex();
             if (pos >= 0 && mapFrames && mapFrames[pos] && apiData && typeof apiData.host === 'string') {
                 frame = mapFrames[pos];
@@ -458,7 +482,7 @@ function loadRadarData(background, onlyUpdateIfNewer) {
             var lastT = apiData.radar && apiData.radar.past && apiData.radar.past.length ? apiData.radar.past[apiData.radar.past.length - 1].time : null;
             updateTimestamp(lastT, true, c.age);
         } else {
-            document.getElementById('timestamp-display').textContent = 'Offline. Connect to load radar.';
+            setTimestampDisplayText('Offline. Connect to load radar.');
         }
         hideRadarError();
         return;
@@ -471,7 +495,7 @@ function loadRadarData(background, onlyUpdateIfNewer) {
         radarFetchWatchdogTimer = null;
     }
     if (!background) {
-        document.getElementById('timestamp-display').textContent = 'Loading radar…';
+        setTimestampDisplayText('Loading radar…');
         hideRadarError();
         // If RainViewer is slow, enable NWS fallback quickly so user sees radar with minimal "zoom not supported" gap.
         radarFetchWatchdogTimer = setTimeout(function() {
@@ -516,7 +540,7 @@ function loadRadarData(background, onlyUpdateIfNewer) {
             .catch(function(e) {
                 console.warn('Radar fetch (attempt ' + (attempt + 1) + '):', e.message);
                 if (attempt + 1 < MAX_RETRIES) {
-                    if (!background) document.getElementById('timestamp-display').textContent = 'Retrying… (' + (attempt + 1) + '/' + MAX_RETRIES + ')';
+                    if (!background) setTimestampDisplayText('Retrying… (' + (attempt + 1) + '/' + MAX_RETRIES + ')');
                     var delay = backoffDelay(attempt, BACKOFF_BASE_MS, BACKOFF_MAX_MS);
                     setTimeout(function() { tryFetch(attempt + 1); }, delay);
                 } else {
@@ -537,7 +561,7 @@ function loadRadarData(background, onlyUpdateIfNewer) {
                         if (mapFrames && mapFrames.length > 0) disableNwsFallback();
                     } else {
                         document.getElementById('loading-indicator').style.display = 'none';
-                        document.getElementById('timestamp-display').textContent = '';
+                        setTimestampDisplayText('');
                         // As a last resort with no cache and RainViewer unavailable, quietly enable NWS fallback as primary.
                         enableNwsFallback();
                     }
@@ -571,8 +595,7 @@ function processRadarFrames() {
             setTimeout(preloadRadarFrames, 1000);
         }
     } else {
-        var el = document.getElementById('timestamp-display');
-        if (el) el.textContent = 'No radar frames available';
+        setTimestampDisplayText('No radar frames available');
     }
     if (mapFrames.length === 0 && isPlaying) stopAnimation();
 }
@@ -682,22 +705,48 @@ function crossfadeToNextFrame(doneCallback) {
     }
 }
 
-// Update timestamp display: optional "Live" or "Cached (X min ago)" prefix
-function updateTimestamp(unixTime, fromCache, cacheAgeMs) {
-    var pre = fromCache ? 'Cached' + (cacheAgeMs != null ? ' (' + (cacheAgeMs < 60000 ? Math.round(cacheAgeMs / 1000) + ' s ago' : Math.round(cacheAgeMs / 60000) + ' min ago') + ')' : '') + ' · ' : 'Live · ';
-    var timePart = '';
-    if (unixTime != null) {
-        var date = new Date(unixTime * 1000);
-        var now = Date.now() / 1000;
-        var isPast = unixTime <= now;
-        var status = isPast ? 'PAST' : 'FORECAST';
-        timePart = status + ': ' + date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }) + ' - Mebane Weather Radar';
-    } else {
-        timePart = 'Mebane Weather Radar';
-    }
-    var el = document.getElementById('timestamp-display');
-    if (el) el.textContent = pre + timePart;
+// Set both control-panel and fullscreen timestamp text. No-throw, no-dependency: each element updated independently so one missing/failing never blocks the other (HA, FO, resilient).
+function setTimestampDisplayText(text) {
+    var s = text != null ? String(text) : '';
+    try {
+        var el = document.getElementById('timestamp-display');
+        if (el) el.textContent = s;
+    } catch (e) {}
+    try {
+        var fsEl = document.getElementById('radar-fs-timestamp');
+        if (fsEl) fsEl.textContent = s;
+    } catch (e) {}
 }
+// Update timestamp display: optional "Live" or "Cached (X min ago)" prefix. Updates both panels so they match the visible frame. No-throw so frame display and animation never break (HA, resilient).
+function updateTimestamp(unixTime, fromCache, cacheAgeMs) {
+    try {
+        var pre = fromCache ? 'Cached' + (cacheAgeMs != null ? ' (' + (cacheAgeMs < 60000 ? Math.round(cacheAgeMs / 1000) + ' s ago' : Math.round(cacheAgeMs / 60000) + ' min ago') + ')' : '') + ' · ' : 'Live · ';
+        var timePart = '';
+        if (unixTime != null && isFinite(unixTime)) {
+            var date = new Date(unixTime * 1000);
+            if (!isNaN(date.getTime())) {
+                var now = Date.now() / 1000;
+                var status = unixTime <= now ? 'PAST' : 'FORECAST';
+                timePart = status + ': ' + date.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' });
+            }
+        }
+        if (!timePart) timePart = 'Radar';
+        setTimestampDisplayText(pre + timePart);
+    } catch (e) {
+        setTimestampDisplayText('Live · Radar');
+    }
+}
+// Sync fullscreen timestamp from current frame (called on fullscreen enter so upper-right label is always accurate and visible).
+function syncFullscreenTimestampFromCurrentFrame() {
+    try {
+        if (typeof mapFrames === 'undefined' || !mapFrames || mapFrames.length === 0 || typeof updateTimestamp !== 'function') return;
+        var pos = typeof animationPosition !== 'undefined' ? animationPosition : mapFrames.length - 1;
+        if (pos < 0) pos = mapFrames.length - 1;
+        var frame = mapFrames[pos];
+        if (frame && frame.time != null) updateTimestamp(frame.time, typeof radarFromCache !== 'undefined' ? radarFromCache : false, typeof radarCacheAgeMs !== 'undefined' ? radarCacheAgeMs : null);
+    } catch (e) {}
+}
+if (typeof window !== 'undefined') window.syncFullscreenTimestampFromCurrentFrame = syncFullscreenTimestampFromCurrentFrame;
 
 // Animation control functions (HA: validate state, clear timer before start, catch frame errors, sync button)
 function togglePlay() {
@@ -828,6 +877,35 @@ window.addEventListener('resize', function() {
         if (!api && !isIOS) return;
         btn.classList.add('mw-fs-available');
         var fsPlayBtn = document.getElementById('radar-fs-play-btn');
+        var fsLatestBtn = document.getElementById('radar-fs-latest-btn');
+        var fsTimestampEl = document.getElementById('radar-fs-timestamp');
+        function goToLatestRadarFrame() {
+            try {
+                if (typeof stopAnimation === 'function') stopAnimation();
+                var useNws = (typeof nwsShowingReason !== 'undefined' && (nwsShowingReason === 'fallback' || nwsShowingReason === 'tile_error')) || (typeof map !== 'undefined' && map && typeof map.getZoom === 'function' && map.getZoom() > (typeof RAINVIEWER_MAX_ZOOM !== 'undefined' ? RAINVIEWER_MAX_ZOOM : 7));
+                if (useNws && typeof buildNwsFrameTimes === 'function') {
+                    var times = buildNwsFrameTimes();
+                    if (times && times.length > 0 && typeof nwsCurrentFrameIndex !== 'undefined' && typeof nwsWmsLayer !== 'undefined' && nwsWmsLayer && typeof map !== 'undefined' && map && map.hasLayer && map.hasLayer(nwsWmsLayer)) {
+                        nwsCurrentFrameIndex = 0;
+                        var timeStr = times[0];
+                        try {
+                            if (typeof nwsWmsLayer.setParams === 'function') nwsWmsLayer.setParams({ time: timeStr });
+                            if (typeof nwsWmsLayer._reset === 'function') nwsWmsLayer._reset();
+                            else if (typeof nwsWmsLayer.redraw === 'function') nwsWmsLayer.redraw();
+                        } catch (e2) {}
+                        var unixTime = timeStr ? Math.floor(new Date(timeStr).getTime() / 1000) : null;
+                        if (typeof updateTimestamp === 'function') updateTimestamp(unixTime, false, null);
+                    }
+                    if (typeof syncRadarToMap === 'function') syncRadarToMap();
+                } else {
+                    var idx = typeof lastPastFrameIndex !== 'undefined' && lastPastFrameIndex >= 0 ? lastPastFrameIndex : (typeof mapFrames !== 'undefined' && mapFrames && mapFrames.length ? mapFrames.length - 1 : -1);
+                    if (idx >= 0 && typeof showFrame === 'function') {
+                        showFrame(idx);
+                        if (typeof syncRadarToMap === 'function') syncRadarToMap({ forceTileReset: true });
+                    }
+                }
+            } catch (e) {}
+        }
         function setFullscreenPlayVisible(visible) {
             try {
                 if (!fsPlayBtn) return;
@@ -841,7 +919,33 @@ window.addEventListener('resize', function() {
                 }
             } catch (e) {}
         }
+        function setFullscreenTimestampVisible(visible) {
+            try {
+                if (!fsTimestampEl) return;
+                if (visible) {
+                    fsTimestampEl.classList.add('mw-fs-timestamp-visible');
+                    fsTimestampEl.style.display = 'block';
+                    if (typeof syncFullscreenTimestampFromCurrentFrame === 'function') syncFullscreenTimestampFromCurrentFrame();
+                } else {
+                    fsTimestampEl.classList.remove('mw-fs-timestamp-visible');
+                    fsTimestampEl.style.display = 'none';
+                }
+            } catch (e) {}
+        }
+        function setFullscreenLatestVisible(visible) {
+            try {
+                if (!fsLatestBtn) return;
+                if (visible) {
+                    fsLatestBtn.classList.add('mw-fs-latest-visible');
+                    fsLatestBtn.style.display = 'block';
+                } else {
+                    fsLatestBtn.classList.remove('mw-fs-latest-visible');
+                    fsLatestBtn.style.display = 'none';
+                }
+            } catch (e) {}
+        }
         if (fsPlayBtn) fsPlayBtn.addEventListener('click', function() { try { if (typeof togglePlay === 'function') togglePlay(); } catch (e) {} });
+        if (fsLatestBtn) fsLatestBtn.addEventListener('click', function() { try { goToLatestRadarFrame(); } catch (e) {} });
         function doRadarRedraw(forceTileReset) {
             try {
                 if (typeof map === 'undefined' || !map) return;
@@ -910,6 +1014,8 @@ window.addEventListener('resize', function() {
                 btn.textContent = '⛶ Full screen';
                 btn.setAttribute('aria-label', 'Full screen');
                 setFullscreenPlayVisible(false);
+                setFullscreenTimestampVisible(false);
+                setFullscreenLatestVisible(false);
                 if (typeof map !== 'undefined' && map) setTimeout(function() { try { map.invalidateSize(); } catch (e) {} }, 150);
             } catch (e) {}
         }
@@ -920,6 +1026,8 @@ window.addEventListener('resize', function() {
                     btn.textContent = '✕ Exit full screen';
                     btn.setAttribute('aria-label', 'Exit full screen');
                     setFullscreenPlayVisible(true);
+                    setFullscreenTimestampVisible(true);
+                    setFullscreenLatestVisible(true);
                     setTimeout(function() { setFullscreenPlayVisible(true); }, 150);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
@@ -932,6 +1040,8 @@ window.addEventListener('resize', function() {
                             btn.textContent = '✕ Exit full screen';
                             btn.setAttribute('aria-label', 'Exit full screen');
                             setFullscreenPlayVisible(true);
+                            setFullscreenTimestampVisible(true);
+                            setFullscreenLatestVisible(true);
                             setTimeout(function() { setFullscreenPlayVisible(true); }, 150);
                             setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
                             setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
@@ -942,6 +1052,8 @@ window.addEventListener('resize', function() {
                             btn.textContent = '✕ Exit full screen';
                             btn.setAttribute('aria-label', 'Exit full screen');
                             setFullscreenPlayVisible(true);
+                            setFullscreenTimestampVisible(true);
+                            setFullscreenLatestVisible(true);
                             setTimeout(function() { setFullscreenPlayVisible(true); }, 150);
                             setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
                             setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
@@ -952,6 +1064,7 @@ window.addEventListener('resize', function() {
                     btn.textContent = '✕ Exit full screen';
                     btn.setAttribute('aria-label', 'Exit full screen');
                     setFullscreenPlayVisible(true);
+                    setFullscreenTimestampVisible(true);
                     setTimeout(function() { setFullscreenPlayVisible(true); }, 150);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
@@ -965,11 +1078,15 @@ window.addEventListener('resize', function() {
                     btn.textContent = '⛶ Full screen';
                     btn.setAttribute('aria-label', 'Full screen');
                     setFullscreenPlayVisible(false);
+                    setFullscreenTimestampVisible(false);
+                    setFullscreenLatestVisible(false);
                     if (typeof map !== 'undefined' && map) setTimeout(function() { try { map.invalidateSize(); } catch (e) {} }, 150);
                 } else if ((document.fullscreenElement || document.webkitFullscreenElement) === mapContainer) {
                     btn.textContent = '✕ Exit full screen';
                     btn.setAttribute('aria-label', 'Exit full screen');
                     setFullscreenPlayVisible(true);
+                    setFullscreenTimestampVisible(true);
+                    setFullscreenLatestVisible(true);
                     setTimeout(function() { setFullscreenPlayVisible(true); }, 150);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 180);
                     setTimeout(function() { refreshMapAndRadarInFullscreen(); }, 550);
