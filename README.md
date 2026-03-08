@@ -47,6 +47,7 @@ All three are self-contained HTML for Weebly Embed Code (or any platform that ac
 - **Fullscreen:** Timestamp in the **top-right** shows the exact time of the radar frame you’re viewing (desktop and mobile). Play/Pause and **Latest** buttons appear in fullscreen; **Latest** jumps back to the most current frame and keeps the map and time in sync.
 - **Zoom:** RainViewer radar shows when **zoomed out** (zoom 4–7). When you zoom in (8+), the map switches to NWS radar. Zoom out again to see RainViewer.
 - **Data:** RainViewer past + nowcast frames; NWS used as fallback if RainViewer is slow or at high zoom. 7‑minute refresh while the tab is visible.
+- **Play order:** Both RainViewer and NWS loops play in chronological order (earliest cached → most current); timestamp stays in sync with the frame.
 
 (Technical details: fullscreen API + CSS fallback on iOS, tile-error failover, watchdog, caching, and resilience are unchanged and documented in the file and [RESILIENCE_AND_ACCURACY_ASSESSMENT.md](RESILIENCE_AND_ACCURACY_ASSESSMENT.md) when present.)
 

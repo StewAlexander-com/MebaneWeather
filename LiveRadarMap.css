@@ -244,7 +244,7 @@ function showRadarError(msg) {
     if (row) row.style.display = 'block';
 }
 
-// Build/cache NWS frame times for animation (last 2h at 10-min steps). Rebuild if cache older than 10 min. HA: no throw.
+// Build/cache NWS frame times for animation (last 2h at 10-min steps). Ordered oldest-first so play is chronological (same as RainViewer). Rebuild if cache older than 10 min. HA: no throw.
 function buildNwsFrameTimes() {
     try {
         var now = Date.now();
@@ -255,6 +255,7 @@ function buildNwsFrameTimes() {
             var d = new Date(t - i * NWS_FRAME_INTERVAL_MS);
             out.push(d.toISOString().replace(/\.\d{3}Z$/, 'Z'));
         }
+        out.reverse();
         nwsFrameTimes = out;
         nwsFrameTimesBuiltAt = now;
         nwsCurrentFrameIndex = 0;
@@ -266,7 +267,7 @@ function ensureNwsLayerOnMap() {
     try {
         if (!map) return;
         buildNwsFrameTimes();
-        var initialTime = nwsFrameTimes.length > 0 ? nwsFrameTimes[0] : null;
+        var initialTime = nwsFrameTimes.length > 0 ? nwsFrameTimes[nwsFrameTimes.length - 1] : null;
         if (!nwsWmsLayer && L && L.tileLayer && typeof L.tileLayer.wms === 'function') {
             var wmsOpts = {
                 layers: NWS_WMS_LAYER,
@@ -424,7 +425,7 @@ function initializeWeatherRadar() {
                 maxZoom: 12,
                 attribution: 'Radar data: NOAA/NWS'
             };
-            if (nwsFrameTimes.length > 0) wmsOpts.time = nwsFrameTimes[0];
+            if (nwsFrameTimes.length > 0) wmsOpts.time = nwsFrameTimes[nwsFrameTimes.length - 1];
             nwsWmsLayer = L.tileLayer.wms(NWS_WMS_URL, wmsOpts);
         }
     } catch (e) {}
@@ -571,7 +572,7 @@ function loadRadarData(background, onlyUpdateIfNewer) {
     tryFetch(0);
 }
 
-// Process radar frames from API response: only use frames that have path; show latest observation (last past = closest to current time).
+// Process radar frames from API response: only use frames that have path; order past by time ascending (earliest first) so play goes forward in time; show latest observation on load.
 function processRadarFrames() {
     mapFrames = [];
     preloadScheduled = false;
@@ -580,6 +581,7 @@ function processRadarFrames() {
     var pastFrames = [];
     if (apiData && apiData.radar) {
         if (apiData.radar.past) pastFrames = apiData.radar.past.filter(validFrame);
+        pastFrames.sort(function(a, b) { return (a.time || 0) - (b.time || 0); });
         mapFrames = pastFrames.slice();
         if (apiData.radar.nowcast) mapFrames = mapFrames.concat(apiData.radar.nowcast.filter(validFrame));
     }
@@ -798,7 +800,12 @@ function startAnimation() {
     }
     isPlaying = true;
     crossfadeInProgress = false;
-    if (useNws) nwsCurrentFrameIndex = 0;
+    if (useNws) {
+        nwsCurrentFrameIndex = 0;
+    } else if (hasRainviewerFrames) {
+        /* Start from earliest frame so loop plays oldest → newest (not newest → oldest). */
+        showFrame(0);
+    }
     var btn = document.getElementById('playButton');
     if (btn) btn.innerHTML = '⏸ Pause';
     updateFullscreenPlayButton();
@@ -886,8 +893,8 @@ window.addEventListener('resize', function() {
                 if (useNws && typeof buildNwsFrameTimes === 'function') {
                     var times = buildNwsFrameTimes();
                     if (times && times.length > 0 && typeof nwsCurrentFrameIndex !== 'undefined' && typeof nwsWmsLayer !== 'undefined' && nwsWmsLayer && typeof map !== 'undefined' && map && map.hasLayer && map.hasLayer(nwsWmsLayer)) {
-                        nwsCurrentFrameIndex = 0;
-                        var timeStr = times[0];
+                        nwsCurrentFrameIndex = times.length - 1;
+                        var timeStr = times[times.length - 1];
                         try {
                             if (typeof nwsWmsLayer.setParams === 'function') nwsWmsLayer.setParams({ time: timeStr });
                             if (typeof nwsWmsLayer._reset === 'function') nwsWmsLayer._reset();
