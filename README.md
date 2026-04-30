@@ -18,7 +18,7 @@ MebaneWeather.com is a self-contained severe weather dashboard and forecast widg
 | **Severe Weather Dashboard** | `Severe-Weather-Dashboard.html` | SPC threat levels, NWS alerts, summarized NWS AFD, winter weather detection |
 | **Forecast Widget** | `MebaneWeather Forecast.css` | Current conditions (Open‑Meteo + NWS AFD), 7‑day forecast, NWS alerts, SPC Day 1; resilient with caching and retries; "From the NWS:" link to full AFD |
 | **Live Radar Map** | `LiveRadarMap.css` | RainViewer precipitation radar (past + nowcast) with Play/Pause and speed control; fullscreen on desktop and smartphones (CSS fallback on iOS); resilient with caching and a 7‑minute watchdog when the tab is visible |
-| **Model Forecast Dashboard** | `mw-weebly-embed.html` | Hourly model-consensus widget (NWS·40% + ECMWF·25% + GFS·20% + HRRR·15%) for Mebane/Burlington NC — midnight-to-midnight timeline, "Today at a Glance" key-stats strip with tap-to-jump, multi-model chart, estimated radar reflectivity threat row, SPC risk (GeoJSON point-in-polygon), NWS alerts, and a full Feynman-style legend accordion. Self-contained HTML for Weebly Embed Code. |
+| **Model Forecast Dashboard** | [`mw-weebly-embed.html`](MODEL_FORECAST_DASHBOARD.md) · [📖 Deep dive](MODEL_FORECAST_DASHBOARD.md) | Hourly model-consensus widget (NWS·40% + ECMWF·25% + GFS·20% + HRRR·15%) for Mebane/Burlington NC — midnight-to-midnight timeline, "Today at a Glance" key-stats strip with tap-to-jump, multi-model chart, estimated radar reflectivity threat row, SPC risk (GeoJSON point-in-polygon), NWS alerts, and a full Feynman-style legend accordion. Self-contained HTML for Weebly Embed Code. |
 
 All three are self-contained HTML for Weebly Embed Code (or any platform that accepts embedded HTML).
 
@@ -54,6 +54,8 @@ All three are self-contained HTML for Weebly Embed Code (or any platform that ac
 - **SPC risk:** GeoJSON point-in-polygon (not HTML text search) correctly identifies Marginal vs Enhanced risk for Mebane's exact coordinates.
 - **Resilience:** `safeFetch()` with per-endpoint timeouts, `cache:'no-store'` + cache-buster on all fetches, old service-worker unregistration, `file://` protocol detection, and a diagnostic accordion panel.
 - **Legend:** Full accordion at the bottom explaining every element in plain language, including the Today at a Glance strip and tap-to-jump behavior. Single-column on narrow phones, 2/3/4-col on wider screens.
+
+> 📖 **[Full technical deep-dive → MODEL_FORECAST_DASHBOARD.md](MODEL_FORECAST_DASHBOARD.md)** — architecture, data sources, design decisions, resilience checklist, and how to adapt for your location.
 
 ### Recent Updates
 
