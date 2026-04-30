@@ -1,0 +1,2072 @@
+<style>
+#mwdb*,#mwdb *::before,#mwdb *::after{box-sizing:border-box;margin:0;padding:0}
+#mwdb{font-family:'Open Sans',system-ui,sans-serif;font-size:0.875rem;color:#222;width:100%;max-width:1040px;margin:0 auto}
+.mw2-card{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.22)}
+/* Header */
+.mw2-hdr{
+  background:linear-gradient(135deg,#7B2FBE 0%,#4A90E2 100%);
+  padding:10px 14px;
+  display:flex;flex-direction:row;align-items:flex-start;
+  justify-content:space-between;gap:8px;flex-wrap:nowrap;
+}
+.mw2-hdr-left{
+  flex:1;min-width:0;overflow:hidden;
+  display:flex;flex-direction:column;gap:0;
+}
+.mw2-hdr h2{
+  font-size:1rem;font-weight:700;color:#fff;
+  line-height:1.2;margin:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.mw2-hdr-meta{
+  display:flex;flex-direction:column;gap:1px;
+  margin-top:3px;overflow:hidden;
+}
+.mw2-hdr-meta span{
+  font-size:0.6875rem;color:rgba(255,255,255,.82);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  line-height:1.4;
+}
+.mw2-hdr-meta .mw2-age{
+  font-size:0.5625rem;color:rgba(255,255,255,.6);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.mw2-hdr-r{
+  display:flex;flex-direction:column;align-items:flex-end;
+  gap:2px;flex-shrink:0;min-width:max-content;padding-top:1px;
+}
+.mw2-live{
+  display:flex;align-items:center;gap:5px;
+  font-size:0.75rem;color:#fff;font-weight:700;letter-spacing:.02em;
+}
+.mw2-dot{width:8px;height:8px;border-radius:50%;background:#00cc00;flex-shrink:0;animation:mw2p 2s ease-in-out infinite}
+@keyframes mw2p{0%,100%{box-shadow:0 0 0 0 rgba(0,204,0,.5)}50%{box-shadow:0 0 0 5px rgba(0,204,0,0)}}
+.mw2-ts{font-size:0.625rem;color:rgba(255,255,255,.75);text-align:right;white-space:nowrap}
+.mw2-stale{display:none;font-size:0.5625rem;background:rgba(255,200,0,.25);color:#ffe08a;border:1px solid rgba(255,200,0,.4);border-radius:3px;padding:1px 5px;margin-top:2px}
+/* Alert / SPC bars */
+.mw2-bar{padding:10px 16px;font-size:0.75rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid #e0e0e0;line-height:1.4}
+.mw2-bdot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.mw2-bar.al-ok{background:#e6f9e6;color:#1a7a1a}.mw2-bar.al-ok .mw2-bdot{background:#28a745}
+.mw2-bar.al-warn{background:#fff3cd;color:#856404}.mw2-bar.al-warn .mw2-bdot{background:#f0ad4e}
+.mw2-bar.al-sev{background:#fde8e8;color:#8b1a1a}.mw2-bar.al-sev .mw2-bdot{background:#dc3545;animation:mw2p 1s ease-in-out infinite}
+.mw2-bar a{color:inherit;font-weight:600;text-decoration:underline;word-break:break-word}
+.mw2-spc-badge{font-size:0.6875rem;font-weight:700;padding:4px 9px;border-radius:4px;border:2px solid currentColor;flex-shrink:0;letter-spacing:.4px}
+.mw2r0{color:#28a745;background:#e8f8ed}.mw2r2{color:#28a745;background:#d4edda}.mw2r3{color:#e6a817;background:#fff3cd}
+.mw2r4{color:#fd7e14;background:#fff0e0}.mw2r5{color:#dc3545;background:#fde8e8}.mw2r6{color:#6f42c1;background:#f0ebff}
+.mw2-bar.spc{background:#f8f8f8}
+.mw2-bar-r{margin-left:auto;font-size:0.6875rem}.mw2-bar-r a{color:#17a2b8;text-decoration:none;font-weight:600}
+/* Day tabs */
+.mw2-dtabs{display:flex;overflow-x:auto;scrollbar-width:none;border-bottom:2px solid #e8e8e8;background:#fafafa}
+.mw2-dtabs::-webkit-scrollbar{display:none}
+.mw2-dtab{padding:12px 16px;font-size:0.75rem;font-weight:700;letter-spacing:.4px;text-transform:uppercase;white-space:nowrap;background:none;border:none;border-bottom:2px solid transparent;margin-bottom:-2px;cursor:pointer;color:#777;transition:color .15s,border-color .15s;min-height:44px;display:flex;align-items:center}
+.mw2-dtab:hover{color:#4A90E2}.mw2-dtab.on{color:#7B2FBE;border-bottom-color:#7B2FBE}
+/* Timeline */
+.mw2-tl{padding:12px 12px 8px;background:#fff}
+.mw2-slrow{display:flex;align-items:center;gap:10px;padding:0 4px 10px}
+.mw2-slrow span{font-size:0.625rem;color:#999;font-family:'JetBrains Mono',monospace;white-space:nowrap;flex-shrink:0}
+input[type=range].mw2-range{flex:1;height:6px;-webkit-appearance:none;appearance:none;border-radius:3px;outline:none;cursor:pointer}
+input[type=range].mw2-range::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#7B2FBE;cursor:pointer;border:2px solid #fff;box-shadow:0 0 0 3px rgba(123,47,190,.25)}
+input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#7B2FBE;border:2px solid #fff;cursor:pointer}
+/* Hour cards */
+.mw2-cards{display:flex;gap:7px;overflow-x:auto;padding-bottom:6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mw2-cards::-webkit-scrollbar{display:none}
+.mw2-hcard{min-width:4.5rem;flex-shrink:0;border:1.5px solid #e4e4e4;border-radius:12px;padding:9px 7px 8px;text-align:center;cursor:pointer;background:#fafafa;transition:border-color .15s,background .15s,transform .1s;min-height:108px}
+.mw2-hcard:active{transform:scale(.95)}
+.mw2-hcard.on{border-color:#7B2FBE;background:#f7f0ff}
+.mw2-hcard.ts{border-color:#dc3545;background:#fff5f5}
+.mw2-hcard.ts.on{border-color:#dc3545;background:#fde8e8}
+.mw2-hc-t{font-size:0.6875rem;font-weight:700;color:#555;margin-bottom:1px}
+.mw2-hc-i{font-size:1.1875rem;line-height:1.25;margin:2px 0;display:flex;align-items:center;justify-content:center}
+.mw2-hc-d{font-size:0.8125rem;font-weight:700;color:#222}
+.mw2-popbar{height:4px;border-radius:2px;background:#ebebeb;margin:4px 0 2px;overflow:hidden}
+.mw2-popfill{height:100%;border-radius:2px}
+.mw2-hc-p{font-size:0.5625rem;font-family:'JetBrains Mono',monospace}
+.mw2-badge{font-size:0.5rem;font-weight:700;letter-spacing:.3px;padding:1px 4px;border-radius:3px;border:1px solid;margin-top:2px;display:inline-block}
+/* Detail grid */
+.mw2-detail{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px;background:#f5f5f5;border-top:1px solid #ebebeb}
+@media(min-width:640px){.mw2-detail{grid-template-columns:1fr 1fr 1fr}}
+.mw2-panel{background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:12px 13px;overflow-wrap:break-word;min-width:0}
+.mw2-panel-full{grid-column:1/-1}
+@media(min-width:640px){.mw2-panel-full{grid-column:auto}}
+.mw2-pt{font-size:0.625rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#7B2FBE;margin-bottom:7px}
+.mw2-kv{display:flex;justify-content:space-between;align-items:baseline;gap:4px;font-size:0.8125rem;padding:6px 0;border-bottom:1px solid #f3f3f3}
+.mw2-kv:last-child{border-bottom:none}
+.mw2-kk{color:#888}.mw2-kval{font-weight:600;font-family:'JetBrains Mono',monospace;color:#222;text-align:right;flex-shrink:0}
+.cok{color:#28a745}.ccau{color:#e6a817}.cwarn{color:#dc3545}
+.mw2-mrow{margin-bottom:8px}
+.mw2-mlbl{display:flex;justify-content:space-between;font-size:0.6875rem;margin-bottom:2px}
+.mw2-mn{font-weight:700;font-family:'JetBrains Mono',monospace}
+.mw2-mv{color:#666;font-size:0.625rem}
+.mw2-mbg{height:5px;border-radius:3px;background:#ebebeb;overflow:hidden}
+.mw2-mbar{height:100%;border-radius:3px;transition:width .4s}
+.mw2-cons{display:flex;justify-content:space-between;font-size:0.75rem;font-weight:700;padding-top:6px;margin-top:4px;border-top:1px solid #ebebeb}
+.mw2-igrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px;padding-top:6px;border-top:1px solid #ebebeb}
+@media(min-width:400px){.mw2-igrid{grid-template-columns:repeat(4,1fr)}}
+.mw2-ic{text-align:center}
+.mw2-il{font-size:0.625rem;color:#888}
+.mw2-iv{font-size:0.8125rem;font-weight:700;font-family:'JetBrains Mono',monospace;margin-top:2px}
+/* Chart */
+.mw2-chartsec{background:#f5f5f5;border-top:1px solid #ebebeb;padding:10px 12px 12px}
+.mw2-ctabs{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+.mw2-ctab{font-size:0.6875rem;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:9px 14px;border-radius:20px;border:1px solid #ddd;background:#fff;color:#666;cursor:pointer;transition:all .15s;min-height:36px}
+.mw2-ctab:hover{border-color:#7B2FBE;color:#7B2FBE}.mw2-ctab.on{background:#7B2FBE;color:#fff;border-color:#7B2FBE;box-shadow:0 2px 8px rgba(123,47,190,.35)}
+.mw2-cwrap{position:relative;height:180px}
+@media(min-width:600px){.mw2-cwrap{height:220px}}
+/* Radar */
+.mw2-radsec{background:#f5f5f5;border-top:1px solid #ebebeb;padding:10px 12px 12px}
+.mw2-radt{font-size:0.625rem;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:#7B2FBE;margin-bottom:6px}
+.mw2-radrow{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mw2-radrow::-webkit-scrollbar{display:none}
+.mw2-rcell{min-width:2.25rem;flex:1;flex-shrink:0;border-top:2px solid;border-radius:3px;padding:4px 2px;text-align:center;cursor:pointer;transition:opacity .2s,box-shadow .2s;position:relative}
+.mw2-rcell.past{opacity:.35}
+.mw2-rcell.rc-now{
+  border-top-width:3px;
+  box-shadow:0 0 0 2px #ff5722, 0 0 8px 2px rgba(255,87,34,.3);
+  z-index:2;
+}
+.mw2-rc-now-pip{
+  font-size:0.4375rem;font-weight:800;color:#ff5722;
+  letter-spacing:.3px;line-height:1;margin-bottom:1px;
+  font-family:'Open Sans',system-ui,sans-serif;
+}
+.mw2-rc-utc{font-size:0.5rem;font-family:'JetBrains Mono',monospace;color:#aaa}
+.mw2-rc-utc.rc-now-lbl{color:#ff5722;font-weight:700}
+.mw2-rc-box{width:1rem;height:1rem;border-radius:2px;margin:2px auto;display:flex;align-items:center;justify-content:center;font-size:0.5rem;font-weight:700;font-family:monospace}
+.mw2-rc-lbl{font-size:0.4375rem;font-family:'JetBrains Mono',monospace}
+.mw2-radleg{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.mw2-rli{display:flex;align-items:center;gap:4px;font-size:0.625rem;color:#888}
+.mw2-rld{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+/* Legend */
+.mw2-legend{display:flex;flex-wrap:wrap;gap:10px;padding:10px 14px;background:#f5f5f5;border-top:1px solid #ebebeb}
+.mw2-li{display:flex;align-items:center;gap:5px;font-size:0.6875rem;color:#666}
+.mw2-ll{width:20px;height:2px;border-radius:1px;flex-shrink:0}
+/* Footer */
+.mw2-footer{padding:9px 16px;font-size:0.625rem;color:#999;background:#efefef;border-top:1px solid #e0e0e0;display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px}
+.mw2-footer a{color:#17a2b8;text-decoration:none}.mw2-footer a:hover{text-decoration:underline}
+/* Skeleton */
+.mw2-skel{background:linear-gradient(90deg,#f0f0f0 25%,#e4e4e4 50%,#f0f0f0 75%);background-size:200% 100%;animation:mw2sk 1.4s infinite;border-radius:6px}
+@keyframes mw2sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+/* Error */
+.mw2-err{padding:20px 16px;text-align:center;color:#888;font-size:0.8125rem}
+.mw2-err b{color:#dc3545;display:block;margin-bottom:6px}
+.mw2-retry{display:inline-block;margin-top:10px;padding:8px 18px;background:#7B2FBE;color:#fff;border-radius:5px;border:none;font-size:0.8125rem;cursor:pointer;font-family:inherit}
+
+/* ── Legend accordion ─────────────────────────────────────────── */
+.mw2-leg-wrap{background:#fff;border-top:2px solid #ebebeb}
+.mw2-leg-toggle{
+  width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:11px 14px;border:none;background:none;cursor:pointer;
+  font-family:'Open Sans',system-ui,sans-serif;font-size:0.75rem;font-weight:700;
+  color:#555;letter-spacing:.3px;text-align:left;
+}
+.mw2-leg-toggle:hover{background:#fafafa}
+.mw2-leg-toggle-left{display:flex;align-items:center;gap:8px}
+.mw2-leg-chevron{
+  font-size:0.625rem;color:#bbb;transition:transform .25s ease;flex-shrink:0;
+  display:inline-block;
+}
+.mw2-leg-chevron.open{transform:rotate(180deg)}
+.mw2-leg-body{
+  display:none;padding:0 12px 14px;
+  animation:mw2-legfade .2s ease;
+}
+@keyframes mw2-legfade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.mw2-leg-grid{
+  display:grid;gap:8px;
+  grid-template-columns:1fr;
+}
+@media(min-width:400px){.mw2-leg-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:560px){.mw2-leg-grid{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:800px){.mw2-leg-grid{grid-template-columns:repeat(4,1fr)}}
+.mw2-leg-card{
+  border-radius:7px;border:1px solid #ebebeb;padding:9px 10px;
+  background:#fafafa;
+}
+.mw2-leg-icon{font-size:1.375rem;line-height:1;margin-bottom:4px}
+.mw2-leg-term{font-size:0.6875rem;font-weight:700;color:#333;margin-bottom:2px}
+.mw2-leg-def{font-size:0.6875rem;color:#666;line-height:1.45}
+.mw2-leg-def b{color:#444;font-weight:600}
+/* Threat colour swatches */
+.mw2-leg-swatch{
+  display:inline-block;width:9px;height:9px;border-radius:2px;
+  vertical-align:middle;margin-right:3px;flex-shrink:0;
+}
+/* Divider label inside grid */
+.mw2-leg-divider{
+  grid-column:1/-1;font-size:0.625rem;font-weight:700;letter-spacing:.8px;
+  text-transform:uppercase;color:#bbb;padding:4px 0 2px;
+  border-bottom:1px solid #ebebeb;margin-bottom:2px;
+}
+
+/* ── Scroll affordance wrapper ──────────────────────────────────────────────
+   Wraps any horizontal scroll row. Shows fade-edge + chevron arrow buttons.  */
+.mw2-scroll-outer{position:relative;min-width:0}
+
+/* Fade gradients — left and right */
+.mw2-scroll-outer::before,
+.mw2-scroll-outer::after{
+  content:'';position:absolute;top:0;bottom:0;width:36px;
+  pointer-events:none;z-index:3;transition:opacity .2s;
+}
+.mw2-scroll-outer::before{
+  left:0;
+  background:linear-gradient(to right,rgba(255,255,255,.95) 0%,rgba(255,255,255,0) 100%);
+}
+.mw2-scroll-outer::after{
+  right:0;
+  background:linear-gradient(to left,rgba(255,255,255,.95) 0%,rgba(255,255,255,0) 100%);
+}
+/* Hide a fade when scrolled fully to that edge */
+.mw2-scroll-outer.at-start::before{opacity:0}
+.mw2-scroll-outer.at-end::after  {opacity:0}
+
+/* Chevron arrow buttons */
+.mw2-scroll-btn{
+  position:absolute;top:50%;transform:translateY(-50%);
+  z-index:4;width:1.5rem;height:1.5rem;border-radius:50%;
+  border:1px solid #ddd;background:#fff;
+  box-shadow:0 1px 4px rgba(0,0,0,.12);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  font-size:0.6875rem;color:#888;padding:0;line-height:1;
+  transition:opacity .2s,background .15s;
+}
+.mw2-scroll-btn:hover{background:#f5f0ff;border-color:#7B2FBE;color:#7B2FBE}
+.mw2-scroll-btn.left {left:2px}
+.mw2-scroll-btn.right{right:2px}
+.mw2-scroll-btn.hidden{opacity:0;pointer-events:none}
+
+/* Day tabs: darker bg gradient because they sit on #fafafa */
+.mw2-scroll-outer.daytabs::before{
+  background:linear-gradient(to right,rgba(250,250,250,.97) 0%,rgba(250,250,250,0) 100%);
+}
+.mw2-scroll-outer.daytabs::after{
+  background:linear-gradient(to left,rgba(250,250,250,.97) 0%,rgba(250,250,250,0) 100%);
+}
+
+/* Radar row: sits on #f5f5f5 */
+.mw2-scroll-outer.radar::before{
+  background:linear-gradient(to right,rgba(245,245,245,.97) 0%,rgba(245,245,245,0) 100%);
+}
+.mw2-scroll-outer.radar::after{
+  background:linear-gradient(to left,rgba(245,245,245,.97) 0%,rgba(245,245,245,0) 100%);
+}
+
+/* Jump buttons above card row */
+.mw2-jump-row{
+  display:flex;gap:7px;padding:0 12px 8px;
+}
+.mw2-jump-btn{
+  font-size:0.5625rem;font-weight:700;letter-spacing:.4px;
+  padding:5px 11px;border-radius:10px;border:1px solid #ddd;
+  background:#fff;color:#888;cursor:pointer;
+  transition:all .15s;font-family:'Open Sans',system-ui,sans-serif;
+  white-space:nowrap;
+}
+.mw2-jump-btn:hover{border-color:#7B2FBE;color:#7B2FBE}
+.mw2-jump-btn.now{border-color:#ff5722;color:#ff5722}
+.mw2-jump-btn.now:hover{background:#fff3f0}
+
+/* ── Mobile font boosts (≤480px) — legible without squinting ─────────────── */
+@media(max-width:480px){
+  .mw2-hdr h2    {font-size:1.0625rem}
+  
+  
+  .mw2-bar       {font-size:0.875rem;padding:12px 16px}
+  .mw2-dtab      {font-size:0.75rem;padding:10px 12px}
+  .mw2-hc-t      {font-size:0.8125rem}
+  .mw2-hc-d      {font-size:0.9375rem}
+  .mw2-hc-p      {font-size:0.625rem}
+  .mw2-hc-i      {font-size:1.375rem}
+  .mw2-badge     {font-size:0.5625rem;padding:2px 5px}
+  .mw2-kv        {font-size:0.8125rem}
+  .mw2-kval      {font-size:0.8125rem}
+  .mw2-pt        {font-size:0.6875rem;margin-bottom:9px}
+  .mw2-mlbl      {font-size:0.75rem}
+  .mw2-cons      {font-size:0.8125rem}
+  .mw2-iv        {font-size:0.9375rem}
+  .mw2-il        {font-size:0.6875rem}
+  .mw2-ctab      {font-size:0.6875rem;padding:8px 13px}
+  .mw2-radt      {font-size:0.6875rem;margin-bottom:7px}
+  .mw2-rc-utc    {font-size:0.5625rem}
+  .mw2-rc-lbl    {font-size:0.5rem}
+  .mw2-rc-now-pip{font-size:0.5rem}
+  .mw2-rli       {font-size:0.6875rem}
+  .mw2-li        {font-size:0.75rem}
+  .mw2-jump-btn  {font-size:0.625rem;padding:4px 9px}
+  .mw2-leg-toggle{font-size:0.875rem;padding:13px 14px}
+  .mw2-leg-term  {font-size:0.75rem}
+  .mw2-leg-def   {font-size:0.75rem;line-height:1.5}
+  .mw2-leg-icon  {font-size:1.5rem}
+  .mw2-sstat-tapline{font-size:0.55rem}
+  .mw2-slrow span{font-size:0.6875rem}
+  .mw2-footer    {font-size:0.6875rem;padding:8px 12px}
+  /* Wider cards on phone so text doesn't cramp */
+  .mw2-hcard{min-width:4.75rem;padding:9px 7px 8px}
+  .mw2-rcell{min-width:2.75rem}
+  /* Taller chart */
+  .mw2-cwrap{height:200px}
+}
+
+/* ── Zoom safety — flex children never overflow ─────────────────────────── */
+.mw2-detail > .mw2-panel,
+.mw2-leg-card {
+  min-width:0;overflow-wrap:break-word;word-break:break-word;
+}
+.mw2-hdr-r{flex-shrink:0}
+
+/* ── Diagnostics panel ─────────────────────────────────────────────── */
+#mw-diag{
+  display:none;
+  background:#0d1117;color:#e6edf3;
+  font-family:'JetBrains Mono',monospace;
+  font-size:0.6875rem;line-height:1.6;
+  padding:12px 14px;border-top:2px solid #ff5722;
+  max-height:220px;overflow-y:auto;
+}
+#mw-diag .mw-dlog{margin:1px 0}
+#mw-diag .ok {color:#3fb950}
+#mw-diag .err{color:#f85149}
+#mw-diag .warn{color:#e3b341}
+#mw-diag .info{color:#79c0ff}
+#mw-diag .hdr{color:#ff7b72;font-weight:700}
+#mw-diag-toggle{
+  font-size:0.625rem;padding:3px 8px;background:none;
+  border:1px solid #555;border-radius:3px;color:#888;cursor:pointer;
+  font-family:inherit;margin-left:8px;vertical-align:middle;
+}
+#mw-diag-toggle:hover{border-color:#ff5722;color:#ff5722}
+
+/* ── Daily summary strip ─────────────────────────────────────────────────── */
+.mw2-hidden{display:none !important}
+.mw2-summary-wrap{
+  border:2px solid #7B2FBE;
+  border-radius:8px;
+  background:#fff;
+  margin:8px 10px;
+}
+.mw2-summary-hdr{
+  display:flex;align-items:center;gap:6px;
+  padding:6px 14px 4px;
+}
+.mw2-summary-hdr-label{
+  font-size:0.6rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
+  color:#7B2FBE;
+}
+.mw2-summary-hdr-rule{
+  flex:1;height:1px;background:rgba(123,47,190,.25);
+}
+.mw2-summary-hdr-tag{
+  font-size:0.5rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:#fff;background:#7B2FBE;border-radius:20px;
+  padding:2px 7px;
+  animation:mw2-pulse-pill 2.4s ease-in-out infinite;
+}
+@keyframes mw2-pulse-pill{
+  0%,100%{box-shadow:0 0 0 0 rgba(123,47,190,.45)}
+  50%{box-shadow:0 0 0 5px rgba(123,47,190,0)}
+}
+.mw2-summary{
+  display:flex;flex-wrap:wrap;gap:0;
+  background:transparent;
+  padding:0 0 4px;
+}
+.mw2-sstat{
+  flex:1;min-width:0;
+  display:flex;flex-direction:column;align-items:center;
+  padding:6px 4px 8px;
+  border-right:1px solid rgba(123,47,190,.13);
+  cursor:default;position:relative;
+}
+.mw2-sstat:last-child{border-right:none}
+.mw2-sstat-icon{font-size:1rem;line-height:1;margin-bottom:2px;display:flex;align-items:center;justify-content:center;color:#7B2FBE;opacity:.85}
+.mw2-sstat-label{
+  font-size:0.5rem;text-transform:uppercase;letter-spacing:.5px;
+  color:#9b7ac8;font-weight:700;white-space:nowrap;
+}
+.mw2-sstat-val{
+  font-size:0.875rem;font-weight:700;color:#222;line-height:1.1;
+  white-space:nowrap;margin-top:1px;
+}
+.mw2-sstat-sub{
+  font-size:0.5625rem;color:#888;white-space:nowrap;margin-top:1px;
+}
+/* Hi is orange-warm, Lo is blue-cool */
+.mw2-sstat-hi{color:#e05a00}
+.mw2-sstat-lo{color:#1a7ab8}
+.mw2-sstat-warn{color:#dc3545}  /* thunderstorm */
+.mw2-sstat-rain{color:#4A90E2}  /* precip/rain */
+.mw2-sstat-wind{color:#555}
+.mw2-sstat-dew{color:#2a9d4e}
+/* Tappable stat tiles */
+.mw2-sstat[data-hi]{cursor:pointer;transition:transform .12s,box-shadow .12s;}
+.mw2-sstat[data-hi]:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(123,47,190,.18);border-radius:6px;background:rgba(123,47,190,.04);}
+.mw2-sstat[data-hi]:active{transform:translateY(0);}
+.mw2-sstat-sub[data-hi]{cursor:pointer;text-decoration:underline dotted rgba(26,122,184,.5);}
+.mw2-sstat-sub[data-hi]:hover{color:#1a7ab8;}
+/* Tap affordance icon — replaces text hint */
+.mw2-tap-icon{display:inline-flex;align-items:center;vertical-align:middle;opacity:.3;margin-right:2px;flex-shrink:0;transition:opacity .15s;}
+.mw2-sstat[data-hi]:hover .mw2-tap-icon,
+.mw2-sstat-sub[data-hi]:hover .mw2-tap-icon,
+.mw2-sstat-val[data-hi]:hover .mw2-tap-icon{opacity:.75;}
+/* hi/lo row wrapper */
+.mw2-sstat-hilo{display:flex;flex-direction:column;align-items:center;gap:1px;}
+.mw2-sstat-hilo-row{display:flex;align-items:center;justify-content:center;gap:2px;cursor:pointer;}
+.mw2-sstat-hilo-row:hover .mw2-tap-icon{opacity:.75;}
+/* Flash animation on target card */
+@keyframes mw2-card-flash{
+  0%{box-shadow:0 0 0 0 rgba(123,47,190,.0);background:#fff;}
+  30%{box-shadow:0 0 0 6px rgba(123,47,190,.35);background:rgba(123,47,190,.1);}
+  100%{box-shadow:0 0 0 0 rgba(123,47,190,.0);background:#fff;}
+}
+.mw2-flash-card{animation:mw2-card-flash .7s ease-out;}
+/* Hover tooltip for full label */
+.mw2-sstat:hover .mw2-sstat-tip{opacity:1;pointer-events:auto}
+.mw2-sstat-tip{
+  position:absolute;bottom:calc(100% + 4px);left:50%;
+  transform:translateX(-50%);
+  background:#222;color:#fff;font-size:0.5rem;
+  padding:3px 6px;border-radius:4px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity .15s;
+  z-index:10;
+}
+.mw2-sstat-tip::after{
+  content:'';position:absolute;top:100%;left:50%;
+  transform:translateX(-50%);
+  border:4px solid transparent;border-top-color:#222;
+}
+</style>
+
+<div id="mwdb">
+  <div class="mw2-card">
+
+    <div class="mw2-hdr">
+      <div class="mw2-hdr-left">
+        <h2>Model Forecast Dashboard</h2>
+        <div class="mw2-hdr-meta">
+          <span>Mebane / Burlington NC &middot; All times US Eastern</span>
+          <span class="mw2-age" id="mw-model-age">NWS model: loading&hellip;</span>
+        </div>
+      </div>
+      <div class="mw2-hdr-r">
+        <div class="mw2-live"><div class="mw2-dot"></div>LIVE</div>
+        <div class="mw2-ts" id="mwts">Loading&hellip;</div>
+        <div class="mw2-stale" id="mwstale">&uarr; Stale</div>
+      </div>
+    </div>
+
+    <div class="mw2-bar al-ok" id="mwalert">
+      <div class="mw2-bdot"></div>
+      <span id="mwalertxt">Checking NWS alerts&hellip;</span>
+    </div>
+
+    <div class="mw2-bar spc" id="mwspc">
+      <span class="mw2-spc-badge mw2r0" id="mwspcbdg">&mdash;</span>
+      <span id="mwspctxt" style="color:#555">Loading SPC outlook&hellip;</span>
+      <div class="mw2-bar-r"><a href="https://www.spc.noaa.gov/products/outlook/day1otlk.html" target="_blank" rel="noopener">SPC &nearr;</a></div>
+    </div>
+
+    <div class="mw2-scroll-outer daytabs at-start" id="mwdtabs-outer"><button class="mw2-scroll-btn left hidden" id="mwdtabs-prev" onclick="MWD.scrollRow(&quot;mwdtabs&quot;,-3)" aria-label="Previous days">&#8249;</button><div class="mw2-dtabs" id="mwdtabs"></div><button class="mw2-scroll-btn right" id="mwdtabs-next" onclick="MWD.scrollRow(&quot;mwdtabs&quot;,3)" aria-label="More days">&#8250;</button></div>
+
+    <!-- Daily summary strip — populated by renderSummary() -->
+    <div class="mw2-summary-wrap mw2-hidden" id="mw-summary-wrap" aria-label="Today at a Glance daily summary">
+      <div class="mw2-summary-hdr">
+        <span class="mw2-summary-hdr-label" id="mw-summary-title">Today at a Glance</span>
+        <div class="mw2-summary-hdr-rule"></div>
+        <span class="mw2-summary-hdr-tag">Key Stats</span>
+      </div>
+      <div class="mw2-summary" id="mw-summary"></div>
+    </div>
+
+    <div class="mw2-tl" id="mwtl">
+      <div style="display:flex;gap:5px;padding-bottom:8px">
+        <div class="mw2-skel" style="height:6px;flex:1;border-radius:3px;align-self:center"></div>
+      </div>
+      <div style="display:flex;gap:5px">
+        <div class="mw2-skel" style="height:100px;min-width:62px;border-radius:8px"></div>
+        <div class="mw2-skel" style="height:100px;min-width:62px;border-radius:8px"></div>
+        <div class="mw2-skel" style="height:100px;min-width:62px;border-radius:8px"></div>
+        <div class="mw2-skel" style="height:100px;min-width:62px;border-radius:8px"></div>
+        <div class="mw2-skel" style="height:100px;min-width:62px;border-radius:8px"></div>
+      </div>
+    </div>
+
+    <div class="mw2-detail" id="mwdetail">
+      <div class="mw2-panel mw2-skel" style="height:160px"></div>
+      <div class="mw2-panel mw2-skel" style="height:160px"></div>
+      <div class="mw2-panel mw2-skel mw2-panel-full" style="height:140px"></div>
+    </div>
+
+    <div class="mw2-chartsec" id="mwchartsec" style="display:none">
+      <div class="mw2-ctabs">
+        <button class="mw2-ctab on" data-c="pop"  onclick="MWD.setChart('pop')">Precip %</button>
+        <button class="mw2-ctab"   data-c="qpf"  onclick="MWD.setChart('qpf')">Rainfall</button>
+        <button class="mw2-ctab"   data-c="cape" onclick="MWD.setChart('cape')">CAPE</button>
+        <button class="mw2-ctab"   data-c="temp" onclick="MWD.setChart('temp')">Temp/Dew</button>
+      </div>
+      <div class="mw2-cwrap"><canvas id="mwchart"></canvas></div>
+    </div>
+
+    <div class="mw2-radsec" id="mwradsec" style="display:none">
+      <div class="mw2-radt">Estimated Radar Reflectivity Threat</div>
+      <div class="mw2-scroll-outer radar at-start" id="mwradrow-outer"><button class="mw2-scroll-btn left hidden" id="mwradrow-prev" onclick="MWD.scrollRow(&quot;mwradrow&quot;,-6)" aria-label="Earlier radar">&#8249;</button><div class="mw2-radrow" id="mwradrow"></div><button class="mw2-scroll-btn right" id="mwradrow-next" onclick="MWD.scrollRow(&quot;mwradrow&quot;,6)" aria-label="Later radar">&#8250;</button></div>
+      <div class="mw2-radleg">
+        <div class="mw2-rli"><div class="mw2-rld" style="background:#ccc"></div>&lt;15 dBZ</div>
+        <div class="mw2-rli"><div class="mw2-rld" style="background:#0AF"></div>15-25</div>
+        <div class="mw2-rli"><div class="mw2-rld" style="background:#0C0"></div>25-35</div>
+        <div class="mw2-rli"><div class="mw2-rld" style="background:#FC0"></div>35-45</div>
+        <div class="mw2-rli"><div class="mw2-rld" style="background:#F60"></div>45-55</div>
+        <div class="mw2-rli"><div class="mw2-rld" style="background:#F00"></div>&gt;55</div>
+      </div>
+    </div>
+
+    <div class="mw2-legend" id="mwlegend" style="display:none">
+      <div class="mw2-li"><div class="mw2-ll" style="background:#17a2b8"></div>NWS/NAM</div>
+      <div class="mw2-li"><div class="mw2-ll" style="background:#28a745"></div>GFS</div>
+      <div class="mw2-li"><div class="mw2-ll" style="background:#f0ad4e"></div>ECMWF</div>
+      <div class="mw2-li"><div class="mw2-ll" style="background:#dc3545"></div>HRRR</div>
+      <div class="mw2-li"><div class="mw2-ll" style="background:#6f42c1"></div>ICON</div>
+      <div class="mw2-li"><div class="mw2-ll" style="background:#222;border-top:2px dashed #222;height:0"></div>Consensus</div>
+    </div>
+
+    <!-- ── Source Verification Panel ──────────────────────────── -->
+    <div id="mwsrcpanel" style="display:none;background:#f8f8f8;border-top:1px solid #e0e0e0;padding:12px 14px;font-size:11px;color:#444">
+      <div style="font-weight:700;font-size:12px;color:#7B2FBE;margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase">Data Sources &amp; Live Verification Links</div>
+      <div style="display:grid;grid-template-columns:1fr;gap:6px">
+
+        <div style="background:#fff;border:1px solid #e4e4e4;border-radius:6px;padding:8px 10px">
+          <div style="font-weight:700;color:#17a2b8;margin-bottom:4px">&#9670; NWS / NAM &mdash; National Weather Service Raleigh (RAH)</div>
+          <div style="color:#666;margin-bottom:4px">Official hourly forecast, PoP, QPF, thunder probability, sky cover, wind &mdash; grid point RAH/49,69 (36.1&deg;N 79.3&deg;W)</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <a href="https://api.weather.gov/gridpoints/RAH/49,69/forecast/hourly" target="_blank" rel="noopener" style="color:#17a2b8;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:10px">Hourly Forecast JSON &nearr;</a>
+            <a href="https://api.weather.gov/gridpoints/RAH/49,69" target="_blank" rel="noopener" style="color:#17a2b8;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:10px">Grid Data (QPF/Thunder) &nearr;</a>
+            <a href="https://api.weather.gov/alerts/active?zone=NCZ023" target="_blank" rel="noopener" style="color:#17a2b8;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:10px">Active Alerts &nearr;</a>
+            <a href="https://forecast.weather.gov/MapClick.php?CityName=Mebane&state=NC&site=RAH&textField1=36.096&textField2=-79.267" target="_blank" rel="noopener" style="color:#17a2b8;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:10px">NWS Mebane Forecast Page &nearr;</a>
+          </div>
+          <div id="mwsrc-nws" style="margin-top:5px;font-size:10px;color:#999;font-family:'JetBrains Mono',monospace">Last fetched: &mdash;</div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e4e4e4;border-radius:6px;padding:8px 10px">
+          <div style="font-weight:700;color:#28a745;margin-bottom:4px">&#9670; GFS &mdash; Global Forecast System (NCEP 0.25&deg;)</div>
+          <div style="color:#666;margin-bottom:4px">PoP, QPF, CAPE, temp, wind &mdash; via Open-Meteo API (model: gfs_global)</div>
+          <a href="https://api.open-meteo.com/v1/forecast?latitude=36.1&longitude=-79.3&hourly=precipitation_probability,precipitation,cape,temperature_2m&models=gfs_global&timezone=America/New_York&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch" target="_blank" rel="noopener" style="color:#28a745;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:10px">Live GFS JSON &nearr;</a>
+          <div id="mwsrc-gfs" style="margin-top:5px;font-size:10px;color:#999;font-family:'JetBrains Mono',monospace">Last fetched: &mdash;</div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e4e4e4;border-radius:6px;padding:8px 10px">
+          <div style="font-weight:700;color:#f0ad4e;margin-bottom:4px">&#9670; ECMWF &mdash; European Centre IFS (0.25&deg;)</div>
+          <div style="color:#666;margin-bottom:4px">PoP, QPF, CAPE, LI &mdash; via Open-Meteo API (model: ecmwf_ifs025)</div>
+          <a href="https://api.open-meteo.com/v1/forecast?latitude=36.1&longitude=-79.3&hourly=precipitation_probability,precipitation,cape,temperature_2m&models=ecmwf_ifs025&timezone=America/New_York&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch" target="_blank" rel="noopener" style="color:#f0ad4e;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:10px">Live ECMWF JSON &nearr;</a>
+          <div id="mwsrc-ecmwf" style="margin-top:5px;font-size:10px;color:#999;font-family:'JetBrains Mono',monospace">Last fetched: &mdash;</div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e4e4e4;border-radius:6px;padding:8px 10px">
+          <div style="font-weight:700;color:#dc3545;margin-bottom:4px">&#9670; HRRR &mdash; High-Resolution Rapid Refresh (NCEP 3km)</div>
+          <div style="color:#666;margin-bottom:4px">PoP, QPF, CAPE &mdash; via Open-Meteo API (model: gfs_hrrr)</div>
+          <a href="https://api.open-meteo.com/v1/forecast?latitude=36.1&longitude=-79.3&hourly=precipitation_probability,precipitation,cape,temperature_2m&models=gfs_hrrr&timezone=America/New_York&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch" target="_blank" rel="noopener" style="color:#dc3545;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:10px">Live HRRR JSON &nearr;</a>
+          <div id="mwsrc-hrrr" style="margin-top:5px;font-size:10px;color:#999;font-family:'JetBrains Mono',monospace">Last fetched: &mdash;</div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e4e4e4;border-radius:6px;padding:8px 10px">
+          <div style="font-weight:700;color:#6f42c1;margin-bottom:4px">&#9670; ICON &mdash; ICON Seamless (Deutscher Wetterdienst)</div>
+          <div style="color:#666;margin-bottom:4px">PoP, QPF, CAPE &mdash; via Open-Meteo API (model: icon_seamless)</div>
+          <a href="https://api.open-meteo.com/v1/forecast?latitude=36.1&longitude=-79.3&hourly=precipitation_probability,precipitation,cape,temperature_2m&models=icon_seamless&timezone=America/New_York&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch" target="_blank" rel="noopener" style="color:#6f42c1;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:10px">Live ICON JSON &nearr;</a>
+          <div id="mwsrc-icon" style="margin-top:5px;font-size:10px;color:#999;font-family:'JetBrains Mono',monospace">Last fetched: &mdash;</div>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e4e4e4;border-radius:6px;padding:8px 10px">
+          <div style="font-weight:700;color:#e6a817;margin-bottom:4px">&#9670; NOAA SPC &mdash; Storm Prediction Center Day 1 Outlook</div>
+          <div style="color:#666;margin-bottom:4px">Convective risk level (NONE/MRGL/SLGT/ENH/MDT/HIGH) for central NC &mdash; parsed from SPC HTML</div>
+          <a href="https://www.spc.noaa.gov/products/outlook/day1otlk.html" target="_blank" rel="noopener" style="color:#e6a817;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:10px">SPC Day 1 Outlook &nearr;</a>
+          &nbsp;
+          <a href="https://www.spc.noaa.gov/products/outlook/day1otlk_1300.html" target="_blank" rel="noopener" style="color:#e6a817;text-decoration:none;font-family:'JetBrains Mono',monospace;font-size:10px">Latest Categorical Map &nearr;</a>
+          <div id="mwsrc-spc" style="margin-top:5px;font-size:10px;color:#999;font-family:'JetBrains Mono',monospace">Last fetched: &mdash;</div>
+        </div>
+
+        <div style="background:#f0f8ff;border:1px solid #cce4f4;border-radius:6px;padding:8px 10px">
+          <div style="font-weight:700;color:#4A90E2;margin-bottom:6px">&#9670; Consensus Formula &amp; Methodology</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.7;color:#555">
+            <div>Consensus PoP = (NWS &times; 0.40) + (GFS &times; 0.20) + (ECMWF &times; 0.25) + (HRRR &times; 0.15)</div>
+            <div>NWS weighted highest: official forecast with local expertise</div>
+            <div>ECMWF second: best global skill score for 24-48h precipitation</div>
+            <div>GFS third: NCEP primary model, direct model guidance</div>
+            <div>HRRR fourth: high-res but shorter range, best for convective timing</div>
+            <div>ICON included for spread awareness (unweighted in consensus)</div>
+            <div style="margin-top:4px">Radar reflectivity threat = estimated from CAPE + thunder PoP + consensus PoP</div>
+            <div>Threat classification: TSTM (thunder&gt;20% &amp; PoP&ge;25%), RAIN (&ge;50%), SHOWER (&ge;25%), SLIGHT (&ge;12%), LOW (&ge;5%), CLEAR</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+    <!-- ── End Source Panel ──────────────────────────────────────── -->
+
+    <!-- Diagnostics panel — hidden by default, toggle via footer button -->
+    <div id="mw-diag"></div>
+
+    <div class="mw2-footer">
+      <span>
+        <a href="https://api.weather.gov" target="_blank" rel="noopener">NWS</a> &middot;
+        <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> &middot;
+        <a href="https://www.spc.noaa.gov" target="_blank" rel="noopener">SPC</a>
+        &middot; GFS &middot; ECMWF &middot; HRRR &middot; ICON
+      </span>
+      <span style="display:flex;align-items:center;gap:8px">
+        <button onclick="MWD.toggleDiag()" id="mw-diag-toggle">🔬 Diag</button> <button onclick="MWD.toggleSrc()" style="font-size:10px;background:none;border:1px solid #ccc;border-radius:3px;padding:2px 7px;cursor:pointer;color:#888;font-family:inherit" id="mwsrcbtn">&#128270; Sources</button>
+        <span id="mwfts">Refreshes hourly</span>
+      </span>
+    </div>
+
+    <!-- ── How It Works Legend accordion ───────────────────────── -->
+    <div class="mw2-leg-wrap" id="mwlegwrap">
+      <button class="mw2-leg-toggle" onclick="MWD.toggleLeg()" aria-expanded="false" aria-controls="mwlegbody">
+        <span class="mw2-leg-toggle-left">
+          <span style="font-size:15px;line-height:1">&#9432;</span>
+          How to read this dashboard
+        </span>
+        <span class="mw2-leg-chevron" id="mwlegchev">&#9660;</span>
+      </button>
+
+      <div class="mw2-leg-body" id="mwlegbody" role="region">
+        <div class="mw2-leg-grid">
+
+          <!-- ── WHAT IS SHOWN ── -->
+          <div class="mw2-leg-divider">What you&rsquo;re seeing</div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon">&#127774;</div>
+            <div class="mw2-leg-term">Hour cards</div>
+            <div class="mw2-leg-def">Each card is one hour of the day, <b>midnight to midnight</b>. Tap or drag the slider to explore any hour. <b>Past hours</b> are dimmed — you can&rsquo;t un-rain the morning.</div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon">&#128308;</div>
+            <div class="mw2-leg-term">NOW marker</div>
+            <div class="mw2-leg-def">The orange ring &amp; needle show <b>right now</b>. Everything left of it already happened. Everything right of it is a forecast — an educated guess about the future.</div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon">&#128202;</div>
+            <div class="mw2-leg-term">Today at a Glance</div>
+            <div class="mw2-leg-def">The purple-bordered strip above the slider shows the day&rsquo;s <b>best and worst</b> in one shot — peak temp, dewpoint, wind, rain chance, rainfall, and storm risk. <b>Tap any value</b> to jump straight to that hour. Tap hi <em>or</em> lo on temp &amp; dewpoint separately.</div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon">&#129516;</div>
+            <div class="mw2-leg-term">Precip % (PoP)</div>
+            <div class="mw2-leg-def"><b>Probability of Precipitation</b> — if 100 days looked exactly like today, rain would fall on this many of them. <b>50%</b> is genuinely a coin flip.</div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon">&#128167;</div>
+            <div class="mw2-leg-term">QPF (rainfall)</div>
+            <div class="mw2-leg-def"><b>Quantitative Precipitation Forecast</b> — the actual amount of water the models expect to fall, in inches. <b>0.01&Prime;</b> is a sprinkle. <b>1.00&Prime;</b> is a soaker.</div>
+          </div>
+
+          <!-- ── THE MODELS ── -->
+          <div class="mw2-leg-divider">The five weather computers</div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon" style="color:#17a2b8">&#9670;</div>
+            <div class="mw2-leg-term" style="color:#17a2b8">NWS / NAM</div>
+            <div class="mw2-leg-def">The <b>US government&rsquo;s official forecast</b>. A meteorologist in Raleigh looked at all the models and drew their best line. <b>Weighted 40%</b> in the consensus — most trusted for local detail.</div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon" style="color:#28a745">&#9670;</div>
+            <div class="mw2-leg-term" style="color:#28a745">GFS</div>
+            <div class="mw2-leg-def"><b>Global Forecast System</b> — the US&rsquo;s main planet-wide computer model. It runs the whole atmosphere as math, 4&times; a day. <b>Weighted 20%.</b> Good at large patterns; less sharp on exact timing.</div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon" style="color:#f0ad4e">&#9670;</div>
+            <div class="mw2-leg-term" style="color:#f0ad4e">ECMWF</div>
+            <div class="mw2-leg-def">Europe&rsquo;s model, widely considered the <b>world&rsquo;s most accurate</b> for 1&ndash;5 day forecasts. <b>Weighted 25%.</b> When ECMWF and GFS disagree, pay attention.</div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon" style="color:#dc3545">&#9670;</div>
+            <div class="mw2-leg-term" style="color:#dc3545">HRRR</div>
+            <div class="mw2-leg-def"><b>High-Resolution Rapid Refresh</b> — a tight 3km zoom on the US, updated <em>every hour</em>. Best at knowing <b>where and when</b> a storm will hit in the next few hours. <b>Weighted 15%.</b></div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon" style="color:#6f42c1">&#9670;</div>
+            <div class="mw2-leg-term" style="color:#6f42c1">ICON</div>
+            <div class="mw2-leg-def">Germany&rsquo;s model (<b>Deutscher Wetterdienst</b>). Shown for <b>spread awareness</b> — if ICON looks very different from the others, it&rsquo;s a signal the atmosphere is being unpredictable. Not in the consensus math.</div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon">&#9878;</div>
+            <div class="mw2-leg-term">Consensus</div>
+            <div class="mw2-leg-def">A <b>weighted average</b> of NWS, GFS, ECMWF &amp; HRRR. Think of it as asking four experts and listening more to the ones with the best track record. <em>NWS&times;0.40 + ECMWF&times;0.25 + GFS&times;0.20 + HRRR&times;0.15.</em></div>
+          </div>
+
+          <!-- ── INSTABILITY ── -->
+          <div class="mw2-leg-divider">Storm energy indicators</div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon">&#9889;</div>
+            <div class="mw2-leg-term">CAPE (J/kg)</div>
+            <div class="mw2-leg-def"><b>Convective Available Potential Energy</b> — the fuel in the air for thunderstorms. Imagine a bubble of warm air: CAPE measures how hard it wants to rocket upward. <b>&lt;300</b> weak &middot; <b>300&ndash;1000</b> moderate &middot; <b>&gt;1000</b> explosive.</div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon">&#129045;</div>
+            <div class="mw2-leg-term">Lifted Index (LI)</div>
+            <div class="mw2-leg-def">Lift a parcel of air to 18,000 ft — if it&rsquo;s <b>warmer than the surrounding air, it keeps rising</b> (unstable). <b>Positive</b> = stable, nothing happens. <b>Negative</b> = unstable. <b>&minus;4 or below</b> = severe risk.</div>
+          </div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon">&#127942;</div>
+            <div class="mw2-leg-term">Thunder %</div>
+            <div class="mw2-leg-def">The <b>official NWS probability</b> that thunder will be heard during this hour at your location. Even 10% means you should keep an eye on the sky. At 30%+ it&rsquo;s a real possibility.</div>
+          </div>
+
+          <!-- ── RADAR / THREAT ── -->
+          <div class="mw2-leg-divider">Radar &amp; threat colours</div>
+
+          <div class="mw2-leg-card">
+            <div class="mw2-leg-icon">&#128225;</div>
+            <div class="mw2-leg-term">Radar dBZ</div>
+            <div class="mw2-leg-def">Radar <b>shouts at rain droplets</b> and listens for the echo. The louder the echo (higher dBZ), the bigger the drops and the heavier the rain. This is <em>estimated</em> from model data, not a live radar scan.</div>
+          </div>
+
+          <div class="mw2-leg-card" style="padding-bottom:8px">
+            <div class="mw2-leg-icon">&#127754;</div>
+            <div class="mw2-leg-term">dBZ scale</div>
+            <div class="mw2-leg-def" style="display:flex;flex-direction:column;gap:3px;margin-top:2px">
+              <span><span class="mw2-leg-swatch" style="background:#ccc"></span><b>&lt;15</b> &mdash; Dry / cloud only</span>
+              <span><span class="mw2-leg-swatch" style="background:#00AAFF"></span><b>15&ndash;25</b> &mdash; Light drizzle</span>
+              <span><span class="mw2-leg-swatch" style="background:#00CC00"></span><b>25&ndash;35</b> &mdash; Light rain</span>
+              <span><span class="mw2-leg-swatch" style="background:#FFCC00"></span><b>35&ndash;45</b> &mdash; Moderate rain</span>
+              <span><span class="mw2-leg-swatch" style="background:#FF6600"></span><b>45&ndash;55</b> &mdash; Heavy / hail possible</span>
+              <span><span class="mw2-leg-swatch" style="background:#FF0000"></span><b>&gt;55</b> &mdash; Severe / large hail</span>
+            </div>
+          </div>
+
+          <div class="mw2-leg-card" style="padding-bottom:8px">
+            <div class="mw2-leg-icon">&#9888;</div>
+            <div class="mw2-leg-term">Threat badges</div>
+            <div class="mw2-leg-def" style="display:flex;flex-direction:column;gap:3px;margin-top:2px">
+              <span><span class="mw2-leg-swatch" style="background:#dc3545"></span><b>TSTM</b> &mdash; Thunder likely, stay aware</span>
+              <span><span class="mw2-leg-swatch" style="background:#4A90E2"></span><b>RAIN</b> &mdash; Steady rain expected (&ge;50%)</span>
+              <span><span class="mw2-leg-swatch" style="background:#17a2b8"></span><b>SHOWER</b> &mdash; Passing showers (&ge;25%)</span>
+              <span><span class="mw2-leg-swatch" style="background:#a0c4e8"></span><b>SLIGHT</b> &mdash; Small chance (&ge;12%)</span>
+              <span><span class="mw2-leg-swatch" style="background:#cce4f4"></span><b>LOW</b> &mdash; Unlikely but possible (&ge;5%)</span>
+              <span><span class="mw2-leg-swatch" style="background:#e0e0e0"></span><b>CLEAR</b> &mdash; No meaningful rain signal</span>
+            </div>
+          </div>
+
+          <!-- ── SPC ── -->
+          <div class="mw2-leg-divider">Severe weather risk (SPC)</div>
+
+          <div class="mw2-leg-card" style="padding-bottom:8px">
+            <div class="mw2-leg-icon">&#127783;</div>
+            <div class="mw2-leg-term">SPC Day 1 Risk</div>
+            <div class="mw2-leg-def" style="display:flex;flex-direction:column;gap:3px;margin-top:2px">
+              <span><span class="mw2-leg-swatch" style="background:#c8e6c9"></span><b>NONE</b> &mdash; Normal day, no severe risk</span>
+              <span><span class="mw2-leg-swatch" style="background:#a5d6a7"></span><b>MRGL</b> &mdash; Marginal: one or two isolated storms</span>
+              <span><span class="mw2-leg-swatch" style="background:#fff176"></span><b>SLGT</b> &mdash; Slight: scattered stronger storms</span>
+              <span><span class="mw2-leg-swatch" style="background:#ffcc80"></span><b>ENH</b> &mdash; Enhanced: widespread, stay informed</span>
+              <span><span class="mw2-leg-swatch" style="background:#ef9a9a"></span><b>MDT</b> &mdash; Moderate: significant event, take action</span>
+              <span><span class="mw2-leg-swatch" style="background:#ce93d8"></span><b>HIGH</b> &mdash; High: major outbreak, seek shelter</span>
+            </div>
+          </div>
+
+        </div><!-- /.mw2-leg-grid -->
+      </div><!-- /.mw2-leg-body -->
+    </div><!-- /.mw2-leg-wrap -->
+    <!-- ── End Legend accordion ──────────────────────────────────── -->
+
+  </div>
+</div>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" onload="this.rel='stylesheet'" href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,600;0,700&family=JetBrains+Mono:wght@400;600&display=swap">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap"></noscript>
+
+<!-- Chart.js: defer so it doesn't block page render, onload triggers chart -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+  onload="if(window._mwChartReady){window._mwChartReady();window._mwChartReady=null;}"
+  onerror="console.warn('MebaneWeather: Chart.js CDN unavailable')"
+  defer></script>
+
+<script>
+try{
+(function(){
+'use strict';
+
+// ── Config ───────────────────────────────────────────────────────
+var LAT=36.1, LON=-79.3;
+var NWS_HDR={'Accept':'application/geo+json'}; // User-Agent set automatically by browser
+var OM='https://api.open-meteo.com/v1/forecast';
+var OM_PARAMS='&hourly=temperature_2m,dewpoint_2m,relativehumidity_2m,precipitation_probability,precipitation,weathercode,cloudcover,windspeed_10m,windgusts_10m,cape,lifted_index&wind_speed_unit=mph&precipitation_unit=inch&temperature_unit=fahrenheit&timezone=America/New_York';
+
+// ── Eastern time (DST-aware, reads browser Intl) ──────────────
+function etOffset(){
+  try{
+    var now=new Date();
+    var s=now.toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:false});
+    var etH=parseInt(s,10)%24, utcH=now.getUTCHours();
+    var d=etH-utcH; if(d>12)d-=24; if(d<-12)d+=24;
+    return d*60;
+  }catch(e){return -240;}
+}
+var ET_OFF=etOffset();
+var ET_ABB=ET_OFF===-300?'EST':'EDT';
+function utcToET(h){return((h+ET_OFF/60)%24+24)%24;}
+function fShort(h){var lh=utcToET(h);return(lh%12||12)+(lh<12?'am':'pm');}
+function fLong(h){var lh=utcToET(h);return(lh%12||12)+':00 '+(lh<12?'AM':'PM')+' '+ET_ABB;}
+
+// ── Palettes ────────────────────────────────────────────────────
+var MC={NWS:'#17a2b8',GFS:'#28a745',ECMWF:'#f0ad4e',HRRR:'#dc3545',ICON:'#6f42c1',Consensus:'#222'};
+var TC={
+  TSTM:{bg:'rgba(220,53,69,.1)',bd:'#dc3545',tx:'#dc3545'},
+  RAIN:{bg:'rgba(74,144,226,.1)',bd:'#4A90E2',tx:'#4A90E2'},
+  SHOWER:{bg:'rgba(23,162,184,.1)',bd:'#17a2b8',tx:'#17a2b8'},
+  SLIGHT:{bg:'rgba(160,196,232,.1)',bd:'#a0c4e8',tx:'#7aadcc'},
+  LOW:{bg:'rgba(204,228,244,.1)',bd:'#cce4f4',tx:'#99c0d9'},
+  CLEAR:{bg:'transparent',bd:'#e4e4e4',tx:'#bbb'}
+};
+var RM=[
+  {l:'<15',c:'#ccc',bg:'#f8f8f8'},
+  {l:'15-25',c:'#00AAFF',bg:'#e8f4ff'},
+  {l:'25-35',c:'#00CC00',bg:'#e8ffe8'},
+  {l:'35-45',c:'#FFCC00',bg:'#fffbe8'},
+  {l:'45-55',c:'#FF6600',bg:'#fff3e8'},
+  {l:'>55',c:'#FF0000',bg:'#ffe8e8'}
+];
+var WMO={0:'Clear',1:'Mostly Clear',2:'Partly Cloudy',3:'Overcast',45:'Fog',
+  51:'Lt Drizzle',53:'Drizzle',61:'Lt Rain',63:'Rain',65:'Heavy Rain',
+  80:'Showers',81:'Showers',82:'Heavy Showers',95:'Thunderstorm',96:'T-Storm',99:'T-Storm'};
+
+// ── State ────────────────────────────────────────────────────────
+var S={days:[],di:0,hi:0,ct:'pop',chart:null};
+
+// ── DOM helpers ──────────────────────────────────────────────────
+var $=function(id){return document.getElementById(id);};
+
+// ── Slider fill ──────────────────────────────────────────────────
+function slFill(v){
+  var pct=(v/23*100).toFixed(1)+'%';
+  var el=$('mwrange');
+  if(!el)return;
+  el.style.background='linear-gradient(to right,#7B2FBE 0%,#7B2FBE '+pct+',#e0e0e0 '+pct+',#e0e0e0 100%)';
+}
+
+// ── ISO duration → hours ────────────────────────────────────────
+function durH(s){
+  var d=+(s.match(/(\d+)D/)||[0,0])[1];
+  var h=+(s.match(/(\d+)H/)||[0,0])[1];
+  return d*24+h||1;
+}
+
+// ── NWS grid property → map ─────────────────────────────────────
+function gMap(prop){
+  var m={};
+  if(!prop||!prop.values)return m;
+  prop.values.forEach(function(v){
+    var parts=v.validTime.split('/'), dt=new Date(parts[0]), n=durH(parts[1]);
+    for(var i=0;i<n;i++){
+      var sl=new Date(dt.getTime()+i*3600000);
+      m[sl.toISOString().slice(0,10)+'_'+sl.getUTCHours()]=v.value;
+    }
+  });
+  return m;
+}
+
+// ── NWS QPF → inches/hour ───────────────────────────────────────
+function gQPF(prop){
+  var m={};
+  if(!prop||!prop.values)return m;
+  prop.values.forEach(function(v){
+    var parts=v.validTime.split('/'), dt=new Date(parts[0]), n=durH(parts[1]);
+    var ph=v.value?v.value/n/25.4:0;
+    for(var i=0;i<n;i++){
+      var sl=new Date(dt.getTime()+i*3600000);
+      m[sl.toISOString().slice(0,10)+'_'+sl.getUTCHours()]=ph;
+    }
+  });
+  return m;
+}
+
+// ── Open-Meteo value lookup ──────────────────────────────────────
+function omV(src,field,dateStr,utcH){
+  if(!src)return 0;
+  var lh=((utcH+ET_OFF/60)%24+24)%24;
+  var tgt=dateStr+'T'+(lh<10?'0':'')+lh+':00';
+  var idx=src.time?src.time.indexOf(tgt):-1;
+  if(idx<0)return 0;
+  return src[field]?src[field][idx]||0:0;
+}
+
+// ── Threat classify ──────────────────────────────────────────────
+function classify(pNWS,thun,cape,pGFS,pECMWF){
+  var mx=Math.max(pNWS||0,pGFS||0,pECMWF||0);
+  var hasT=thun>20||(thun>10&&cape>300);
+  if(hasT&&mx>=25)return'TSTM';
+  if(mx>=50)return'RAIN';
+  if(mx>=25)return'SHOWER';
+  if(mx>=12)return'SLIGHT';
+  if(mx>=5)return'LOW';
+  return'CLEAR';
+}
+
+// ── Radar level ──────────────────────────────────────────────────
+function radLvl(cape,thun,pop,wx){
+  var s=0;
+  if(cape>1000)s+=3;else if(cape>500)s+=2;else if(cape>200)s+=1;
+  if(thun>30)s+=2;else if(thun>10)s+=1;
+  if(pop>40)s+=1;if(wx>=95)s+=2;
+  return Math.min(s,5);
+}
+
+// ── Sky icon ─────────────────────────────────────────────────────
+function skyIco(sky,thun){
+  // Inline SVG icons — render on every browser/OS, no font required
+  if(thun>20)return'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M20 17.58A5 5 0 0018 8h-1.26A8 8 0 104 15.25" stroke="#888" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><polyline points="13 11 9 17 15 17 11 23" stroke="#f0ad4e" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>';
+  if(sky>87) return'<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M17.5 19H9a7 7 0 110-14 5 5 0 019.9 1 3.5 3.5 0 01-1.4 6.7z" stroke="#888" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  if(sky>65) return'<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="9" r="4" stroke="#f0ad4e" stroke-width="1.5"/><path d="M16.5 17H8a5 5 0 110-10 3.5 3.5 0 017 1 2.5 2.5 0 01-1 4.8" stroke="#888" stroke-width="1.4" stroke-linecap="round"/></svg>';
+  if(sky>35) return'<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="10" cy="10" r="3.5" stroke="#f0ad4e" stroke-width="1.5"/><path d="M17 17H9a5 5 0 110-10" stroke="#aaa" stroke-width="1.4" stroke-linecap="round"/></svg>';
+  return'<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4" stroke="#f0ad4e" stroke-width="1.8"/><line x1="12" y1="2" x2="12" y2="5" stroke="#f0ad4e" stroke-width="1.5" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="22" stroke="#f0ad4e" stroke-width="1.5" stroke-linecap="round"/><line x1="2" y1="12" x2="5" y2="12" stroke="#f0ad4e" stroke-width="1.5" stroke-linecap="round"/><line x1="19" y1="12" x2="22" y2="12" stroke="#f0ad4e" stroke-width="1.5" stroke-linecap="round"/><line x1="4.9" y1="4.9" x2="7.1" y2="7.1" stroke="#f0ad4e" stroke-width="1.5" stroke-linecap="round"/><line x1="16.9" y1="16.9" x2="19.1" y2="19.1" stroke="#f0ad4e" stroke-width="1.5" stroke-linecap="round"/><line x1="4.9" y1="19.1" x2="7.1" y2="16.9" stroke="#f0ad4e" stroke-width="1.5" stroke-linecap="round"/><line x1="16.9" y1="7.1" x2="19.1" y2="4.9" stroke="#f0ad4e" stroke-width="1.5" stroke-linecap="round"/></svg>';
+}
+
+// ── Date list ────────────────────────────────────────────────────
+function dates(n){
+  var out=[],t=new Date();t.setHours(0,0,0,0);
+  for(var i=0;i<n;i++)out.push(new Date(t.getTime()+i*86400000).toISOString().slice(0,10));
+  return out;
+}
+
+// ── Compile records for one day ──────────────────────────────────
+function compile(dateStr,gfs,ecmwf,icon,hrrr,gPop,gThun,gSky,gTemp,gDew,gWind,gGust,gRH,gQPFm,nwsHrly){
+  var recs=[];
+  for(var utcH=0;utcH<24;utcH++){try{
+    var k=dateStr+'_'+utcH;
+    var nP=nwsHrly[k]||{};
+    var tC=gTemp[k]; var tF=tC!=null?Math.round(tC*9/5+32):(nP.temperature!=null?nP.temperature:null);
+    var dC=gDew[k];  var dF=dC!=null?Math.round(dC*9/5+32):null;
+    var pNWS=Math.round(gPop[k]||(nP.probabilityOfPrecipitation&&nP.probabilityOfPrecipitation.value)||0);
+    var thun=Math.round(gThun[k]||0);
+    var sky=Math.round(gSky[k]||0);
+    var wind=Math.round((gWind[k]||0)*0.621371);
+    var gust=Math.round((gGust[k]||0)*0.621371);
+    var rh=Math.round(gRH[k]||(nP.relativeHumidity&&nP.relativeHumidity.value)||0);
+    var qNWS=Math.round((gQPFm[k]||0)*10000)/10000;
+    var pGFS=Math.round(omV(gfs,'precipitation_probability',dateStr,utcH));
+    var pECMWF=Math.round(omV(ecmwf,'precipitation_probability',dateStr,utcH));
+    var pHRRR=Math.round(omV(hrrr,'precipitation_probability',dateStr,utcH));
+    var pICON=Math.round(omV(icon,'precipitation_probability',dateStr,utcH));
+    var pCons=Math.round(pNWS*0.40+pGFS*0.20+pECMWF*0.25+pHRRR*0.15);
+    var qGFS=Math.round(omV(gfs,'precipitation',dateStr,utcH)*10000)/10000;
+    var qECMWF=Math.round(omV(ecmwf,'precipitation',dateStr,utcH)*10000)/10000;
+    var qHRRR=Math.round(omV(hrrr,'precipitation',dateStr,utcH)*10000)/10000;
+    var qICON=Math.round(omV(icon,'precipitation',dateStr,utcH)*10000)/10000;
+    var cGFS=Math.round(omV(gfs,'cape',dateStr,utcH));
+    var cECMWF=Math.round(omV(ecmwf,'cape',dateStr,utcH));
+    var cHRRR=Math.round(omV(hrrr,'cape',dateStr,utcH));
+    var cICON=Math.round(omV(icon,'cape',dateStr,utcH));
+    var cMax=Math.max(cGFS,cECMWF,cHRRR,cICON);
+    var liGFS=Math.round((omV(gfs,'lifted_index',dateStr,utcH)||0)*10)/10;
+    var wx=Math.round(omV(gfs,'weathercode',dateStr,utcH));
+    var threat=classify(pNWS,thun,cMax,pGFS,pECMWF);
+    var rl=radLvl(cMax,thun,pNWS,wx);
+    var wxDesc=thun>25?'Chance T-Storm':thun>10?'Slight Ch. T-Storm':
+      pNWS>30||pECMWF>40?'Chance Showers':pNWS>15?'Slight Ch. Showers':WMO[wx]||'Partly Cloudy';
+    recs.push({utcH:utcH,sky:sky,tF:tF,dF:dF,wind:wind,gust:gust,rh:rh,
+      pNWS:pNWS,pGFS:pGFS,pECMWF:pECMWF,pHRRR:pHRRR,pICON:pICON,pCons:pCons,
+      thun:thun,qNWS:qNWS,qGFS:qGFS,qECMWF:qECMWF,qHRRR:qHRRR,qICON:qICON,
+      cGFS:cGFS,cECMWF:cECMWF,cHRRR:cHRRR,cICON:cICON,cMax:cMax,
+      liGFS:liGFS,wx:wx,wxDesc:wxDesc,threat:threat,rl:rl});
+  }catch(e){/* skip bad hour, never crash */}
+  }
+  return recs;
+}
+
+// ── Fetch all data ───────────────────────────────────────────────
+
+// Unpack flat multi-model OM response into per-model objects
+// OM returns fields like "cape_gfs_global", "cape_ecmwf_ifs025" etc.
+function unpackOM(h, model){
+  if(!h||!h.time) return null;
+  var out={time:h.time};
+  var suffix='_'+model;
+  Object.keys(h).forEach(function(k){
+    if(k==='time') return;
+    if(k.slice(-suffix.length)===suffix){
+      out[k.slice(0,-suffix.length)]=h[k];
+    }
+  });
+  return out;
+}
+
+// ── Fetch helpers ────────────────────────────────────────────────────────────
+// Each call has its OWN timeout and its OWN try/catch.
+// A failure in any one source NEVER breaks the others.
+// Returns null on any error — callers always get a value, never an exception.
+
+function safeFetch(url, opts, timeoutMs) {
+  timeoutMs = timeoutMs || 12000;
+  return new Promise(function(resolve) {
+    var ac = new AbortController();
+    var tid = setTimeout(function(){ dlog('warn','TIMEOUT ('+timeoutMs+'ms): '+url.slice(0,60)); ac.abort(); resolve(null); }, timeoutMs);
+    var fetchOpts = Object.assign({cache:'no-store'}, opts||{}, {signal:ac.signal});
+    fetch(url, fetchOpts)
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){
+        clearTimeout(tid);
+        // d is parsed JSON — null means r.ok was false
+        // Only reject if d itself is null (HTTP error) or d has {error:true} (OM error format)
+        var hasProblem = !d || d.error === true;
+        var result = hasProblem ? null : d;
+        dlog(result?'ok':'err',
+          'fetch '+(result?'OK':'FAIL')+': '+url.slice(0,60)+
+          (hasProblem?' [d='+(d===null?'null':'{error:'+d.error+'}')+']':''));
+        resolve(result);
+      })
+      .catch(function(e){
+        clearTimeout(tid);
+        dlog('err','fetch CATCH: '+url.slice(0,60)+' — '+(e&&e.message?e.message:String(e)));
+        resolve(null);
+      });
+  });
+}
+
+// Cache-busted Open-Meteo URL
+function omBatchUrl(s,e){
+  var cycle=Math.floor(Date.now()/(15*60*1000));
+  return OM+'?latitude='+LAT+'&longitude='+LON+OM_PARAMS
+    +'&models=gfs_global,ecmwf_ifs025,icon_seamless,gfs_hrrr'
+    +'&start_date='+s+'&end_date='+e+'&_t='+cycle;
+}
+
+// ── Main data fetch — all calls independent, all degrade gracefully ───────────
+function fetchAll(){
+  var ds=dates(7), s=ds[0], e=ds[ds.length-1];
+
+  // Fire all 4 fetches simultaneously, each with its own 12s timeout.
+  // Promise.allSettled guarantees ALL complete before we process.
+  Promise.allSettled([
+    safeFetch(omBatchUrl(s,e), {}, 15000),
+    safeFetch('https://api.weather.gov/gridpoints/RAH/49,69', {headers:NWS_HDR}, 12000),
+    safeFetch('https://api.weather.gov/gridpoints/RAH/49,69/forecast/hourly', {headers:NWS_HDR}, 12000),
+    safeFetch('https://api.weather.gov/alerts/active?zone=NCZ023', {headers:NWS_HDR}, 8000)
+  ]).then(function(res){
+    // safeFetch resolves to null on any error, or raw JSON on success
+    try{
+      dlog('info','r0 type='+(res[0].value===null?'null':typeof res[0].value)+
+        ' hasHourly='+(!!(res[0].value&&res[0].value.hourly)));
+      dlog('info','r1 type='+(res[1].value===null?'null':typeof res[1].value)+
+        ' hasProps='+(!!(res[1].value&&res[1].value.properties)));
+    }catch(diagE){}
+
+    var r0=res[0].value, r1=res[1].value, r2=res[2].value, r3=res[3].value;
+
+    var omRaw  = r0&&r0.hourly       ? r0.hourly           : null;
+    var grid   = r1&&r1.properties   ? r1.properties        : null;
+    var hrlyP  = r2&&r2.properties&&r2.properties.periods ? r2.properties.periods : [];
+    var alerts = r3&&r3.features     ? r3.features          : [];
+
+    var gfs   = unpackOM(omRaw,'gfs_global');
+    var ecmwf = unpackOM(omRaw,'ecmwf_ifs025');
+    var icon  = unpackOM(omRaw,'icon_seamless');
+    var hrrr  = unpackOM(omRaw,'gfs_hrrr');
+
+    dlog('info','Extract: omRaw='+(omRaw?'keys:'+Object.keys(omRaw).slice(0,3):'null')+
+      ' grid='+(grid?'keys:'+Object.keys(grid).slice(0,3):'null')+
+      ' hrlyP='+hrlyP.length+
+      ' gfs='+(gfs?'time-len:'+((gfs.time||[]).length):'null'));
+
+    // If every single data source failed, show error + retry
+    if(!omRaw && !grid && hrlyP.length===0){
+      dlog('err','All sources null — showError');
+      showError(); return;
+    }
+
+    _lastFetch=Date.now();
+    dlog('ok','Data present — starting compile. omRaw.time.length='+(omRaw&&omRaw.time?omRaw.time.length:'null')+' grid keys='+(grid?Object.keys(grid).length:'0'));
+    // Test omV on one known hour
+    var _et=ET_OFF/60; var _testLH=((22+_et)%24+24)%24;
+    var _testTgt=dates(1)[0]+'T'+(_testLH<10?'0':'')+_testLH+':00';
+    var _testIdx=gfs&&gfs.time?gfs.time.indexOf(_testTgt):-1;
+    dlog('info','omV-probe: ET_OFF='+ET_OFF+' utc22→lh'+_testLH+' tgt='+_testTgt+' idx='+_testIdx+' pop='+(gfs&&gfs.precipitation_probability&&_testIdx>=0?gfs.precipitation_probability[_testIdx]:'?'));
+
+    var gPop=gMap(grid&&grid.probabilityOfPrecipitation);
+    var gThun=gMap(grid&&grid.probabilityOfThunder);
+    var gSky=gMap(grid&&grid.skyCover);
+    var gTemp=gMap(grid&&grid.temperature);
+    var gDew=gMap(grid&&grid.dewpoint);
+    var gWind=gMap(grid&&grid.windSpeed);
+    var gGust=gMap(grid&&grid.windGust);
+    var gRH=gMap(grid&&grid.relativeHumidity);
+    var gQPFm=gQPF(grid&&grid.quantitativePrecipitation);
+
+    var nwsHrly={};
+    hrlyP.forEach(function(p){
+      var dt=new Date(p.startTime);
+      nwsHrly[dt.toISOString().slice(0,10)+'_'+dt.getUTCHours()]=p;
+    });
+
+    var newDays=ds.map(function(dateStr){
+      return{dateStr:dateStr,recs:compile(dateStr,gfs,ecmwf,icon,hrrr,gPop,gThun,gSky,gTemp,gDew,gWind,gGust,gRH,gQPFm,nwsHrly)};
+    });
+
+    // Upsert — no duplicates
+    var newSet={};
+    newDays.forEach(function(d){newSet[d.dateStr]=d;});
+    S.days=S.days.filter(function(d){return !!newSet[d.dateStr];});
+    var existing={};
+    S.days.forEach(function(d){existing[d.dateStr]=true;});
+    newDays.forEach(function(d){
+      if(existing[d.dateStr]){
+        for(var i=0;i<S.days.length;i++){if(S.days[i].dateStr===d.dateStr){S.days[i]=d;break;}}
+      } else {
+        S.days.push(d);
+      }
+    });
+    S.days.sort(function(a,b){return a.dateStr<b.dateStr?-1:1;});
+    S.di=Math.min(S.di,S.days.length-1);
+
+    // Timestamp
+    var now=new Date();
+    dlog('ok','fetchAll complete at '+now.toLocaleTimeString());
+    var tsStr=now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})+' '+ET_ABB;
+    $('mwts').textContent='Updated '+tsStr;
+    // Show NWS model run time and age in the header subtitle
+    var nwsUpdateTime='', nwsRunAge='';
+    if(r1&&r1.properties&&r1.properties.updateTime){
+      var nwsUT=new Date(r1.properties.updateTime);
+      var ageMin=Math.round((now-nwsUT)/60000);
+      var ageStr=ageMin<60?(ageMin+'m ago'):Math.floor(ageMin/60)+'h'+(ageMin%60?Math.round(ageMin%60)+'m':'')+" ago";
+      var runTimeStr=nwsUT.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',timeZone:'America/New_York'});
+      nwsUpdateTime=' \u00b7 NWS: '+runTimeStr+' EDT';
+      var el=document.getElementById('mw-model-age');
+      if(el) el.textContent='NWS model run: '+runTimeStr+' EDT ('+ageStr+') \u00b7 HRRR: hourly \u00b7 GFS/ECMWF: 6h';
+    }
+    $('mwfts').textContent='Fetched: '+tsStr+nwsUpdateTime+' \u00b7 Auto-refreshes hourly';
+    // Stamp source fetch times
+    var srcTs='Fetched at '+tsStr+' \u2014 click link to verify live';
+    ['nws','gfs','ecmwf','hrrr','icon'].forEach(function(id){
+      var el=$('mwsrc-'+id); if(el) el.textContent=srcTs;
+    });
+    var spcEl=$('mwsrc-spc'); if(spcEl) spcEl.textContent='Fetched at '+tsStr+' \u2014 click link to verify live';
+
+    renderAlerts(alerts);
+    fetchSPC();
+    buildTabs();
+    renderDay();
+    showSections();
+  }).catch(function(e){
+    dlog('err','CATCH in allSettled.then: '+(e&&e.message?e.message:String(e))+' stack:'+(e&&e.stack?e.stack.slice(0,200):'none'));
+    showError();
+  });
+}
+
+// ── Alerts ───────────────────────────────────────────────────────
+function renderAlerts(alerts){
+  var bar=$('mwalert'), txt=$('mwalertxt');
+  if(!alerts.length){
+    bar.className='mw2-bar al-ok';
+    txt.innerHTML='No active NWS weather alerts for Mebane, NC. <a href="https://forecast.weather.gov/MapClick.php?CityName=Mebane&state=NC&site=RAH" target="_blank" rel="noopener">Verify at weather.gov</a>';
+    return;
+  }
+  var severe=alerts.some(function(a){return['Tornado Warning','Severe Thunderstorm Warning','Flash Flood Warning'].indexOf(a.properties.event)>=0;});
+  bar.className='mw2-bar '+(severe?'al-sev':'al-warn');
+  var names=[...new Set(alerts.map(function(a){return a.properties.event;}))].join(' \u00b7 ');
+  txt.innerHTML='&#9888; ACTIVE: '+names+' \u2014 <a href="https://forecast.weather.gov/MapClick.php?CityName=Mebane&state=NC" target="_blank" rel="noopener">Details</a>';
+}
+
+// ── SPC — uses GeoJSON point-in-polygon for Mebane exact coordinates ────────
+// This is the authoritative method: checks the actual SPC categorical outlook
+// polygons and tests whether Mebane (36.1N, 79.3W) falls inside each zone.
+// The old HTML text-search method was wrong — it matched risk language for
+// other states (e.g. "Enhanced Risk...Texas") and showed the wrong level here.
+function fetchSPC(){
+  var META={
+    'NONE': {cls:'mw2r0',l:'NONE', t:'No severe storm risk today.'},
+    'TSTM': {cls:'mw2r0',l:'TSTM', t:'General thunderstorm area — no organized severe risk.'},
+    'MRGL': {cls:'mw2r2',l:'MRGL', t:'Marginal Risk: Isolated severe storms possible.'},
+    'SLGT': {cls:'mw2r3',l:'SLGT', t:'Slight Risk: Scattered severe storms possible.'},
+    'ENH':  {cls:'mw2r4',l:'ENH',  t:'Enhanced Risk: Numerous severe storms expected.'},
+    'MDT':  {cls:'mw2r5',l:'MDT',  t:'Moderate Risk: Widespread severe storms likely.'},
+    'HIGH': {cls:'mw2r6',l:'HIGH', t:'High Risk: Major severe weather outbreak expected.'}
+  };
+  var RANK={'NONE':0,'TSTM':1,'MRGL':2,'SLGT':3,'ENH':4,'MDT':5,'HIGH':6};
+
+  // Ray-casting point-in-polygon
+  function pip(lon,lat,ring){
+    var inside=false, n=ring.length, j=n-1;
+    for(var i=0;i<n;j=i++){
+      var xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];
+      if(((yi>lat)!=(yj>lat))&&(lon<(xj-xi)*(lat-yi)/(yj-yi)+xi)) inside=!inside;
+    }
+    return inside;
+  }
+
+  function inFeature(feat,lon,lat){
+    var g=feat.geometry; if(!g) return false;
+    var rings=g.type==='Polygon'?g.coordinates:
+              g.type==='MultiPolygon'?g.coordinates.reduce(function(a,p){return a.concat(p);},[]):[];
+    for(var i=0;i<rings.length;i++) if(pip(lon,lat,rings[i])) return true;
+    return false;
+  }
+
+  // Use the SPC GeoJSON categorical layer — exact polygons, machine-readable
+  safeFetch('https://www.spc.noaa.gov/products/outlook/day1otlk_cat.lyr.geojson',
+           {}, 8000)
+    .then(function(d){var r={ok:!!d,json:function(){return Promise.resolve(d);}};return d?r.json():null;})
+    .then(function(d){
+      var best='NONE';
+      (d.features||[]).forEach(function(f){
+        var label=(f.properties.LABEL||f.properties.label||'').toUpperCase().trim();
+        if(RANK[label]>RANK[best] && inFeature(f,LON,LAT)) best=label;
+      });
+      var m=META[best]||META['NONE'];
+      var b=$('mwspcbdg');
+      b.className='mw2-spc-badge '+m.cls;
+      b.textContent=m.l;
+      $('mwspctxt').textContent=m.t;
+    }).catch(function(err){
+      // GeoJSON failed — fall back to HTML text parse as backup
+      // The HTML parse is less accurate (no coords) but better than showing error
+      safeFetch('https://www.spc.noaa.gov/products/outlook/day1otlk.html',{},8000)
+        .then(function(d){return d ? JSON.stringify(d) : '';})
+        .then(function(t){
+          var risks=['HIGH RISK','MODERATE RISK','ENHANCED RISK','SLIGHT RISK','MARGINAL RISK','TSTM'];
+          // Find the risk level for the Southeast/NC region specifically
+          // Look for risk mentions near state abbreviations NC, SC, VA
+          var lines=t.split('\n');
+          var best='NONE', bestRank=0;
+          var ncContext=false;
+          for(var i=0;i<lines.length;i++){
+            var line=lines[i].toUpperCase();
+            // Flag when we're in a Southeast/NC discussion section
+            if(/\bNC\b|\bSC\b|\bVA\b|CAROLINA|SOUTHEAST/.test(line)) ncContext=true;
+            if(/^[A-Z]{2}\.\.\.|DISCUSSION/.test(line)) ncContext=false;
+            if(ncContext||i<50){ // header section applies nationally, check carefully
+              var rMap={'HIGH RISK':6,'MODERATE RISK':5,'ENHANCED RISK':4,
+                        'SLIGHT RISK':3,'MARGINAL RISK':2,'TSTM':1};
+              for(var rk in rMap){
+                if(line.indexOf(rk)>=0 && rMap[rk]>bestRank){
+                  bestRank=rMap[rk]; best=rk;
+                }
+              }
+            }
+          }
+          // Map to badge
+          var fbMap={
+            'HIGH RISK':{cls:'mw2r6',l:'HIGH',t:'High Risk: Major severe weather outbreak.'},
+            'MODERATE RISK':{cls:'mw2r5',l:'MDT',t:'Moderate Risk: Widespread severe storms.'},
+            'ENHANCED RISK':{cls:'mw2r4',l:'ENH',t:'Enhanced Risk: Numerous severe storms.'},
+            'SLIGHT RISK':{cls:'mw2r3',l:'SLGT',t:'Slight Risk: Scattered severe storms.'},
+            'MARGINAL RISK':{cls:'mw2r2',l:'MRGL',t:'Marginal Risk: Isolated severe storms possible.'},
+            'TSTM':{cls:'mw2r0',l:'TSTM',t:'General thunderstorm area — verify at spc.noaa.gov'},
+            'NONE':{cls:'mw2r0',l:'NONE',t:'No severe storm risk — verify at spc.noaa.gov'}
+          };
+          var m=fbMap[best]||fbMap['NONE'];
+          var b=$('mwspcbdg');
+          b.className='mw2-spc-badge '+m.cls;
+          b.textContent=m.l+'*'; // asterisk = fallback method, less precise
+          $('mwspctxt').textContent=m.t+' (verify at spc.noaa.gov)';
+        }).catch(function(){
+          $('mwspcbdg').textContent='?';
+          $('mwspctxt').textContent='SPC unavailable — <a href="https://www.spc.noaa.gov" target="_blank" rel="noopener">check spc.noaa.gov</a>';
+        });
+    });
+}
+
+// ── Day tabs ─────────────────────────────────────────────────────
+function buildTabs(){
+  var c=$('mwdtabs'); c.innerHTML='';
+  var DN=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var MN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  S.days.forEach(function(day,i){
+    var dt=new Date(day.dateStr+'T12:00:00');
+    var lbl=i===0?'Today':DN[dt.getDay()]+' '+MN[dt.getMonth()]+' '+dt.getDate();
+    var b=document.createElement('button');
+    b.className='mw2-dtab'+(i===S.di?' on':'');
+    b.textContent=lbl;
+    b.onclick=function(){S.di=i;S.hi=0;buildTabs();renderDay();};
+    c.appendChild(b);
+  });
+  setTimeout(function(){updateScrollHints('mwdtabs-outer','mwdtabs');},60);
+}
+
+// ── Full day render ───────────────────────────────────────────────
+function renderDay(){
+  try{renderTL();}catch(e){dlog('err','renderTL:'+e.message);}
+  try{renderDetail(S.hi);}catch(e){dlog('err','renderDetail:'+e.message);}
+  try{renderRadar();}catch(e){dlog('err','renderRadar:'+e.message);}
+  try{renderChart();}catch(e){dlog('err','renderChart:'+e.message);}
+  try{renderSummary();}catch(e){dlog('err','renderSummary:'+e.message);}
+}
+
+// ── Timeline ─────────────────────────────────────────────────────
+// ── Sorted card index: midnight→midnight in local Eastern time ──────────
+// Returns array of UTC hours re-ordered so index 0 = local midnight.
+// e.g. EDT (UTC-4): [4,5,6,...,23,0,1,2,3]
+function localOrderedUTCHours(){
+  var off = ET_OFF / 60; // e.g. -4 for EDT
+  var start = ((-off) % 24 + 24) % 24; // UTC hour that equals local midnight
+  var arr = [];
+  for(var i=0;i<24;i++) arr.push((start + i) % 24);
+  return arr;
+}
+
+// slot index (0–23, midnight→midnight) → record in recs[]
+function slotToRec(recs, slot){
+  var ord = localOrderedUTCHours();
+  return recs[ord[slot]] || null;
+}
+
+// current local hour (0–23) → slot index
+function localHourToSlot(localH){
+  return localH; // slot 0 = midnight = local hour 0, slot 11 = 11am, etc.
+}
+
+// current NOW slot (fractional, for needle position)
+function nowSlotFrac(){
+  var now = new Date();
+  var etStr = now.toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:false});
+  var parts = etStr.split(':');
+  var lh = parseInt(parts[0],10) % 24;
+  var lm = parseInt(parts[1]||'0',10);
+  return lh + lm/60;
+}
+
+function renderTL(){
+  var recs=S.days[S.di]?S.days[S.di].recs:[];
+  if(!recs.length)return;
+  var r=slotToRec(recs,S.hi)||recs[0];
+  var nowFrac = (S.di===0) ? nowSlotFrac() : -1; // only show NOW on today
+  var nowPct = (nowFrac>=0) ? (nowFrac/23*100).toFixed(2)+'%' : null;
+
+  $('mwtl').innerHTML=
+    '<div class="mw2-slrow">'+
+    '<span id="mwsll" style="min-width:36px">'+fShort(r.utcH)+'</span>'+
+    '<div style="flex:1;position:relative">'+
+    '<input type="range" class="mw2-range" id="mwrange" min="0" max="23" value="'+S.hi+'" aria-label="Select forecast hour" style="width:100%">'+
+    // NOW needle on the slider track
+    (nowPct ? '<div id="mwnow-needle" title="Current time" style="position:absolute;top:50%;left:'+nowPct+';transform:translate(-50%,-50%);pointer-events:none;z-index:2">'+
+      '<div style="width:2px;height:18px;background:#ff5722;border-radius:1px;margin:0 auto"></div>'+
+      '<div style="font-size:8px;font-weight:700;color:#ff5722;text-align:center;white-space:nowrap;margin-top:1px;font-family:JetBrains Mono,monospace">NOW</div>'+
+    '</div>' : '')+
+    '</div>'+
+    '<span id="mwslr" style="min-width:80px;text-align:right">'+fLong(r.utcH)+'</span>'+
+    '</div>'+
+    '<div class="mw2-jump-row" id="mwjumprow"><button class="mw2-jump-btn" onclick="MWD.jumpCards(0)" title="Jump to midnight">12am</button><button class="mw2-jump-btn" onclick="MWD.jumpCards(6)" title="Jump to 6am">6am</button><button class="mw2-jump-btn" onclick="MWD.jumpCards(12)" title="Jump to noon">12pm</button><button class="mw2-jump-btn" onclick="MWD.jumpCards(18)" title="Jump to 6pm">6pm</button><button class="mw2-jump-btn now" id="mwjump-now" onclick="MWD.jumpNow()" title="Jump to current hour">&#9679; NOW</button></div><div class="mw2-scroll-outer at-start" id="mwcards-outer"><button class="mw2-scroll-btn left hidden" id="mwcards-prev" onclick="MWD.scrollRow(&quot;mwcards&quot;,-4)" aria-label="Earlier hours">&#8249;</button><div class="mw2-cards" id="mwcards"></div><button class="mw2-scroll-btn right" id="mwcards-next" onclick="MWD.scrollRow(&quot;mwcards&quot;,4)" aria-label="Later hours">&#8250;</button></div>';
+  slFill(S.hi);
+  var slider=$('mwrange');
+  slider.addEventListener('input',function(){
+    S.hi=+this.value; slFill(S.hi);
+    var rr=slotToRec(recs,S.hi);
+    if(rr){$('mwsll').textContent=fShort(rr.utcH);$('mwslr').textContent=fLong(rr.utcH);}
+    refreshCards();renderDetail();renderChart();scrollCard();
+  });
+  buildCards(recs, nowFrac);
+}
+
+function buildCards(recs, nowFrac){
+  var c=$('mwcards'); if(!c)return; c.innerHTML='';
+  var ord=localOrderedUTCHours(); // [4,5,...,23,0,1,2,3] for EDT
+  var nowSlot = (nowFrac!=null && nowFrac>=0) ? Math.round(nowFrac) : -1;
+  // Whether to insert the NOW marker between cards
+  var nowInserted = false;
+
+  for(var slot=0; slot<24; slot++){
+    var r = recs[ord[slot]];
+    if(!r) continue;
+    var isNow = (nowFrac!=null && nowFrac>=0 && slot===nowSlot);
+    var isPast = (nowFrac!=null && nowFrac>=0 && slot < Math.floor(nowFrac));
+
+    var t=TC[r.threat];
+    var pc=r.threat==='TSTM'?'#dc3545':r.threat==='RAIN'?'#4A90E2':'#17a2b8';
+    var el=document.createElement('div');
+
+    // Past hours: slightly dimmed
+    var pastStyle = isPast ? 'opacity:0.5;' : '';
+    el.className='mw2-hcard'+(slot===S.hi?' on':'')+(r.threat==='TSTM'?' ts':'');
+    el.dataset.hi=slot;
+    el.setAttribute('role','button');
+    el.setAttribute('tabindex','0');
+    el.setAttribute('aria-label',fLong(r.utcH)+' '+r.wxDesc);
+    el.style.cssText = pastStyle;
+
+    // NOW ring on current hour card
+    var nowRing = isNow ?
+      'box-shadow:0 0 0 2px #ff5722,0 0 8px 2px rgba(255,87,34,.35);border-color:#ff5722 !important;' : '';
+    if(isNow) el.style.cssText += nowRing;
+
+    el.innerHTML=
+      // NOW label above current hour
+      (isNow ? '<div style="font-size:8px;font-weight:800;color:#ff5722;letter-spacing:.5px;margin-bottom:1px">NOW</div>' : '')+
+      '<div class="mw2-hc-t" style="'+(isNow?'color:#ff5722;font-weight:800':'')+'">'+fShort(r.utcH)+'</div>'+
+      '<div class="mw2-hc-i">'+skyIco(r.sky,r.thun)+'</div>'+
+      '<div class="mw2-hc-d">'+(r.tF!=null?r.tF+'&deg;':'&ndash;')+'</div>'+
+      '<div class="mw2-popbar"><div class="mw2-popfill" style="width:'+r.pCons+'%;background:'+pc+'"></div></div>'+
+      '<div class="mw2-hc-p" style="color:'+(r.pCons>5?pc:'#ccc')+'">'+r.pCons+'%</div>'+
+      '<div class="mw2-badge" style="background:'+t.bg+';border-color:'+t.bd+';color:'+t.tx+'">'+r.threat+'</div>';
+
+    (function(s){
+      el.addEventListener('click',function(){selectH(s);});
+      el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' ')selectH(s);});
+    })(slot);
+
+    c.appendChild(el);
+  }
+  scrollCard();
+  setTimeout(function(){updateScrollHints('mwcards-outer','mwcards');},60);
+}
+
+function selectH(slot){
+  S.hi=slot;
+  var sl=$('mwrange'); if(sl){sl.value=slot;slFill(slot);}
+  var recs=S.days[S.di]?S.days[S.di].recs:[];
+  var r=slotToRec(recs,slot);
+  if(r){var a=$('mwsll');if(a)a.textContent=fShort(r.utcH);var b=$('mwslr');if(b)b.textContent=fLong(r.utcH);}
+  refreshCards();renderDetail(slot);renderChart();scrollCard();
+}
+
+function refreshCards(){
+  document.querySelectorAll('.mw2-hcard').forEach(function(el){
+    el.classList.toggle('on',+el.dataset.hi===S.hi);
+    // Re-apply past dimming
+    var nowFrac=(S.di===0)?nowSlotFrac():-1;
+    var slot=+el.dataset.hi;
+    el.style.opacity=(nowFrac>=0 && slot<Math.floor(nowFrac))?'0.5':'1';
+  });
+}
+
+function scrollCard(){
+  var c=$('mwcards'); if(!c)return;
+  var card=c.querySelector('[data-hi="'+S.hi+'"]');
+  if(card)card.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+}
+
+// ── Detail ────────────────────────────────────────────────────────
+function renderDetail(slot){
+  if(slot==null) slot=S.hi;
+  var recs=S.days[S.di]?S.days[S.di].recs:[];
+  var r=slotToRec(recs,slot); if(!r)return;
+  var t=TC[r.threat];
+  var rm=RM[r.rl];
+  var models=[['NWS',r.pNWS,r.qNWS],['GFS',r.pGFS,r.qGFS],['ECMWF',r.pECMWF,r.qECMWF],['HRRR',r.pHRRR,r.qHRRR],['ICON',r.pICON,r.qICON]];
+  var capes=[['GFS',r.cGFS,MC.GFS],['ECMWF',r.cECMWF,MC.ECMWF],['HRRR',r.cHRRR,MC.HRRR],['ICON',r.cICON,MC.ICON]];
+  $('mwdetail').innerHTML=
+    '<div class="mw2-panel">'+
+    '<div class="mw2-pt">Conditions</div>'+
+    kv('Temp',r.tF!=null?r.tF+'&deg;F':'&ndash;')+
+    kv('Dewpoint',r.dF!=null?r.dF+'&deg;F':'&ndash;')+
+    kv('RH',r.rh+'%')+
+    kv('Sky',r.sky+'%')+
+    kv('Wind',r.wind+' mph')+
+    kv('Gusts',r.gust>0?r.gust+' mph':'&ndash;')+
+    '<div class="mw2-kv" style="border-top:1px dashed #ebebeb;margin-top:4px;padding-top:5px"><span class="mw2-kk">Wx</span><span class="mw2-kval" style="font-family:\'Open Sans\',sans-serif;font-size:11px;text-align:right;max-width:120px">'+r.wxDesc+'</span></div>'+
+    '</div>'+
+    '<div class="mw2-panel">'+
+    '<div class="mw2-pt">Model PoP</div>'+
+    models.map(function(m){return mbar(m[0],m[1],m[2]);}).join('')+
+    '<div class="mw2-cons"><span>Consensus</span><span>'+r.pCons+'%</span></div>'+
+    '</div>'+
+    '<div class="mw2-panel mw2-panel-full">'+
+    '<div class="mw2-pt">Instability &amp; Radar</div>'+
+    capes.map(function(c){return cbar('CAPE '+c[0],c[1],c[2],Math.min(100,(c[1]/1200)*100));}).join('')+
+    '<div class="mw2-igrid">'+
+    '<div class="mw2-ic"><div class="mw2-il">Est. Radar</div><div class="mw2-iv" style="color:'+rm.c+';font-size:12px">'+rm.l+' dBZ</div></div>'+
+    '<div class="mw2-ic"><div class="mw2-il">Thunder</div><div class="mw2-iv" style="color:'+(r.thun>20?'#dc3545':r.thun>10?'#e6a817':'#28a745')+'">'+r.thun+'%</div></div>'+
+    '<div class="mw2-ic"><div class="mw2-il">LI (GFS)</div><div class="mw2-iv" style="color:'+(r.liGFS<-2?'#dc3545':r.liGFS<0?'#e6a817':'#28a745')+'">'+r.liGFS+'</div></div>'+
+    '<div class="mw2-ic"><div class="mw2-il">Threat</div><div class="mw2-badge" style="font-size:11px;padding:2px 7px;background:'+t.bg+';border-color:'+t.bd+';color:'+t.tx+'">'+r.threat+'</div></div>'+
+    '</div></div>';
+}
+
+function kv(k,v){return '<div class="mw2-kv"><span class="mw2-kk">'+k+'</span><span class="mw2-kval">'+v+'</span></div>';}
+function mbar(name,pop,qpf){
+  return '<div class="mw2-mrow"><div class="mw2-mlbl"><span class="mw2-mn" style="color:'+MC[name]+'">'+name+'</span><span class="mw2-mv">'+pop+'% &middot; '+(qpf>0?qpf.toFixed(3)+'"':'0"')+'</span></div><div class="mw2-mbg"><div class="mw2-mbar" style="width:'+pop+'%;background:'+MC[name]+'"></div></div></div>';
+}
+function cbar(name,val,color,pct){
+  return '<div class="mw2-mrow"><div class="mw2-mlbl"><span class="mw2-mn" style="color:'+color+';font-size:10px">'+name+'</span><span class="mw2-mv">'+val+' J/kg</span></div><div class="mw2-mbg"><div class="mw2-mbar" style="width:'+pct+'%;background:'+color+'"></div></div></div>';
+}
+
+// ── Radar ─────────────────────────────────────────────────────────
+function renderRadar(){
+  var recs=S.days[S.di]?S.days[S.di].recs:[];
+  var row=$('mwradrow'); if(!row)return; row.innerHTML='';
+  var ord=localOrderedUTCHours();
+
+  // NOW position — only meaningful on today's tab
+  var nowFrac=(S.di===0)?nowSlotFrac():-1;
+  var nowSlotIdx=(nowFrac>=0)?Math.round(nowFrac):-1;
+  var nowCell=null;
+
+  ord.forEach(function(utcH,slot){
+    var i=slot; var r=recs[utcH]; if(!r)return;
+    var m=RM[r.rl];
+    var isNow  = (slot===nowSlotIdx);
+    var isPast = (nowFrac>=0 && slot<Math.floor(nowFrac));
+
+    var cell=document.createElement('div');
+    var cls='mw2-rcell'+(isPast?' past':'')+(isNow?' rc-now':'');
+    cell.className=cls;
+    // Keep dBZ colour on top border; NOW cell overrides with orange via box-shadow
+    cell.style.cssText='background:'+m.bg+';border-top-color:'+(isNow?'#ff5722':m.c);
+    cell.title=fLong(r.utcH)+'\n'+m.l+' dBZ \u00b7 CAPE '+r.cMax+' \u00b7 Thunder '+r.thun+'%';
+    cell.setAttribute('data-rslot', slot);
+    cell.innerHTML=
+      (isNow?'<div class="mw2-rc-now-pip">NOW</div>':'')+
+      '<div class="mw2-rc-utc'+(isNow?' rc-now-lbl':'')+'">'+fShort(r.utcH)+'</div>'+
+      '<div class="mw2-rc-box" style="background:'+m.c+'22;border:1px solid '+m.c+'44;color:'+m.c+'">'+r.rl+'</div>'+
+      '<div class="mw2-rc-lbl" style="color:'+m.c+'">'+m.l+'</div>';
+    cell.addEventListener('click',function(){selectH(slot);});
+    row.appendChild(cell);
+    if(isNow) nowCell=cell;
+  });
+
+  // Scroll NOW cell to centre-left on first render
+  if(nowCell){
+    setTimeout(function(){
+      nowCell.scrollIntoView({behavior:'instant',block:'nearest',inline:'center'});
+      // nudge left so 1–2 past cells are visible as context
+      var rowEl=$('mwradrow');
+      if(rowEl) rowEl.scrollLeft=Math.max(0, rowEl.scrollLeft - nowCell.offsetWidth*1.5);
+      updateScrollHints('mwradrow-outer','mwradrow');
+    },80);
+  } else {
+    setTimeout(function(){updateScrollHints('mwradrow-outer','mwradrow');},60);
+  }
+}
+
+// ── Chart ─────────────────────────────────────────────────────────
+function renderChart(){
+  var recs=S.days[S.di]?S.days[S.di].recs:[];
+  if(!recs.length) return;
+  if(typeof Chart==='undefined'){
+    // Chart.js not yet available — register a one-time callback for when it loads
+    // (fired by the onload on the <script> tag)
+    window._mwChartReady = function(){ window._mwChartReady=null; renderChart(); };
+    return;
+  }
+  if(S.chart){S.chart.destroy();S.chart=null;}
+  var ord=localOrderedUTCHours();
+  var ordRecs=ord.map(function(utcH){return recs[utcH]||{utcH:utcH,pNWS:0,pGFS:0,pECMWF:0,pHRRR:0,pICON:0,pCons:0,thun:0,qNWS:0,qGFS:0,qECMWF:0,qHRRR:0,cGFS:0,cECMWF:0,cHRRR:0,cICON:0,tF:null,dF:null};});
+  var labels=ordRecs.map(function(r){return fShort(r.utcH);});
+  var ct=S.ct;
+  var base={
+    responsive:true,maintainAspectRatio:false,animation:{duration:250},
+    plugins:{
+      legend:{display:true,position:'top',labels:{font:{size:10,family:"'Open Sans',sans-serif"},boxWidth:16,padding:8,color:'#555'}},
+      tooltip:{backgroundColor:'#fff',titleColor:'#333',bodyColor:'#555',borderColor:'#ddd',borderWidth:1,
+        titleFont:{size:10,family:"'JetBrains Mono',monospace"},bodyFont:{size:10,family:"'JetBrains Mono',monospace"}}
+    },
+    scales:{
+      x:{ticks:{font:{size:8,family:"'JetBrains Mono',monospace"},color:'#999',maxRotation:0,autoSkip:true,maxTicksLimit:12},grid:{color:'#f0f0f0'}},
+      y:{ticks:{font:{size:9},color:'#999'},grid:{color:'#f0f0f0'}}
+    }
+  };
+  var type='line',datasets;
+  if(ct==='pop'){
+    datasets=[
+      {label:'NWS/NAM',data:ordRecs.map(function(r){return r.pNWS;}),borderColor:MC.NWS,backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:.3},
+      {label:'GFS',data:ordRecs.map(function(r){return r.pGFS;}),borderColor:MC.GFS,backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:.3},
+      {label:'ECMWF',data:ordRecs.map(function(r){return r.pECMWF;}),borderColor:MC.ECMWF,backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:.3},
+      {label:'HRRR',data:ordRecs.map(function(r){return r.pHRRR;}),borderColor:MC.HRRR,backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:.3},
+      {label:'ICON',data:ordRecs.map(function(r){return r.pICON;}),borderColor:MC.ICON,backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:.3,borderDash:[4,3]},
+      {label:'Consensus',data:ordRecs.map(function(r){return r.pCons;}),borderColor:MC.Consensus,backgroundColor:'transparent',borderWidth:2.5,pointRadius:0,tension:.3},
+      {label:'Thunder',data:ordRecs.map(function(r){return r.thun;}),borderColor:'#e74c3c',backgroundColor:'transparent',borderWidth:1.5,pointRadius:0,tension:.3,borderDash:[3,3]}
+    ];
+    base.scales.y.min=0;base.scales.y.max=100;
+    base.scales.y.title={display:true,text:'%',color:'#999',font:{size:9}};
+  } else if(ct==='qpf'){
+    type='bar';
+    datasets=[
+      {label:'QPF NWS',data:ordRecs.map(function(r){return r.qNWS;}),backgroundColor:MC.NWS+'aa',borderColor:MC.NWS,borderWidth:1},
+      {label:'QPF GFS',data:ordRecs.map(function(r){return r.qGFS;}),backgroundColor:MC.GFS+'88',borderColor:MC.GFS,borderWidth:1},
+      {label:'QPF ECMWF',data:ordRecs.map(function(r){return r.qECMWF;}),backgroundColor:MC.ECMWF+'88',borderColor:MC.ECMWF,borderWidth:1},
+      {label:'QPF HRRR',data:ordRecs.map(function(r){return r.qHRRR;}),backgroundColor:MC.HRRR+'88',borderColor:MC.HRRR,borderWidth:1}
+    ];
+    base.scales.y.title={display:true,text:'in',color:'#999',font:{size:9}};
+  } else if(ct==='cape'){
+    datasets=[
+      {label:'CAPE GFS',data:ordRecs.map(function(r){return r.cGFS;}),borderColor:MC.GFS,backgroundColor:MC.GFS+'18',fill:true,borderWidth:2,pointRadius:0,tension:.3},
+      {label:'CAPE ECMWF',data:ordRecs.map(function(r){return r.cECMWF;}),borderColor:MC.ECMWF,backgroundColor:MC.ECMWF+'18',fill:true,borderWidth:2,pointRadius:0,tension:.3},
+      {label:'CAPE HRRR',data:ordRecs.map(function(r){return r.cHRRR;}),borderColor:MC.HRRR,backgroundColor:MC.HRRR+'10',fill:true,borderWidth:1.5,pointRadius:0,tension:.3}
+    ];
+    base.scales.y.title={display:true,text:'J/kg',color:'#999',font:{size:9}};
+  } else {
+    datasets=[
+      {label:'Temp \u00b0F',data:ordRecs.map(function(r){return r.tF;}),borderColor:'#fd7e14',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:.3},
+      {label:'Dewpoint \u00b0F',data:ordRecs.map(function(r){return r.dF;}),borderColor:'#17a2b8',backgroundColor:'transparent',borderWidth:2,pointRadius:0,tension:.3}
+    ];
+    base.scales.y.title={display:true,text:'\u00b0F',color:'#999',font:{size:9}};
+  }
+  // Draw chart — annotation plugin not loaded so we add a NOW line via
+  // a custom afterDraw plugin registered inline instead (no CDN dependency)
+  var nowLinePlugin = null;
+  if(S.di===0){
+    var nowF=nowSlotFrac();
+    if(nowF>=0 && nowF<=23){
+      var nowIdx=Math.round(nowF);
+      nowLinePlugin = {
+        id:'mwNowLine',
+        afterDraw:function(chart){
+          var ctx2=chart.ctx;
+          var xAxis=chart.scales.x;
+          var yAxis=chart.scales.y;
+          if(!xAxis||!yAxis) return;
+          var x=xAxis.getPixelForValue(nowIdx);
+          if(x==null||isNaN(x)) return;
+          ctx2.save();
+          ctx2.beginPath();
+          ctx2.setLineDash([4,3]);
+          ctx2.strokeStyle='#ff5722';
+          ctx2.lineWidth=1.5;
+          ctx2.moveTo(x, yAxis.top);
+          ctx2.lineTo(x, yAxis.bottom);
+          ctx2.stroke();
+          ctx2.setLineDash([]);
+          // "NOW" label
+          ctx2.fillStyle='#ff5722';
+          ctx2.font='bold 8px monospace';
+          ctx2.textAlign='center';
+          ctx2.fillText('NOW', x, yAxis.top - 2);
+          ctx2.restore();
+        }
+      };
+    }
+  }
+  var plugins = nowLinePlugin ? [nowLinePlugin] : [];
+  S.chart=new Chart($('mwchart').getContext('2d'),{type:type,data:{labels:labels,datasets:datasets},options:base,plugins:plugins});
+}
+
+function setChart(type){
+  S.ct=type;
+  document.querySelectorAll('.mw2-ctab').forEach(function(t){t.classList.toggle('on',t.dataset.c===type);});
+  renderChart();
+}
+
+// ── Show sections ─────────────────────────────────────────────────
+function showSections(){
+  $('mwchartsec').style.display='block';
+  $('mwradsec').style.display='block';
+  $('mwlegend').style.display='flex';
+}
+
+// ── Error ─────────────────────────────────────────────────────────
+function showError(){
+  dlog('err','showError() called — all APIs null');
+  $('mwtl').innerHTML='<div class="mw2-err">'+
+    '<b>Unable to load forecast data</b>'+
+    '<p style="font-size:12px;color:#888;margin:6px 0 12px;line-height:1.5">'+
+    'NWS and Open-Meteo APIs could not be reached.<br>'+
+    'Check your internet connection or try again in a moment.</p>'+
+    '<button class="mw2-retry" onclick="MWD.init()">&#8635; Retry</button>'+
+    '</div>';
+}
+
+// ── Visibility refresh (iOS / background tab) ─────────────────────
+// Re-fetch when tab becomes visible — catches stale data from background tabs.
+var _lastFetch=0;
+function _shouldRefetch(){
+  var age=Date.now()-_lastFetch;
+  if(age > 60*60*1000) return true; // always refresh if >1h
+  if(age < 5*60*1000)  return false; // never within 5min of last fetch
+  // Refresh if we're just past an NWS update window (00Z+30, 06Z+30, 12Z+30, 18Z+30)
+  // These are when fresh NWS grid data becomes available
+  var utcH=new Date().getUTCHours(), utcM=new Date().getUTCMinutes();
+  var nwsWindows=[0,6,12,18]; // NWS model cycle hours
+  for(var i=0;i<nwsWindows.length;i++){
+    var minsAfter=(utcH-nwsWindows[i])*60+utcM;
+    if(minsAfter>=30 && minsAfter<=45) return true; // within 15min window after update
+  }
+  return age > 10*60*1000; // otherwise refresh every 10min
+}
+document.addEventListener('visibilitychange',function(){
+  if(document.visibilityState==='visible' && _shouldRefetch()) fetchAll();
+});
+
+// ── Hourly scheduler ──────────────────────────────────────────────
+function scheduleHourly(){
+  var now=new Date();
+  var utcH=now.getUTCHours(), utcM=now.getUTCMinutes();
+  // NWS update windows: fire 30min after each 6h model cycle (00,06,12,18Z)
+  // Also fire every hour at :02 as fallback
+  var nwsWindows=[0,6,12,18];
+  var msOptions=[];
+  // Next :02 past hour
+  msOptions.push((60-utcM)*60000-now.getUTCSeconds()*1000+2*60000);
+  // Next NWS window (+30min after each cycle hour)
+  nwsWindows.forEach(function(wh){
+    var targetUTCH=wh, targetM=30;
+    if(utcH>targetUTCH||(utcH===targetUTCH&&utcM>=targetM)) targetUTCH+=6;
+    var minsUntil=(targetUTCH-utcH)*60+(targetM-utcM);
+    if(minsUntil>0) msOptions.push(minsUntil*60000-now.getUTCSeconds()*1000+10000);
+  });
+  var nextMs=Math.min.apply(null,msOptions.filter(function(m){return m>0;}));
+  if(!nextMs||nextMs<30000) nextMs=30000; // never sooner than 30s
+  setTimeout(function(){fetchAll();scheduleHourly();},nextMs);
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+function init(){
+  // Start at current local Eastern hour (slot = local hour 0-23, midnight=0)
+  var etStr=new Date().toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:false});
+  S.hi=Math.min(23,Math.max(0,parseInt(etStr,10)%24));
+  fetchAll();
+  // Schedule hourly refresh via idle callback so it doesn't compete with first render
+  // Schedule hourly refresh after first data is loaded (not before)
+  // initScrollHints fires automatically after buildCards/renderRadar
+  scheduleHourly();
+  initScrollHints();
+}
+
+// ── Source panel toggle ─────────────────────────────────────────────
+function toggleSrc(){
+  var panel=$('mwsrcpanel'), btn=$('mwsrcbtn');
+  if(!panel)return;
+  var open=panel.style.display==='block';
+  panel.style.display=open?'none':'block';
+  btn.textContent=open?'\uD83D\uDD0E Sources':'\u2715 Close Sources';
+}
+
+// Public handle for retry button + chart tab onclick
+
+function toggleLeg(){
+  var body=$('mwlegbody'), chev=$('mwlegchev'), btn=body&&body.previousElementSibling;
+  if(!body) return;
+  var open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  if(chev) chev.classList.toggle('open',!open);
+  if(btn)  btn.setAttribute('aria-expanded', String(!open));
+}
+
+// ── Scroll row utilities ─────────────────────────────────────────────────────
+
+// Scroll a named scroll container by N card-widths (negative = left)
+function scrollRow(id, steps){
+  var el=document.getElementById(id); if(!el) return;
+  var cardW = el.querySelector('[class*="hcard"],[class*="dtab"],[class*="rcell"]');
+  var step  = cardW ? cardW.offsetWidth + 5 : 70;
+  el.scrollBy({left: steps * step, behavior:'smooth'});
+}
+
+// Jump hour card row to a specific local-hour slot
+function jumpCards(localH){
+  var el=document.getElementById('mwcards'); if(!el) return;
+  var card=el.querySelector('[data-hi="'+localH+'"]');
+  if(card) card.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+}
+
+// Jump to NOW card
+function jumpToStat(slotIdx){
+  // Select the hour in the detail panel + slider
+  selectH(slotIdx);
+  // Ensure the hour cards section is visible before flashing
+  var tl=document.getElementById('mwtl');
+  if(tl) tl.scrollIntoView({behavior:'smooth',block:'nearest'});
+  // Flash the target card for visual feedback
+  setTimeout(function(){
+    var c=document.getElementById('mwcards');
+    if(!c) return;
+    var card=c.querySelector('[data-hi="'+slotIdx+'"]');
+    if(!card) return;
+    card.classList.remove('mw2-flash-card');
+    void card.offsetWidth; // force reflow to restart animation
+    card.classList.add('mw2-flash-card');
+    card.addEventListener('animationend',function(){card.classList.remove('mw2-flash-card');},{once:true});
+  },80);
+}
+
+function jumpNow(){
+  // Always switch back to today (di=0) first
+  if(S.di!==0){
+    S.di=0;
+    S.hi=0;
+    buildTabs();
+    renderDay();
+  }
+  // Then scroll hour cards to current Eastern hour
+  var etStr=new Date().toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',hour12:false});
+  var lh=parseInt(etStr,10)%24;
+  jumpCards(lh);
+}
+
+// Update scroll affordances for a given outer wrapper + inner scroll element
+function updateScrollHints(outerId, innerId){
+  var outer=document.getElementById(outerId);
+  var inner=document.getElementById(innerId);
+  if(!outer||!inner) return;
+  var atStart = inner.scrollLeft <= 4;
+  var atEnd   = inner.scrollLeft >= inner.scrollWidth - inner.clientWidth - 4;
+  outer.classList.toggle('at-start', atStart);
+  outer.classList.toggle('at-end',   atEnd);
+  // Chevron visibility
+  var prev=document.getElementById(innerId+'-prev');
+  var next=document.getElementById(innerId+'-next');
+  if(prev) prev.classList.toggle('hidden', atStart);
+  if(next) next.classList.toggle('hidden', atEnd);
+}
+
+// Attach scroll listeners to all three rows
+function initScrollHints(){
+  var rows=[
+    ['mwdtabs-outer','mwdtabs'],
+    ['mwcards-outer','mwcards'],
+    ['mwradrow-outer','mwradrow']
+  ];
+  rows.forEach(function(pair){
+    var inner=document.getElementById(pair[1]);
+    if(!inner) return;
+    inner.addEventListener('scroll',function(){updateScrollHints(pair[0],pair[1]);},{passive:true});
+    // Initial state check after render
+    setTimeout(function(){updateScrollHints(pair[0],pair[1]);},50);
+    setTimeout(function(){updateScrollHints(pair[0],pair[1]);},400);
+  });
+}
+
+
+// ── Diagnostics engine ───────────────────────────────────────────────────────
+var _diag = [];
+function dlog(cls, msg) {
+  _diag.push({cls:cls, msg:msg, t:new Date().toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',second:'2-digit'})});
+  var el = document.getElementById('mw-diag');
+  if(el && el.style.display !== 'none') _renderDiag();
+}
+function _renderDiag() {
+  var el = document.getElementById('mw-diag');
+  if(!el) return;
+  el.innerHTML = _diag.slice(-40).map(function(d){
+    return '<div class="mw-dlog '+d.cls+'"><span style="color:#555">'+d.t+'</span> '+d.msg+'</div>';
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+function toggleDiag() {
+  var el = document.getElementById('mw-diag');
+  if(!el) return;
+  var open = el.style.display === 'block';
+  el.style.display = open ? 'none' : 'block';
+  if(!open) _renderDiag();
+  var btn = document.getElementById('mw-diag-toggle');
+  if(btn) btn.textContent = open ? '🔬 Diag' : '✕ Diag';
+}
+
+
+// ── Daily summary strip ───────────────────────────────────────────────────────
+// Shows at-a-glance Hi/Lo for the active day.
+// Hi+Lo: temperature, dewpoint
+// Hi only: consensus PoP, QPF NWS, thunder%
+// Wind: peak gust or wind (highest)
+function renderSummary(){
+  var recs=S.days[S.di]?S.days[S.di].recs:[];
+  var el=document.getElementById('mw-summary');
+  dlog('info','renderSummary: recs='+recs.length+' el='+(el?'found':'MISSING'));
+  var wrap=document.getElementById('mw-summary-wrap');
+  if(!el||!recs.length){if(el)el.classList.add('mw2-hidden');if(wrap)wrap.classList.add('mw2-hidden');dlog('warn','renderSummary: early return recs='+recs.length);return;}
+
+  // Pull values across all 24 hours
+  var temps   = recs.map(function(r){return r.tF}).filter(function(v){return v!=null});
+  var dews    = recs.map(function(r){return r.dF}).filter(function(v){return v!=null});
+  var pops    = recs.map(function(r){return r.pCons});
+  var qpfs    = recs.map(function(r){return r.qNWS||0});
+  var thuns   = recs.map(function(r){return r.thun||0});
+  var winds   = recs.map(function(r){return r.wind||0});
+  var gusts   = recs.map(function(r){return r.gust||0});
+
+  var hiTemp  = temps.length ? Math.round(Math.max.apply(null,temps)) : null;
+  var loTemp  = temps.length ? Math.round(Math.min.apply(null,temps)) : null;
+  var hiDew   = dews.length  ? Math.round(Math.max.apply(null,dews))  : null;
+  var loDew   = dews.length  ? Math.round(Math.min.apply(null,dews))  : null;
+  var maxPop  = Math.max.apply(null,pops);
+  var maxQpf  = Math.max.apply(null,qpfs);
+  var maxThun = Math.max.apply(null,thuns);
+  var maxWind = Math.max.apply(null,gusts.map(function(g,i){return Math.max(g,winds[i]);}));
+
+  // Colour helpers
+  function tCol(v){ return v>=90?'#dc3545':v>=80?'#e05a00':v>=70?'#f0a500':v>=50?'#28a745':'#1a7ab8'; }
+  function dCol(v){ return v>=70?'#dc3545':v>=60?'#e05a00':v>=50?'#f0a500':'#2a9d4e'; }
+  function popCol(v){ return v>=50?'#dc3545':v>=30?'#e05a00':v>=15?'#f0a500':'#4A90E2'; }
+  function thunCol(v){ return v>=30?'#dc3545':v>=15?'#e05a00':'#888'; }
+  function windCol(v){ return v>=40?'#dc3545':v>=25?'#e05a00':v>=15?'#f0a500':'#555'; }
+
+  // Format QPF
+  function fQpf(v){ return v>0 ? (v>=0.1?v.toFixed(2)+'"':v.toFixed(3)+'"') : '0"'; }
+
+  // Find peak SLOT (local midnight-based 0-23) for each stat
+  // Must iterate over slots, not raw recs[], because recs[] is UTC-indexed
+  var ord=localOrderedUTCHours();
+  function peakSlot(valFn, skipNull){
+    var best=-Infinity, slot=0;
+    for(var s=0;s<24;s++){
+      var r=recs[ord[s]]; if(!r) continue;
+      var v=valFn(r);
+      if(skipNull && v==null) continue;
+      if(v!=null && v>best){best=v;slot=s;}
+    }
+    return slot;
+  }
+  function minSlot(valFn){
+    var best=Infinity, slot=0;
+    for(var s=0;s<24;s++){
+      var r=recs[ord[s]]; if(!r) continue;
+      var v=valFn(r);
+      if(v!=null && v<best){best=v;slot=s;}
+    }
+    return slot;
+  }
+  var iHiTemp = peakSlot(function(r){return r.tF;}, true);
+  var iLoTemp = minSlot(function(r){return r.tF;});
+  var iHiDew  = peakSlot(function(r){return r.dF;}, true);
+  var iLoDew  = minSlot(function(r){return r.dF;});
+  var iWind   = peakSlot(function(r){return Math.max(r.wind||0,r.gust||0);});
+  var iPop    = peakSlot(function(r){return r.pCons||0;});
+  var iQpf    = peakSlot(function(r){return r.qNWS||0;});
+  var iThun   = peakSlot(function(r){return r.thun||0;});
+
+  // Build stats — 6 items
+  var stats = [
+    {
+      icon:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>', label:'TEMP', tip:'Tap hi or lo to jump to that hour',
+      hiIdx:iHiTemp, loIdx:iLoTemp,
+      html:'<div class="mw2-sstat-hilo">'+
+           '<div class="mw2-sstat-hilo-row" onclick="event.stopPropagation();MWD.jumpToStat('+iHiTemp+')" title="Jump to warmest hour">'+
+           '<span class="mw2-tap-icon"><svg width="9" height="11" viewBox="0 0 9 11" fill="none"><path d="M4.5 1v7M2 5l2.5-4L7 5" stroke="#7B2FBE" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+
+           '<span class="mw2-sstat-val mw2-sstat-hi" style="color:'+tCol(hiTemp)+'">'+(hiTemp!=null?hiTemp+'&deg;':'&ndash;')+'</span>'+
+           '</div>'+
+           '<div class="mw2-sstat-hilo-row" onclick="event.stopPropagation();MWD.jumpToStat('+iLoTemp+')" title="Jump to coolest hour">'+
+           '<span class="mw2-tap-icon"><svg width="9" height="11" viewBox="0 0 9 11" fill="none"><path d="M4.5 10V3M2 6l2.5 4L7 6" stroke="#1a7ab8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+
+           '<span class="mw2-sstat-sub mw2-sstat-lo">'+(loTemp!=null?loTemp+'&deg;':'&ndash;')+'</span>'+
+           '</div>'+
+           '</div>',
+      noWrap:true
+    },
+    {
+      icon:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>', label:'DEW PT', tip:'Tap hi or lo to jump to that hour',
+      hiIdx:iHiDew, loIdx:iLoDew,
+      html:'<div class="mw2-sstat-hilo">'+
+           '<div class="mw2-sstat-hilo-row" onclick="event.stopPropagation();MWD.jumpToStat('+iHiDew+')" title="Jump to muggiest hour">'+
+           '<span class="mw2-tap-icon"><svg width="9" height="11" viewBox="0 0 9 11" fill="none"><path d="M4.5 1v7M2 5l2.5-4L7 5" stroke="#7B2FBE" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+
+           '<span class="mw2-sstat-val" style="color:'+dCol(hiDew)+'">'+(hiDew!=null?hiDew+'&deg;':'&ndash;')+'</span>'+
+           '</div>'+
+           '<div class="mw2-sstat-hilo-row" onclick="event.stopPropagation();MWD.jumpToStat('+iLoDew+')" title="Jump to driest hour">'+
+           '<span class="mw2-tap-icon"><svg width="9" height="11" viewBox="0 0 9 11" fill="none"><path d="M4.5 10V3M2 6l2.5 4L7 6" stroke="#1a7ab8" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>'+
+           '<span class="mw2-sstat-sub mw2-sstat-lo">'+(loDew!=null?loDew+'&deg;':'&ndash;')+'</span>'+
+           '</div>'+
+           '</div>',
+      noWrap:true
+    },
+    {
+      icon:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/></svg>', label:'WIND', tip:'Jump to peak wind hour',
+      hiIdx:iWind,
+      html:'<div style="display:flex;align-items:center;justify-content:center;gap:2px">'+
+           '<span class="mw2-tap-icon"><svg width="10" height="12" viewBox="0 0 10 14" fill="none"><path d="M5 2C3.9 2 3 2.9 3 4v5l-.7-.7a1 1 0 0 0-1.4 1.4l2.8 2.8A2 2 0 0 0 5 13h1a3 3 0 0 0 3-3V6a1 1 0 0 0-2 0v-.5a1 1 0 0 0-2 0V4a1 1 0 0 0-1-2z" stroke="#7B2FBE" stroke-width="1.1" stroke-linejoin="round"/></svg></span>'+
+           '<span class="mw2-sstat-val mw2-sstat-wind" style="color:'+windCol(maxWind)+'">'+maxWind+'<small style="font-size:.6em;font-weight:400"> mph</small></span>'+
+           '</div>'
+    },
+    {
+      icon:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25M8 16h.01M8 20h.01M12 18h.01M12 22h.01M16 16h.01M16 20h.01"/></svg>', label:'PRCP%', tip:'Jump to peak precip hour',
+      hiIdx:iPop,
+      html:'<div style="display:flex;align-items:center;justify-content:center;gap:2px">'+
+           '<span class="mw2-tap-icon"><svg width="10" height="12" viewBox="0 0 10 14" fill="none"><path d="M5 2C3.9 2 3 2.9 3 4v5l-.7-.7a1 1 0 0 0-1.4 1.4l2.8 2.8A2 2 0 0 0 5 13h1a3 3 0 0 0 3-3V6a1 1 0 0 0-2 0v-.5a1 1 0 0 0-2 0V4a1 1 0 0 0-1-2z" stroke="#7B2FBE" stroke-width="1.1" stroke-linejoin="round"/></svg></span>'+
+           '<span class="mw2-sstat-val" style="color:'+popCol(maxPop)+'">'+Math.round(maxPop)+'<small style="font-size:.65em;font-weight:400">%</small></span>'+
+           '</div>'
+    },
+    {
+      icon:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/><line x1="8" y1="16" x2="8" y2="16.01"/><line x1="8" y1="20" x2="8" y2="20.01"/><line x1="12" y1="18" x2="12" y2="18.01"/><line x1="12" y1="22" x2="12" y2="22.01"/><line x1="16" y1="16" x2="16" y2="16.01"/></svg>', label:'RAIN', tip:'Jump to highest rainfall hour',
+      hiIdx:iQpf,
+      html:'<div style="display:flex;align-items:center;justify-content:center;gap:2px">'+
+           '<span class="mw2-tap-icon"><svg width="10" height="12" viewBox="0 0 10 14" fill="none"><path d="M5 2C3.9 2 3 2.9 3 4v5l-.7-.7a1 1 0 0 0-1.4 1.4l2.8 2.8A2 2 0 0 0 5 13h1a3 3 0 0 0 3-3V6a1 1 0 0 0-2 0v-.5a1 1 0 0 0-2 0V4a1 1 0 0 0-1-2z" stroke="#7B2FBE" stroke-width="1.1" stroke-linejoin="round"/></svg></span>'+
+           '<span class="mw2-sstat-val mw2-sstat-rain">'+fQpf(maxQpf)+'</span>'+
+           '</div>'
+    },
+    {
+      icon:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"/><polyline points="13 11 9 17 15 17 11 23" stroke="#f0ad4e"/></svg>', label:'TSTM', tip:'Jump to peak storm hour',
+      hiIdx:iThun,
+      html:'<div style="display:flex;align-items:center;justify-content:center;gap:2px">'+
+           '<span class="mw2-tap-icon"><svg width="10" height="12" viewBox="0 0 10 14" fill="none"><path d="M5 2C3.9 2 3 2.9 3 4v5l-.7-.7a1 1 0 0 0-1.4 1.4l2.8 2.8A2 2 0 0 0 5 13h1a3 3 0 0 0 3-3V6a1 1 0 0 0-2 0v-.5a1 1 0 0 0-2 0V4a1 1 0 0 0-1-2z" stroke="#7B2FBE" stroke-width="1.1" stroke-linejoin="round"/></svg></span>'+
+           '<span class="mw2-sstat-val" style="color:'+thunCol(maxThun)+'">'+maxThun+'<small style="font-size:.65em;font-weight:400">%</small></span>'+
+           '</div>'
+    },
+  ];
+
+  el.innerHTML = stats.map(function(s){
+    var hi=s.hiIdx!=null?s.hiIdx:null;
+    var attr=(!s.noWrap && hi!=null)?(' data-hi="'+hi+'" onclick="MWD.jumpToStat('+hi+')"'):'';
+    return '<div class="mw2-sstat"'+attr+'>'+
+      '<div class="mw2-sstat-icon">'+s.icon+'</div>'+
+      '<div class="mw2-sstat-label">'+s.label+'</div>'+
+      s.html+
+      '<div class="mw2-sstat-tip">'+s.tip+'</div>'+
+    '</div>';
+  }).join('');
+
+  // Update title label based on selected day
+  var titleEl=document.getElementById('mw-summary-title');
+  if(titleEl){
+    var dayData=S.days[S.di];
+    var nowDs=(function(){var n=new Date();return n.getFullYear()+'-'+(n.getMonth()<9?'0':'')+(n.getMonth()+1)+'-'+(n.getDate()<10?'0':'')+n.getDate();})();
+    var isToday=(dayData&&dayData.dateStr===nowDs);
+    if(isToday){titleEl.textContent='Today at a Glance';}
+    else if(dayData&&dayData.dateStr){
+      var d=new Date(dayData.dateStr+'T12:00:00');
+      titleEl.textContent=d.toLocaleDateString('en-US',{weekday:'long'})+' at a Glance';
+    } else {titleEl.textContent='Day at a Glance';}
+  }
+  dlog('ok','renderSummary: set display=flex, stats='+stats.length);
+  el.classList.remove('mw2-hidden');
+  var wrap=document.getElementById('mw-summary-wrap');
+  if(wrap)wrap.classList.remove('mw2-hidden');
+}
+
+window.MWD={init:init,toggleDiag:toggleDiag,setChart:setChart,toggleSrc:toggleSrc,toggleLeg:toggleLeg,scrollRow:scrollRow,jumpCards:jumpCards,jumpNow:jumpNow,jumpToStat:jumpToStat};
+
+// ── Non-blocking boot: activate only when widget scrolls into view ────────────
+// This prevents the widget from blocking Weebly page load or other widgets.
+(function(){
+  // ── Boot sequence ─────────────────────────────────────────────────────────
+  // Detect file:// — APIs are blocked by browser security when opened locally.
+  // The widget must be embedded on a web page (Weebly, any http/https URL).
+  if(window.location.protocol==='file:'){
+    var el=document.getElementById('mwtl');
+    if(el) el.innerHTML='<div class="mw2-err" style="padding:20px 16px;text-align:center">'+
+      '<b style="color:#7B2FBE;display:block;margin-bottom:8px;font-size:14px">⚠ Local File — Not Supported</b>'+
+      '<p style="font-size:13px;color:#555;line-height:1.5">This widget must be embedded on a web page.<br>'+
+      'Open it via <strong>http://</strong> or <strong>https://</strong> — not from a local file.<br><br>'+
+      '<span style="font-size:11px;color:#888">Paste into your Weebly Embed Code block and publish.</span></p>'+
+      '</div>';
+    return; // Stop — don't attempt any API calls
+  }
+  // Simple and robust: start data fetching immediately on DOMContentLoaded.
+  // Chart.js is loaded async — the chart render function already handles the
+  // case where Chart isn't ready yet (retries via setTimeout). No polling needed.
+  //
+  // Purge any stale service worker from older embed versions.
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.getRegistrations().then(function(regs){
+      regs.forEach(function(reg){
+        if(reg.scope&&(reg.scope.includes('mw-widget')||reg.scope.includes('mebaneweather'))){
+          reg.unregister();
+        }
+      });
+    });
+  }
+
+  // Guard: never call init() twice
+  var _booted = false;
+  function _boot(){
+    if(_booted){ dlog('warn','_boot called twice — ignored'); return; }
+    _booted = true;
+    dlog('info','Boot: readyState='+document.readyState+' proto='+window.location.protocol+' ET_OFF='+ET_OFF+' ET_ABB='+ET_ABB);
+    init();
+  }
+
+  // Fire as soon as the DOM is ready — don't wait for Chart.js
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', _boot);
+  } else {
+    // Already parsed (e.g. script at bottom of body, or Weebly inline embed)
+    _boot();
+  }
+})();
+
+})();
+}catch(e){console.warn("MebaneWeather widget error:",e);try{dlog("hdr","FATAL: "+e.message);}catch(ee){}}
+</script>

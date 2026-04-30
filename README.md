@@ -18,6 +18,7 @@ MebaneWeather.com is a self-contained severe weather dashboard and forecast widg
 | **Severe Weather Dashboard** | `Severe-Weather-Dashboard.html` | SPC threat levels, NWS alerts, summarized NWS AFD, winter weather detection |
 | **Forecast Widget** | `MebaneWeather Forecast.css` | Current conditions (Open‑Meteo + NWS AFD), 7‑day forecast, NWS alerts, SPC Day 1; resilient with caching and retries; "From the NWS:" link to full AFD |
 | **Live Radar Map** | `LiveRadarMap.css` | RainViewer precipitation radar (past + nowcast) with Play/Pause and speed control; fullscreen on desktop and smartphones (CSS fallback on iOS); resilient with caching and a 7‑minute watchdog when the tab is visible |
+| **Model Forecast Dashboard** | `mw-weebly-embed.html` | Hourly model-consensus widget (NWS·40% + ECMWF·25% + GFS·20% + HRRR·15%) for Mebane/Burlington NC — midnight-to-midnight timeline, "Today at a Glance" key-stats strip with tap-to-jump, multi-model chart, estimated radar reflectivity threat row, SPC risk (GeoJSON point-in-polygon), NWS alerts, and a full Feynman-style legend accordion. Self-contained HTML for Weebly Embed Code. |
 
 All three are self-contained HTML for Weebly Embed Code (or any platform that accepts embedded HTML).
 
@@ -40,6 +41,19 @@ All three are self-contained HTML for Weebly Embed Code (or any platform that ac
 | **Resilience (Forecast)** | Exponential backoff with jitter, cache fallback, and offline handling. Per‑attempt timeouts grow over retries for more robust behavior. | Active |
 | **Audit Trail (Forecast)** | Footer shows data sources; status bar distinguishes Live vs Cached (with age); includes links to verify at the original source. | Active |
 | **Live Radar (RainViewer)** | Past + nowcast frames, latest on load; zoom/pan reloads tiles; fullscreen on desktop and smartphones (CSS fallback on iOS); 7‑minute watchdog when tab visible. | Active |
+
+### Recent Updates
+
+**April 2026** — Model Forecast Dashboard (`mw-weebly-embed.html`):
+- Brand-new self-contained hourly forecast widget deployed live at [MebaneWeather.com](https://www.stewalexander.com/weather.html).
+- **Multi-model consensus:** NWS/NAM (40%) + ECMWF (25%) + GFS (20%) + HRRR (15%) blended hourly for precipitation probability, QPF, CAPE, thunderstorm %, and estimated radar reflectivity.
+- **Today at a Glance strip:** Purple-bordered summary card showing the day's peak temp (Hi/Lo), dewpoint (Hi/Lo), max wind, max precip%, max rainfall, and max thunder% — tap any value to jump directly to that hour on the timeline.
+- **Midnight-to-midnight timeline:** Hour cards, slider, and chart all run 12am→12am in US Eastern time (DST-aware). Orange NOW ring + needle + chart line mark the current hour.
+- **Tap-to-jump navigation:** IKEA-style SVG arrow/finger icons on each stat tile — no text labels needed; tap hi or lo separately on temp and dewpoint.
+- **Scroll affordances:** Chevrons + fade gradients on all scrollable rows; 12am/6am/12pm/6pm/NOW jump buttons. NOW button always returns to today's tab regardless of which day is active.
+- **SPC risk:** GeoJSON point-in-polygon (not HTML text search) correctly identifies Marginal vs Enhanced risk for Mebane's exact coordinates.
+- **Resilience:** `safeFetch()` with per-endpoint timeouts, `cache:'no-store'` + cache-buster on all fetches, old service-worker unregistration, `file://` protocol detection, and a diagnostic accordion panel.
+- **Legend:** Full accordion at the bottom explaining every element in plain language, including the Today at a Glance strip and tap-to-jump behavior. Single-column on narrow phones, 2/3/4-col on wider screens.
 
 ### Recent Updates
 
