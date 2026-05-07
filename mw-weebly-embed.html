@@ -400,15 +400,15 @@ input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radi
   /* ── Daily summary strip ─────────────────────────────────── */
   .mw2-summary-wrap    {margin:10px 10px}
   .mw2-summary-hdr     {padding:8px 14px 5px}
-  /* Bump summary header labels so they’re readable */
   .mw2-summary-hdr-label{font-size:0.75rem;font-weight:800}
   .mw2-summary-hdr-tag {font-size:0.625rem;padding:3px 9px}
-  .mw2-sstat           {padding:9px 6px 10px}
-  /* Stat labels (TEMP, DEW PT etc.) — lifted from 8px to 10px */
-  .mw2-sstat-label     {font-size:0.625rem;letter-spacing:.3px}
-  .mw2-sstat-val       {font-size:1rem}
-  .mw2-sstat-sub       {font-size:0.6875rem;margin-top:2px}
-  .mw2-sstat-tapline   {font-size:0.625rem}
+  /* Fix: 6 stat columns clip on 350px — tighten internal padding, allow label to wrap */
+  .mw2-sstat           {padding:8px 3px 9px;min-width:0}
+  .mw2-sstat-label     {font-size:0.5625rem;letter-spacing:.2px;white-space:normal;
+                         text-align:center;line-height:1.2}
+  .mw2-sstat-val       {font-size:0.9375rem}
+  .mw2-sstat-sub       {font-size:0.625rem;margin-top:2px;white-space:normal;text-align:center}
+  .mw2-sstat-tapline   {font-size:0.5625rem}
 
   /* ── Detail panels: single column for breathing room ────────────── */
   .mw2-detail          {grid-template-columns:1fr;gap:10px;padding:12px 12px}
@@ -429,13 +429,14 @@ input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radi
   .mw2-iv              {font-size:1rem}
 
   /* ── Chart section ────────────────────────────────────────── */
-  .mw2-chartsec        {padding:14px 12px 14px}
+  /* Fix: clip chart canvas so it doesn’t bleed past the card edge */
+  .mw2-chartsec        {padding:14px 12px 14px;overflow:hidden}
   .mw2-ctabs           {gap:6px;margin-bottom:12px}
   /* Fix: tabs must not wrap — nowrap + scroll so “PRECIP %” stays on one line */
   .mw2-ctab            {font-size:0.75rem;padding:8px 12px;min-height:40px;
                          white-space:nowrap;flex-shrink:0}
   /* Taller chart: legend wraps on mobile, needs extra vertical room */
-  .mw2-cwrap           {height:260px}
+  .mw2-cwrap           {height:260px;overflow:hidden}
 
   /* ── Radar strip ─────────────────────────────────────────── */
   .mw2-radsec          {padding:14px 12px 14px}
@@ -448,7 +449,9 @@ input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radi
   .mw2-rli             {font-size:0.8125rem;gap:6px}
 
   /* ── Chart legend row (condition icons) ──────────────────────── */
-  .mw2-legend          {gap:14px;padding:12px 16px}
+  /* Fix: right padding so last item isn’t clipped during scroll */
+  .mw2-legend          {gap:12px;padding:12px 16px 12px 14px}
+  .mw2-legend::after   {content:'';flex-shrink:0;width:14px} /* scroll buffer */
   .mw2-li              {font-size:0.875rem;gap:7px}
 
   /* ── Glossary / legend panel ───────────────────────────────── */
@@ -1729,7 +1732,7 @@ function renderChart(){
   var isMobile=(window.innerWidth||document.documentElement.clientWidth||390)<500;
   var base={
     responsive:true,maintainAspectRatio:false,animation:{duration:250},
-    layout:{padding:{top:isMobile?2:4,bottom:0,left:0,right:0}},
+    layout:{padding:{top:isMobile?2:4,bottom:0,left:isMobile?6:0,right:isMobile?4:0}},
     plugins:{
       legend:{display:true,position:'top',
         labels:{font:{size:isMobile?8:10,family:"'Open Sans',sans-serif"},
