@@ -377,13 +377,14 @@ input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radi
 
   /* ── Hour cards ──────────────────────────────────────────── */
   .mw2-cards           {gap:9px;padding:0 10px 10px}
-  .mw2-hcard           {min-width:5.5rem;padding:11px 9px 10px;border-radius:14px}
+  .mw2-hcard           {min-width:5.5rem;padding:11px 9px 10px;border-radius:14px;min-height:120px}
   .mw2-hc-t            {font-size:0.875rem;margin-bottom:3px}
   .mw2-hc-i            {font-size:1.5rem;margin:4px 0}
   .mw2-hc-d            {font-size:1rem}
-  .mw2-hc-p            {font-size:0.6875rem}
-  .mw2-badge           {font-size:0.625rem;padding:2px 5px}
-  .mw2-popbar          {margin:5px 0 3px}
+  /* Precip % and badge must be readable — these appear on thunderstorm cards */
+  .mw2-hc-p            {font-size:0.75rem}
+  .mw2-badge           {font-size:0.6875rem;padding:3px 6px;letter-spacing:.2px}
+  .mw2-popbar          {margin:5px 0 3px;height:5px}
 
   /* ── Jump buttons ────────────────────────────────────────── */
   .mw2-jump-btn        {font-size:0.75rem;padding:7px 13px;min-height:38px;border-radius:12px}
@@ -421,7 +422,8 @@ input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radi
   .mw2-chartsec        {padding:14px 12px 14px}
   .mw2-ctabs           {gap:8px;margin-bottom:12px}
   .mw2-ctab            {font-size:0.8125rem;padding:9px 15px;min-height:40px}
-  .mw2-cwrap           {height:210px}
+  /* Taller chart: legend wraps on mobile, needs extra vertical room */
+  .mw2-cwrap           {height:260px}
 
   /* ── Radar strip ─────────────────────────────────────────── */
   .mw2-radsec          {padding:14px 12px 14px}
@@ -1711,16 +1713,22 @@ function renderChart(){
   var ordRecs=ord.map(function(utcH){return recs[utcH]||{utcH:utcH,pNWS:0,pGFS:0,pECMWF:0,pHRRR:0,pICON:0,pCons:0,thun:0,qNWS:0,qGFS:0,qECMWF:0,qHRRR:0,cGFS:0,cECMWF:0,cHRRR:0,cICON:0,tF:null,dF:null};});
   var labels=ordRecs.map(function(r){return fShort(r.utcH);});
   var ct=S.ct;
+  /* Mobile-aware chart sizing: narrow viewport = smaller legend, fewer ticks */
+  var isMobile=(window.innerWidth||document.documentElement.clientWidth||390)<500;
   var base={
     responsive:true,maintainAspectRatio:false,animation:{duration:250},
+    layout:{padding:{top:isMobile?2:4,bottom:0,left:0,right:0}},
     plugins:{
-      legend:{display:true,position:'top',labels:{font:{size:10,family:"'Open Sans',sans-serif"},boxWidth:16,padding:8,color:'#555'}},
+      legend:{display:true,position:'top',
+        labels:{font:{size:isMobile?8:10,family:"'Open Sans',sans-serif"},
+                boxWidth:isMobile?10:16,padding:isMobile?5:8,
+                color:mwCol('#555','#aaaacc')}},
       tooltip:{backgroundColor:mwCol('#fff','#1e2a4a'),titleColor:mwCol('#333','#e8e8f0'),bodyColor:mwCol('#555','#aaaacc'),borderColor:mwCol('#ddd','#2e3a5c'),borderWidth:1,
         titleFont:{size:10,family:"'JetBrains Mono',monospace"},bodyFont:{size:10,family:"'JetBrains Mono',monospace"}}
     },
     scales:{
-      x:{ticks:{font:{size:8,family:"'JetBrains Mono',monospace"},color:mwCol('#999','#4a4a6a'),maxRotation:0,autoSkip:true,maxTicksLimit:12},grid:{color:mwCol('#f0f0f0','rgba(255,255,255,.06)')}},
-      y:{ticks:{font:{size:9},color:mwCol('#999','#4a4a6a')},grid:{color:mwCol('#f0f0f0','rgba(255,255,255,.06)')}}
+      x:{ticks:{font:{size:isMobile?7:8,family:"'JetBrains Mono',monospace"},color:mwCol('#999','#4a4a6a'),maxRotation:0,autoSkip:true,maxTicksLimit:isMobile?8:12},grid:{color:mwCol('#f0f0f0','rgba(255,255,255,.06)')}},
+      y:{ticks:{font:{size:isMobile?8:9},color:mwCol('#999','#4a4a6a')},grid:{color:mwCol('#f0f0f0','rgba(255,255,255,.06)')}}
     }
   };
   var type='line',datasets;
