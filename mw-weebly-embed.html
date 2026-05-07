@@ -347,45 +347,73 @@ input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radi
 .mw2-jump-btn.now{border-color:#ff5722;color:#ff5722}
 .mw2-jump-btn.now:hover{background:var(--mw-card-bg)3f0}
 
-/* ── Mobile font boosts (≤480px) — legible without squinting ─────────────── */
+/* ── Mobile font boosts (≤480px) — legible for glasses wearers ───────────── */
 @media(max-width:480px){
-  .mw2-hdr h2    {font-size:1.0625rem}
-  
-  
-  .mw2-bar       {font-size:0.875rem;padding:12px 16px}
-  .mw2-dtab      {font-size:0.75rem;padding:10px 12px}
-  .mw2-hc-t      {font-size:0.8125rem}
-  .mw2-hc-d      {font-size:0.9375rem}
-  .mw2-hc-p      {font-size:0.625rem}
-  .mw2-hc-i      {font-size:1.375rem}
-  .mw2-badge     {font-size:0.5625rem;padding:2px 5px}
-  .mw2-kv        {font-size:0.8125rem}
-  .mw2-kval      {font-size:0.8125rem}
-  .mw2-pt        {font-size:0.6875rem;margin-bottom:9px}
-  .mw2-mlbl      {font-size:0.75rem}
-  .mw2-cons      {font-size:0.8125rem}
-  .mw2-iv        {font-size:0.9375rem}
-  .mw2-il        {font-size:0.6875rem}
-  .mw2-ctab      {font-size:0.6875rem;padding:8px 13px}
-  .mw2-radt      {font-size:0.6875rem;margin-bottom:7px}
-  .mw2-rc-utc    {font-size:0.625rem}
-  .mw2-rc-lbl    {font-size:0.5625rem}
-  .mw2-rc-now-pip{font-size:0.5rem}
-  .mw2-rli       {font-size:0.6875rem}
-  .mw2-li        {font-size:0.75rem}
-  .mw2-jump-btn  {font-size:0.625rem;padding:4px 9px}
-  .mw2-leg-toggle{font-size:0.875rem;padding:13px 14px}
-  .mw2-leg-term  {font-size:0.75rem}
-  .mw2-leg-def   {font-size:0.75rem;line-height:1.5}
-  .mw2-leg-icon  {font-size:1.5rem}
-  .mw2-sstat-tapline{font-size:0.55rem}
-  .mw2-slrow span{font-size:0.6875rem}
-  .mw2-footer    {font-size:0.6875rem;padding:8px 12px}
-  /* Wider cards on phone so text doesn't cramp */
-  .mw2-hcard{min-width:4.75rem;padding:9px 7px 8px}
-  .mw2-rcell{min-width:3rem}
-  /* Taller chart */
-  .mw2-cwrap{height:200px}
+  /* Base size up so everything inherits larger */
+  #mwdb                {font-size:1rem}
+
+  /* Header */
+  .mw2-hdr             {padding:12px 14px;gap:10px}
+  .mw2-hdr h2          {font-size:1.1875rem;white-space:normal;line-height:1.25}
+  .mw2-hdr-meta span   {font-size:0.8125rem;line-height:1.5}
+  .mw2-hdr-meta .mw2-age{font-size:0.6875rem}
+  .mw2-live            {font-size:0.875rem;gap:6px}
+  .mw2-ts              {font-size:0.75rem}
+
+  /* Alert / SPC bars */
+  .mw2-bar             {font-size:0.9375rem;padding:12px 14px;gap:8px;line-height:1.5}
+  .mw2-spc-badge       {font-size:0.8125rem;padding:5px 10px}
+  .mw2-bar-r           {font-size:0.8125rem}
+
+  /* Day tabs */
+  .mw2-dtab            {font-size:0.875rem;padding:12px 14px;min-height:48px}
+
+  /* Hour cards */
+  .mw2-hcard           {min-width:5.25rem;padding:10px 8px 9px;border-radius:12px}
+  .mw2-hc-t            {font-size:0.875rem;margin-bottom:2px}
+  .mw2-hc-i            {font-size:1.5rem;margin:3px 0}
+  .mw2-hc-d            {font-size:1rem}
+  .mw2-hc-p            {font-size:0.6875rem}
+  .mw2-badge           {font-size:0.625rem;padding:2px 5px}
+
+  /* Detail panels */
+  .mw2-detail          {gap:10px;padding:10px 10px}
+  .mw2-panel           {padding:13px 12px}
+  .mw2-pt              {font-size:0.75rem;margin-bottom:10px;letter-spacing:.6px}
+  .mw2-kv              {font-size:0.9375rem;padding:7px 0}
+  .mw2-kval            {font-size:0.9375rem}
+  .mw2-mlbl            {font-size:0.875rem}
+  .mw2-mv              {font-size:0.75rem}
+  .mw2-cons            {font-size:0.9375rem;padding-top:8px}
+
+  /* Icon grid (UV, visibility, etc.) */
+  .mw2-il              {font-size:0.8125rem}
+  .mw2-iv              {font-size:1rem}
+
+  /* Chart tabs */
+  .mw2-ctab            {font-size:0.8125rem;padding:9px 14px;min-height:40px}
+  .mw2-cwrap           {height:210px}
+
+  /* Radar strip */
+  .mw2-radt            {font-size:0.8125rem;margin-bottom:8px}
+  .mw2-rcell           {min-width:3.25rem}
+  .mw2-rc-utc          {font-size:0.6875rem}
+  .mw2-rc-lbl          {font-size:0.6875rem}
+  .mw2-rc-now-pip      {font-size:0.5625rem}
+
+  /* Legend */
+  .mw2-leg-toggle      {font-size:1rem;padding:13px 14px}
+  .mw2-leg-term        {font-size:0.875rem}
+  .mw2-leg-def         {font-size:0.875rem;line-height:1.55}
+  .mw2-leg-icon        {font-size:1.625rem}
+
+  /* Misc */
+  .mw2-rli             {font-size:0.8125rem}
+  .mw2-li              {font-size:0.875rem}
+  .mw2-slrow span      {font-size:0.8125rem}
+  .mw2-jump-btn        {font-size:0.75rem;padding:6px 11px;min-height:36px}
+  .mw2-sstat-tapline   {font-size:0.625rem}
+  .mw2-footer          {font-size:0.8125rem;padding:10px 14px;line-height:1.55}
 }
 
 /* ── Zoom safety — flex children never overflow ─────────────────────────── */
