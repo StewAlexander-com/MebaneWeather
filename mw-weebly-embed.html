@@ -355,9 +355,13 @@ input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radi
 
   /* ── Header ─────────────────────────────────────────────── */
   .mw2-hdr             {padding:14px 16px;gap:10px}
-  .mw2-hdr h2          {font-size:1.1875rem;white-space:normal;line-height:1.3}
-  .mw2-hdr-meta        {gap:3px;margin-top:4px}
-  .mw2-hdr-meta span   {font-size:0.8125rem;line-height:1.5}
+  /* Fix: remove overflow:hidden on hdr-left so h2 isn’t clipped */
+  .mw2-hdr-left        {overflow:visible}
+  .mw2-hdr h2          {font-size:1.1875rem;white-space:normal;line-height:1.3;
+                         overflow:visible;text-overflow:clip}
+  .mw2-hdr-meta        {gap:3px;margin-top:4px;overflow:visible}
+  .mw2-hdr-meta span   {font-size:0.8125rem;line-height:1.5;
+                         white-space:normal;overflow:visible;text-overflow:clip}
   .mw2-hdr-meta .mw2-age{font-size:0.6875rem;margin-top:1px}
   .mw2-live            {font-size:0.875rem;gap:6px}
   .mw2-ts              {font-size:0.75rem}
@@ -387,17 +391,23 @@ input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radi
   .mw2-popbar          {margin:5px 0 3px;height:5px}
 
   /* ── Jump buttons ────────────────────────────────────────── */
+  /* Fix: row scrolls horizontally so • NOW button isn’t clipped */
+  .mw2-jump-row        {overflow-x:auto;scrollbar-width:none;
+                         padding-right:16px;flex-wrap:nowrap}
+  .mw2-jump-row::-webkit-scrollbar{display:none}
   .mw2-jump-btn        {font-size:0.75rem;padding:7px 13px;min-height:38px;border-radius:12px}
 
   /* ── Daily summary strip ─────────────────────────────────── */
   .mw2-summary-wrap    {margin:10px 10px}
   .mw2-summary-hdr     {padding:8px 14px 5px}
-  .mw2-summary-hdr-label{font-size:0.6875rem}
-  .mw2-summary-hdr-tag {font-size:0.5625rem;padding:3px 8px}
+  /* Bump summary header labels so they’re readable */
+  .mw2-summary-hdr-label{font-size:0.75rem;font-weight:800}
+  .mw2-summary-hdr-tag {font-size:0.625rem;padding:3px 9px}
   .mw2-sstat           {padding:9px 6px 10px}
-  .mw2-sstat-label     {font-size:0.5625rem;letter-spacing:.4px}
-  .mw2-sstat-val       {font-size:0.9375rem}
-  .mw2-sstat-sub       {font-size:0.625rem;margin-top:2px}
+  /* Stat labels (TEMP, DEW PT etc.) — lifted from 8px to 10px */
+  .mw2-sstat-label     {font-size:0.625rem;letter-spacing:.3px}
+  .mw2-sstat-val       {font-size:1rem}
+  .mw2-sstat-sub       {font-size:0.6875rem;margin-top:2px}
   .mw2-sstat-tapline   {font-size:0.625rem}
 
   /* ── Detail panels: single column for breathing room ────────────── */
@@ -420,8 +430,10 @@ input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radi
 
   /* ── Chart section ────────────────────────────────────────── */
   .mw2-chartsec        {padding:14px 12px 14px}
-  .mw2-ctabs           {gap:8px;margin-bottom:12px}
-  .mw2-ctab            {font-size:0.8125rem;padding:9px 15px;min-height:40px}
+  .mw2-ctabs           {gap:6px;margin-bottom:12px}
+  /* Fix: tabs must not wrap — nowrap + scroll so “PRECIP %” stays on one line */
+  .mw2-ctab            {font-size:0.75rem;padding:8px 12px;min-height:40px;
+                         white-space:nowrap;flex-shrink:0}
   /* Taller chart: legend wraps on mobile, needs extra vertical room */
   .mw2-cwrap           {height:260px}
 
