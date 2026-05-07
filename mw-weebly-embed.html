@@ -347,73 +347,106 @@ input[type=range].mw2-range::-moz-range-thumb{width:20px;height:20px;border-radi
 .mw2-jump-btn.now{border-color:#ff5722;color:#ff5722}
 .mw2-jump-btn.now:hover{background:var(--mw-card-bg)3f0}
 
-/* ── Mobile font boosts (≤480px) — legible for glasses wearers ───────────── */
+/* ── Mobile (≤480px) — legible for glasses wearers, elegant spacing ──────── */
 @media(max-width:480px){
-  /* Base size up so everything inherits larger */
+
+  /* ── Base ────────────────────────────────────────────────────── */
   #mwdb                {font-size:1rem}
 
-  /* Header */
-  .mw2-hdr             {padding:12px 14px;gap:10px}
-  .mw2-hdr h2          {font-size:1.1875rem;white-space:normal;line-height:1.25}
+  /* ── Header ─────────────────────────────────────────────── */
+  .mw2-hdr             {padding:14px 16px;gap:10px}
+  .mw2-hdr h2          {font-size:1.1875rem;white-space:normal;line-height:1.3}
+  .mw2-hdr-meta        {gap:3px;margin-top:4px}
   .mw2-hdr-meta span   {font-size:0.8125rem;line-height:1.5}
-  .mw2-hdr-meta .mw2-age{font-size:0.6875rem}
+  .mw2-hdr-meta .mw2-age{font-size:0.6875rem;margin-top:1px}
   .mw2-live            {font-size:0.875rem;gap:6px}
   .mw2-ts              {font-size:0.75rem}
 
-  /* Alert / SPC bars */
-  .mw2-bar             {font-size:0.9375rem;padding:12px 14px;gap:8px;line-height:1.5}
+  /* ── Alert / SPC bars ───────────────────────────────────── */
+  .mw2-bar             {font-size:0.9375rem;padding:13px 16px;gap:9px;line-height:1.5}
   .mw2-spc-badge       {font-size:0.8125rem;padding:5px 10px}
   .mw2-bar-r           {font-size:0.8125rem}
 
-  /* Day tabs */
-  .mw2-dtab            {font-size:0.875rem;padding:12px 14px;min-height:48px}
+  /* ── Day tabs ───────────────────────────────────────────── */
+  .mw2-dtab            {font-size:0.875rem;padding:13px 16px;min-height:48px}
 
-  /* Hour cards */
-  .mw2-hcard           {min-width:5.25rem;padding:10px 8px 9px;border-radius:12px}
-  .mw2-hc-t            {font-size:0.875rem;margin-bottom:2px}
-  .mw2-hc-i            {font-size:1.5rem;margin:3px 0}
+  /* ── Timeline scrubber ───────────────────────────────────── */
+  .mw2-tl              {padding:14px 14px 10px}
+  .mw2-slrow           {gap:12px;padding:0 4px 12px}
+  .mw2-slrow span      {font-size:0.8125rem}
+
+  /* ── Hour cards ──────────────────────────────────────────── */
+  .mw2-cards           {gap:9px;padding:0 10px 10px}
+  .mw2-hcard           {min-width:5.5rem;padding:11px 9px 10px;border-radius:14px}
+  .mw2-hc-t            {font-size:0.875rem;margin-bottom:3px}
+  .mw2-hc-i            {font-size:1.5rem;margin:4px 0}
   .mw2-hc-d            {font-size:1rem}
   .mw2-hc-p            {font-size:0.6875rem}
   .mw2-badge           {font-size:0.625rem;padding:2px 5px}
+  .mw2-popbar          {margin:5px 0 3px}
 
-  /* Detail panels */
-  .mw2-detail          {gap:10px;padding:10px 10px}
-  .mw2-panel           {padding:13px 12px}
-  .mw2-pt              {font-size:0.75rem;margin-bottom:10px;letter-spacing:.6px}
-  .mw2-kv              {font-size:0.9375rem;padding:7px 0}
+  /* ── Jump buttons ────────────────────────────────────────── */
+  .mw2-jump-btn        {font-size:0.75rem;padding:7px 13px;min-height:38px;border-radius:12px}
+
+  /* ── Daily summary strip ─────────────────────────────────── */
+  .mw2-summary-wrap    {margin:10px 10px}
+  .mw2-summary-hdr     {padding:8px 14px 5px}
+  .mw2-summary-hdr-label{font-size:0.6875rem}
+  .mw2-summary-hdr-tag {font-size:0.5625rem;padding:3px 8px}
+  .mw2-sstat           {padding:9px 6px 10px}
+  .mw2-sstat-label     {font-size:0.5625rem;letter-spacing:.4px}
+  .mw2-sstat-val       {font-size:0.9375rem}
+  .mw2-sstat-sub       {font-size:0.625rem;margin-top:2px}
+  .mw2-sstat-tapline   {font-size:0.625rem}
+
+  /* ── Detail panels: single column for breathing room ────────────── */
+  .mw2-detail          {grid-template-columns:1fr;gap:10px;padding:12px 12px}
+  .mw2-panel-full      {grid-column:1} /* already 1-col so reset is safe */
+  .mw2-panel           {padding:15px 14px}
+  .mw2-pt              {font-size:0.75rem;margin-bottom:11px;letter-spacing:.6px}
+  .mw2-kv              {font-size:0.9375rem;padding:8px 0}
   .mw2-kval            {font-size:0.9375rem}
   .mw2-mlbl            {font-size:0.875rem}
+  .mw2-mrow            {margin-bottom:10px}
   .mw2-mv              {font-size:0.75rem}
-  .mw2-cons            {font-size:0.9375rem;padding-top:8px}
+  .mw2-cons            {font-size:0.9375rem;padding-top:9px;margin-top:6px}
 
-  /* Icon grid (UV, visibility, etc.) */
+  /* Icon grid: 2-col always on iPhone (never 4-col) */
+  .mw2-igrid           {grid-template-columns:1fr 1fr !important;gap:10px;margin-top:10px;padding-top:8px}
+  .mw2-ic              {padding:2px 0}
   .mw2-il              {font-size:0.8125rem}
   .mw2-iv              {font-size:1rem}
 
-  /* Chart tabs */
-  .mw2-ctab            {font-size:0.8125rem;padding:9px 14px;min-height:40px}
+  /* ── Chart section ────────────────────────────────────────── */
+  .mw2-chartsec        {padding:14px 12px 14px}
+  .mw2-ctabs           {gap:8px;margin-bottom:12px}
+  .mw2-ctab            {font-size:0.8125rem;padding:9px 15px;min-height:40px}
   .mw2-cwrap           {height:210px}
 
-  /* Radar strip */
-  .mw2-radt            {font-size:0.8125rem;margin-bottom:8px}
+  /* ── Radar strip ─────────────────────────────────────────── */
+  .mw2-radsec          {padding:14px 12px 14px}
+  .mw2-radt            {font-size:0.8125rem;margin-bottom:10px}
   .mw2-rcell           {min-width:3.25rem}
   .mw2-rc-utc          {font-size:0.6875rem}
   .mw2-rc-lbl          {font-size:0.6875rem}
   .mw2-rc-now-pip      {font-size:0.5625rem}
+  .mw2-radleg          {gap:10px;margin-top:9px}
+  .mw2-rli             {font-size:0.8125rem;gap:6px}
 
-  /* Legend */
-  .mw2-leg-toggle      {font-size:1rem;padding:13px 14px}
+  /* ── Chart legend row (condition icons) ──────────────────────── */
+  .mw2-legend          {gap:14px;padding:12px 16px}
+  .mw2-li              {font-size:0.875rem;gap:7px}
+
+  /* ── Glossary / legend panel ───────────────────────────────── */
+  .mw2-leg-toggle      {font-size:1rem;padding:14px 16px}
+  .mw2-leg-grid        {padding:0 12px 16px;gap:10px}
+  .mw2-leg-card        {padding:11px 12px;border-radius:8px}
   .mw2-leg-term        {font-size:0.875rem}
   .mw2-leg-def         {font-size:0.875rem;line-height:1.55}
-  .mw2-leg-icon        {font-size:1.625rem}
+  .mw2-leg-icon        {font-size:1.625rem;margin-bottom:6px}
 
-  /* Misc */
-  .mw2-rli             {font-size:0.8125rem}
-  .mw2-li              {font-size:0.875rem}
-  .mw2-slrow span      {font-size:0.8125rem}
-  .mw2-jump-btn        {font-size:0.75rem;padding:6px 11px;min-height:36px}
-  .mw2-sstat-tapline   {font-size:0.625rem}
-  .mw2-footer          {font-size:0.8125rem;padding:10px 14px;line-height:1.55}
+  /* ── Footer ───────────────────────────────────────────────── */
+  .mw2-footer          {font-size:0.8125rem;padding:12px 16px;line-height:1.6;gap:6px}
 }
 
 /* ── Zoom safety — flex children never overflow ─────────────────────────── */
