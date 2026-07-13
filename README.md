@@ -11,14 +11,14 @@ MebaneWeather.com is a self-contained severe weather dashboard and forecast widg
 
 ## Project Overview
 
-**MebaneWeather.com** provides real-time weather and severe-weather monitoring for Mebane, NC (Alamance County). The repo includes three embeddable components:
+**MebaneWeather.com** provides real-time weather and severe-weather monitoring for Mebane, NC (Alamance County). The repo includes embeddable components plus hardened v2.1.0 Weebly embeds in [`weebly/`](weebly/):
 
 | Component | File | Description |
 |-----------|------|-------------|
 | **Severe Weather Dashboard** | `Severe-Weather-Dashboard.html` | SPC threat levels, NWS alerts, summarized NWS AFD, winter weather detection |
 | **Forecast Widget** | `MebaneWeather Forecast.css` | Current conditions (Open‑Meteo + NWS AFD), 7‑day forecast, NWS alerts, SPC Day 1; resilient with caching and retries; "From the NWS:" link to full AFD |
-| **Live Radar Map** | `LiveRadarMap.css` | RainViewer precipitation radar (past + nowcast) with Play/Pause and speed control; fullscreen on desktop and smartphones (CSS fallback on iOS); resilient with caching and a 7‑minute watchdog when the tab is visible |
-| **Model Forecast Dashboard** | [`mw-weebly-embed.html`](MODEL_FORECAST_DASHBOARD.md) · [📖 Deep dive](MODEL_FORECAST_DASHBOARD.md) | Hourly model-consensus widget (NWS·40% + ECMWF·25% + GFS·20% + HRRR·15%) for Mebane/Burlington NC — midnight-to-midnight timeline, "Today at a Glance" key-stats strip with tap-to-jump, multi-model chart, estimated radar reflectivity threat row, SPC risk (GeoJSON point-in-polygon), NWS alerts, and a full Feynman-style legend accordion. Self-contained HTML for Weebly Embed Code. |
+| **Live Radar Map** | `LiveRadarMap.css` | RainViewer precipitation radar (past + nowcast) with Play/Pause and speed control; fullscreen on desktop and smartphones (CSS fallback on iOS); resilient with caching and a 7‑minute watchdog when the tab is visible. **Weebly embed:** see [`weebly/mebane-weather-radar-widget.html`](weebly/mebane-weather-radar-widget.html). |
+| **Model Forecast Dashboard** | [`weebly/mebane-weather-widget.html`](weebly/mebane-weather-widget.html) · [📖 Deep dive](MODEL_FORECAST_DASHBOARD.md) | Hourly model-consensus widget v2.1.0 (NWS·40% + ECMWF·25% + GFS·20% + HRRR·15%) — hardened Weebly embed with UX/a11y fixes, dark mode, and resilience hardening. Legacy: [`mw-weebly-embed.html`](mw-weebly-embed.html). |
 
 All three are self-contained HTML for Weebly Embed Code (or any platform that accepts embedded HTML).
 

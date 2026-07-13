@@ -1,0 +1,140 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Mebane Weather Widget — UX patch (append inside #mwdb <style> block)
+   Review: mebane-weather-ux-fixes.md
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Extra tokens for surfaces that were hardcoded ───────────────────────── */
+#mwdb {
+  --mw-muted-border: #ebebeb;
+  --mw-kv-border: #f3f3f3;
+  --mw-scroll-fade: rgba(255, 255, 255, 0.95);
+  --mw-tab-muted: #777777;
+  --mw-cta: #17a2b8;
+}
+@media (prefers-color-scheme: dark) {
+  #mwdb {
+    --mw-muted-border: #2a2a4a;
+    --mw-kv-border: #2e2e4e;
+    --mw-scroll-fade: rgba(26, 26, 46, 0.97);
+    --mw-tab-muted: #8888aa;
+    --mw-cta: #34d9ee;
+  }
+}
+
+/* ── P0: Fix invalid NOW button hover ────────────────────────────────────── */
+.mw2-jump-btn.now:hover {
+  background: rgba(255, 87, 34, 0.08);
+  border-color: #ff5722;
+  color: #ff5722;
+}
+
+/* ── P0: Dark-aware scroll fades (all rows) ────────────────────────────────── */
+.mw2-scroll-outer::before {
+  background: linear-gradient(to right, var(--mw-scroll-fade) 0%, rgba(0, 0, 0, 0) 100%);
+}
+.mw2-scroll-outer::after {
+  background: linear-gradient(to left, var(--mw-scroll-fade) 0%, rgba(0, 0, 0, 0) 100%);
+}
+.mw2-scroll-outer.daytabs::before,
+.mw2-scroll-outer.daytabs::after {
+  background: linear-gradient(to right, var(--mw-fade-bg2) 0%, rgba(0, 0, 0, 0) 100%);
+}
+.mw2-scroll-outer.daytabs::after {
+  background: linear-gradient(to left, var(--mw-fade-bg2) 0%, rgba(0, 0, 0, 0) 100%);
+}
+.mw2-scroll-outer.radar::before,
+.mw2-scroll-outer.radar::after {
+  background: linear-gradient(to right, var(--mw-bg2) 0%, rgba(0, 0, 0, 0) 100%);
+}
+.mw2-scroll-outer.radar::after {
+  background: linear-gradient(to left, var(--mw-bg2) 0%, rgba(0, 0, 0, 0) 100%);
+}
+
+/* ── P1: Themed detail / chart / legend (replace hardcoded grays) ─────────── */
+.mw2-kv { border-bottom-color: var(--mw-kv-border); }
+.mw2-mbg { background: var(--mw-input-track); }
+.mw2-cons,
+.mw2-igrid { border-top-color: var(--mw-muted-border); }
+.mw2-dtab { color: var(--mw-tab-muted); }
+.mw2-ctab {
+  border-color: var(--mw-border2);
+  color: var(--mw-text2);
+}
+.mw2-leg-wrap { border-top-color: var(--mw-divider); }
+.mw2-leg-term { color: var(--mw-text); }
+.mw2-leg-def { color: var(--mw-text2); }
+.mw2-leg-def b { color: var(--mw-text); }
+.mw2-leg-divider {
+  color: var(--mw-text3);
+  border-bottom-color: var(--mw-muted-border);
+}
+.mw2-leg-chevron { color: var(--mw-text3); }
+.mw2-scroll-btn { border-color: var(--mw-border2); }
+.mw2-jump-btn { border-color: var(--mw-border2); }
+.mw2-bar-r a,
+.mw2-footer a { color: var(--mw-cta); }
+#mwspctxt { color: var(--mw-text2) !important; }
+
+/* Summary label contrast (WCAG) */
+.mw2-sstat-label { color: var(--mw-purple); }
+
+/* ── P1: Focus visible (keyboard users) ──────────────────────────────────── */
+#mwdb :focus { outline: none; }
+#mwdb :focus-visible {
+  outline: 2px solid var(--mw-purple);
+  outline-offset: 2px;
+}
+.mw2-hcard:focus-visible {
+  outline-offset: 3px;
+}
+
+/* ── P1: Touch targets on footer utilities ───────────────────────────────── */
+#mw-diag-toggle,
+#mwsrcbtn {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px 12px !important;
+  font-size: 0.75rem !important;
+}
+.mw2-ctab { min-height: 44px; }
+
+/* ── P1: Touch feedback (no hover on phones) ─────────────────────────────── */
+@media (hover: none) {
+  .mw2-sstat-tip { display: none !important; }
+  .mw2-sstat[data-hi]:active {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(123, 47, 190, 0.2);
+    background: var(--mw-purple-dim);
+    border-radius: 6px;
+  }
+}
+
+/* ── P1: Respect reduced motion ──────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .mw2-dot,
+  .mw2-bar.al-sev .mw2-bdot,
+  .mw2-summary-hdr-tag,
+  .mw2-skel,
+  .mw2-leg-body {
+    animation: none !important;
+  }
+  .mw2-hcard,
+  .mw2-ctab,
+  .mw2-scroll-btn,
+  .mw2-sstat[data-hi] {
+    transition: none !important;
+  }
+}
+
+/* ── P2: Screen-reader only helper ───────────────────────────────────────── */
+#mwdb .mw2-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
